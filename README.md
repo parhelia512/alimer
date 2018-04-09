@@ -15,7 +15,7 @@
 
 ## Credits
 
-Alimer is fork from [Turso3D](https://github.com/cadaver/turso3d), **Turso3D** is licensed under the [MIT](https://github.com/cadaver/turso3d/blob/master/License.txt).
+Alimer is fork from [Turso3D](https://github.com/cadaver/turso3d), which is licensed under the [MIT](https://github.com/cadaver/turso3d/blob/master/License.txt)
 
 Alimer uses the following third-party libraries:
 
