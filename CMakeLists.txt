@@ -54,7 +54,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 include (CMakeDependentOption)
 option (TURSO3D_LOGGING "Enable logging macros" TRUE)
 option (TURSO3D_PROFILING "Enable performance profiling" TRUE)
-cmake_dependent_option (TURSO3D_STATIC_RUNTIME "Use static C/C++ runtime library with MSVC" FALSE "MSVC" FALSE)
+cmake_dependent_option (ALIMER_STATIC_RUNTIME "Use static C/C++ runtime library with MSVC" FALSE "MSVC" FALSE)
 cmake_dependent_option (TURSO3D_OPENGL "Use OpenGL instead of Direct3D11 on Windows" FALSE "WIN32" TRUE)
 
 # Set default configuration to Release for single-configuration generators
@@ -114,7 +114,7 @@ endif ()
 
 # Compiler-specific setup
 if (MSVC)
-    if (TURSO3D_STATIC_RUNTIME)
+    if (ALIMER_STATIC_RUNTIME)
         set (RELEASE_RUNTIME /MT)
         set (DEBUG_RUNTIME /MTd)
     else ()
@@ -143,20 +143,6 @@ elseif (NOT XCODE)
     endif ()
 endif ()
 
-# Macro to set output directories on all configurations
-macro (set_output_directories OUTPUT_PATH)
-    foreach (TYPE ${ARGN})
-        set (CMAKE_${TYPE}_OUTPUT_DIRECTORY ${OUTPUT_PATH})
-        foreach (CONFIG ${CMAKE_CONFIGURATION_TYPES})
-            string (TOUPPER ${CONFIG} CONFIG)
-            set (CMAKE_${TYPE}_OUTPUT_DIRECTORY_${CONFIG} ${OUTPUT_PATH})
-        endforeach ()
-    endforeach ()
-endmacro ()
-
-# Set output directory for executables
-set_output_directories (${PROJECT_SOURCE_DIR}/Bin RUNTIME PDB)
-
 # Engine
 add_subdirectory (Alimer)
 
@@ -165,3 +151,17 @@ add_subdirectory (Samples)
 
 # Install CMake modules and toolchains provided by and for Urho3D
 install (DIRECTORY ${CMAKE_SOURCE_DIR}/CMake/ DESTINATION ${DEST_SHARE_DIR}/CMake)    # Note: the trailing slash is significant
+
+# Install CMake build scripts
+file (GLOB CMAKE_SCRIPTS ${CMAKE_SOURCE_DIR}/*${SCRIPT_EXT})
+install (PROGRAMS ${CMAKE_SCRIPTS} DESTINATION ${DEST_SHARE_DIR}/Scripts)
+
+# Print current build configuration
+message(STATUS "Alimer Configuration:")
+if (ALIMER_STATIC_RUNTIME)
+    message(STATUS "  Runtime         STATIC")
+else ()
+    message(STATUS "  Runtime         SHARED")
+endif ()
+
+message(STATUS "  Library         ${ALIMER_LIBRARY_TYPE}")

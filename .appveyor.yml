@@ -7,6 +7,9 @@ branches:
   only:
     - master
 
+install:
+  - git submodule update --init --recursive
+
 before_build:
  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
  - mkdir "%APPVEYOR_BUILD_FOLDER%\Build"
@@ -15,7 +18,7 @@ before_build:
 
 build_script:
   - cd "%APPVEYOR_BUILD_FOLDER%\Build"
-  - cmake --build . --target install
+  - cmake --build . -- /verbosity:minimal
 after_build:
   - cd "%APPVEYOR_BUILD_FOLDER%"
   - 7z a Alimer-SDK.7z "%APPVEYOR_BUILD_FOLDER%\Alimer-SDK"
