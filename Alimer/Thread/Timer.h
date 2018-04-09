@@ -1,7 +1,7 @@
 // For conditions of distribution and use, see copyright notice in License.txt
 
 #include "../Base/String.h"
-#include "../Turso3DConfig.h"
+#include "../AlimerConfig.h"
 
 #pragma once
 

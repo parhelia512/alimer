@@ -38,18 +38,12 @@ macro (add_engine_directory_group DIRECTORY GROUP)
 endmacro ()
 
 # Set definitions
-if (TURSO3D_SHARED)
-    add_definitions (-DTURSO3D_EXPORTS)
-    set (TURSO3D_LIB_TYPE SHARED)
-else ()
-    set (TURSO3D_LIB_TYPE STATIC)
-endif ()
 if (WIN32 AND NOT TURSO3D_OPENGL)
     set (TURSO3D_D3D11 TRUE)
 endif ()
 
-# Generate the Turso3DConfig.h file
-configure_file (Turso3DConfig.h.in ${CMAKE_CURRENT_SOURCE_DIR}/Turso3DConfig.h)
+# Generate the AlimerConfig.h file
+configure_file (AlimerConfig.h.in ${CMAKE_CURRENT_SOURCE_DIR}/AlimerConfig.h)
 
 # Add source files from subdirectories
 add_engine_directory (Base)
@@ -79,8 +73,19 @@ endif ()
 file (GLOB TURSO3D_FILES *.h *.c *.cpp)
 list (APPEND SOURCE_FILES ${TURSO3D_FILES})
 
-# Define the Turso3D library target
-add_library (${TARGET_NAME} ${TURSO3D_LIB_TYPE} ${SOURCE_FILES})
+# Define the library target.
+add_library (${TARGET_NAME} ${ALIMER_LIBRARY_TYPE} ${SOURCE_FILES})
+
+target_include_directories(${TARGET_NAME} PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>        # For parent projects to find engine headers
+	PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+)
+
+if (BUILD_SHARED_LIBS OR EMSCRIPTEN)
+    target_compile_definitions (${TARGET_NAME} PRIVATE -DALIMER_EXPORTS)
+else ()
+    target_compile_definitions (${TARGET_NAME} PUBLIC -DALIMER_STATIC)
+endif ()
 
 # Add third party include directories. Only used internally
 include_directories (ThirdParty/STB)
@@ -92,6 +97,7 @@ if (TURSO3D_D3D11)
     endif ()
     target_link_libraries (${TARGET_NAME} ${DIRECT3D_LIBRARIES})
 endif ()
+
 if (TURSO3D_OPENGL)
     include_directories (ThirdParty/FlextGL)
     find_package (OpenGL REQUIRED)

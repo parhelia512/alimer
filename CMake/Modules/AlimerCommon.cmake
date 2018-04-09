@@ -20,3 +20,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
+
+macro (add_alimer_executable TARGET)
+    file (GLOB SOURCE_FILES *.cpp *.h)
+    if (NOT ALIMER_WIN32_CONSOLE)
+        set (TARGET_TYPE WIN32)
+    endif ()
+
+    if (ANDROID)
+        add_library(${TARGET} SHARED ${ARGN})
+    else ()
+        add_executable (${TARGET} ${TARGET_TYPE} ${ARGN})
+    endif ()
+    target_link_libraries (${TARGET} Alimer)
+
+endmacro ()

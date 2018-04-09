@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "../Turso3DConfig.h"
+#include "../AlimerConfig.h"
 
 #include <cstdlib>
 #include <cmath>

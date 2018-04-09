@@ -48,7 +48,6 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Define CMake options
 include (CMakeDependentOption)
-option (TURSO3D_SHARED "Build Turso3D as a shared library" FALSE)
 option (TURSO3D_LOGGING "Enable logging macros" TRUE)
 option (TURSO3D_PROFILING "Enable performance profiling" TRUE)
 cmake_dependent_option (TURSO3D_STATIC_RUNTIME "Use static C/C++ runtime library with MSVC" FALSE "MSVC" FALSE)
@@ -150,9 +149,6 @@ macro (set_output_directories OUTPUT_PATH)
         endforeach ()
     endforeach ()
 endmacro ()
-
-# Set Turso3D as a global include directory
-include_directories (Turso3D)
 
 # Set output directory for executables
 set_output_directories (${PROJECT_SOURCE_DIR}/Bin RUNTIME PDB)

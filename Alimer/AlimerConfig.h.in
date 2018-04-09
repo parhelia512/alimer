@@ -2,10 +2,9 @@
 
 #pragma once
 
-/// %Turso3D engine namespace.
-namespace Turso3D
-{
-}
+
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef _MSC_VER
 #pragma warning(disable:4481)
@@ -17,13 +16,13 @@ namespace Turso3D
 #ifdef _MSC_VER
 #pragma warning(disable:4251)
 #endif
-#ifdef TURSO3D_EXPORTS
-#define TURSO3D_API __declspec(dllexport)
+#ifdef ALIMER_EXPORTS
+#   define TURSO3D_API __declspec(dllexport)
 #else
-#define TURSO3D_API __declspec(dllimport)
+#   define TURSO3D_API __declspec(dllimport)
 #endif
 #else
-#define TURSO3D_API
+#   define TURSO3D_API
 #endif
 
 // Turso3D build configuration

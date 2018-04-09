@@ -1,6 +1,6 @@
 // For conditions of distribution and use, see copyright notice in License.txt
 
-#include "../../Turso3DConfig.h"
+#include "../../AlimerConfig.h"
 
 #ifdef TURSO3D_OPENGL
 
