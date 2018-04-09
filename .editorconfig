@@ -1,0 +1,31 @@
+root = true
+
+[*]
+charset = utf-8
+indent_style = tab
+indent_size  = 4
+trim_trailing_whitespace = true
+max_line_length = 120
+
+[*.py]
+indent_style = space
+indent_size = 4
+
+# Solution Files
+[*.sln]
+indent_style = tab
+
+# XML Project Files
+[*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj}]
+indent_style = space
+indent_size = 2
+
+# Configuration Files
+[*.{json,xml,yml,config,props,targets,nuspec,resx,ruleset}]
+indent_style = space
+indent_size = 2
+
+# Markdown Files
+[*.md]
+indent_style = space
+trim_trailing_whitespace = false
