@@ -21,5 +21,3 @@ Alimer uses the following third-party libraries:
 
 - stb_image 2.19 (https://nothings.org)
 - stb_image_write 1.09 (https://nothings.org)
-- stb_rect_pack 0.11 (https://nothings.org)
-- stb_vorbis 1.14 (https://nothings.org)

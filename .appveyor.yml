@@ -28,4 +28,3 @@ skip_commits:
     - .travis.yml
     - LICENSE
     - README.md
-    - AUTHORS.md
