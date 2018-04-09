@@ -50,6 +50,10 @@ set (CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Enable the creation of folders for Visual Studio projects
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# Get Root Directory
+get_filename_component(ALIMER_ROOT_DIR "." ABSOLUTE)
+set (ALIMER_INSTALL_DIR ${ALIMER_ROOT_DIR}/Build/Share)
+
 # Define CMake options
 include (CMakeDependentOption)
 option (TURSO3D_LOGGING "Enable logging macros" TRUE)
@@ -143,6 +147,20 @@ elseif (NOT XCODE)
     endif ()
 endif ()
 
+# Macro to set output directories on all configurations
+macro (set_output_directories OUTPUT_PATH)
+    foreach (TYPE ${ARGN})
+        set (CMAKE_${TYPE}_OUTPUT_DIRECTORY ${OUTPUT_PATH})
+        foreach (CONFIG ${CMAKE_CONFIGURATION_TYPES})
+            string (TOUPPER ${CONFIG} CONFIG)
+            set (CMAKE_${TYPE}_OUTPUT_DIRECTORY_${CONFIG} ${OUTPUT_PATH})
+        endforeach ()
+    endforeach ()
+endmacro ()
+
+# Set output directory for executables
+set_output_directories (${PROJECT_SOURCE_DIR}/Bin RUNTIME PDB)
+
 # Engine
 add_subdirectory (Alimer)
 
@@ -150,11 +168,11 @@ add_subdirectory (Alimer)
 add_subdirectory (Samples)
 
 # Install CMake modules and toolchains provided by and for Urho3D
-install (DIRECTORY ${CMAKE_SOURCE_DIR}/CMake/ DESTINATION ${DEST_SHARE_DIR}/CMake)    # Note: the trailing slash is significant
+install (DIRECTORY ${CMAKE_SOURCE_DIR}/CMake/ DESTINATION ${ALIMER_INSTALL_DIR}/CMake)    # Note: the trailing slash is significant
 
 # Install CMake build scripts
 file (GLOB CMAKE_SCRIPTS ${CMAKE_SOURCE_DIR}/*${SCRIPT_EXT})
-install (PROGRAMS ${CMAKE_SCRIPTS} DESTINATION ${DEST_SHARE_DIR}/Scripts)
+install (PROGRAMS ${CMAKE_SCRIPTS} DESTINATION ${ALIMER_INSTALL_DIR}/Scripts)
 
 # Print current build configuration
 message(STATUS "Alimer Configuration:")

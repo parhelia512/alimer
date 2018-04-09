@@ -18,7 +18,7 @@ before_build:
 
 build_script:
   - cd "%APPVEYOR_BUILD_FOLDER%\Build"
-  - cmake --build . -- /verbosity:minimal
+  - cmake --build . --target install
 after_build:
   - cd "%APPVEYOR_BUILD_FOLDER%"
   - 7z a Alimer-SDK.7z "%APPVEYOR_BUILD_FOLDER%\Alimer-SDK"

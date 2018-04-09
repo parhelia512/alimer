@@ -20,3 +20,6 @@ Docs/html/
 *.user
 *.sln.docstates
 .vs/
+
+# Generated AlimerConfig.h
+Alimer/AlimerConfig.h
