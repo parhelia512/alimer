@@ -25,13 +25,13 @@
 #include "Debug/DebugNew.h"
 
 #ifdef _MSC_VER
-#include <crtdbg.h>
+#	include <crtdbg.h>
 #endif
 
 #include <cstdio>
 #include <cstdlib>
 
-using namespace Turso3D;
+using namespace Alimer;
 
 int main()
 {

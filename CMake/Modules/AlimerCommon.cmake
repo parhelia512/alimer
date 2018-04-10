@@ -21,6 +21,15 @@
 # THE SOFTWARE.
 #
 
+# Set compiler variable
+set ("${CMAKE_CXX_COMPILER_ID}" ON)
+
+# Configure variables
+set (ALIMER_URL "https://github.com/amerkoleci/alimer")
+set (ALIMER_DESCRIPTION "Alimer is a free lightweight, cross-platform 2D and 3D game engine implemented in C++11 and released under the MIT license. Forked from Turso3D (https://github.com/cadaver/turso3d).")
+execute_process (COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/GetAlimerRevision.cmake WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} OUTPUT_VARIABLE ALIMER_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+string (REGEX MATCH "([^.]+)\\.([^.]+)\\.(.+)" MATCHED "${ALIMER_VERSION}")
+
 # Setup SDK install destinations
 if (WIN32)
     set (SCRIPT_EXT .bat)
@@ -28,15 +37,33 @@ else ()
     set (SCRIPT_EXT .sh)
 endif ()
 
-# Set compiler variable
-set ("${CMAKE_CXX_COMPILER_ID}" ON)
+if (ANDROID)
+    # For Android platform, install to a path based on the chosen Android ABI, e.g. libs/armeabi-v7a
+    set (LIB_SUFFIX s/${ANDROID_NDK_ABI_NAME})
+endif ()
 
+set (DEST_BASE_INCLUDE_DIR include)
+set (DEST_INCLUDE_DIR ${DEST_BASE_INCLUDE_DIR}/Alimer)
+set (DEST_BIN_DIR bin)
+if (WIN32 AND BUILD_SHARED_LIBS)
+    # Windows can not find shared libraries in other directories.
+    set (DEST_TOOLS_DIR ${DEST_BIN_DIR})
+    set (DEST_SAMPLES_DIR ${DEST_BIN_DIR})
+else ()
+    set (DEST_TOOLS_DIR ${DEST_BIN_DIR}/tools)
+    set (DEST_SAMPLES_DIR ${DEST_BIN_DIR}/samples)
+endif ()
+set (DEST_SHARE_DIR share)
+set (DEST_LIBRARY_DIR lib${LIB_SUFFIX})
+if (ANDROID)
+    set (SHARED_LIB_INSTALL_DIR lib${LIB_SUFFIX})
+else ()
+    set (SHARED_LIB_INSTALL_DIR bin)
+endif ()
 
-# Configure variables
-set (ALIMER_URL "https://github.com/amerkoleci/alimer")
-set (ALIMER_DESCRIPTION "Alimer is a free lightweight, cross-platform 2D and 3D game engine implemented in C++11 and released under the MIT license. Forked from Turso3D (https://github.com/cadaver/turso3d).")
-execute_process (COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/GetAlimerRevision.cmake WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} OUTPUT_VARIABLE ALIMER_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
-string (REGEX MATCH "([^.]+)\\.([^.]+)\\.(.+)" MATCHED "${ALIMER_VERSION}")
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${DEST_BIN_DIR})
+set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${SHARED_LIB_INSTALL_DIR})
+set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${DEST_LIBRARY_DIR})
 
 macro (add_alimer_executable TARGET)
     file (GLOB SOURCE_FILES *.cpp *.h)

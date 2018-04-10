@@ -31,7 +31,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-using namespace Turso3D;
+using namespace Alimer;
 
 class Test
 {

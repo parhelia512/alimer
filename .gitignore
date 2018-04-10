@@ -22,4 +22,4 @@ Docs/html/
 .vs/
 
 # Generated AlimerConfig.h
-Alimer/AlimerConfig.h
+Source/Alimer/AlimerConfig.h
