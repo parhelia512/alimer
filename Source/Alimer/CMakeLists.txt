@@ -110,3 +110,10 @@ if (WIN32)
 else ()
 	target_link_libraries (${TARGET_NAME} pthread)
 endif ()
+
+install(TARGETS Alimer
+    EXPORT Alimer
+    LIBRARY DESTINATION ${SHARED_LIB_INSTALL_DIR}
+    RUNTIME DESTINATION ${SHARED_LIB_INSTALL_DIR}
+    ARCHIVE DESTINATION lib${LIB_SUFFIX}
+)
