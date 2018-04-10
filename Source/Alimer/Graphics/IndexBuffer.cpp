@@ -27,37 +27,47 @@
 
 namespace Alimer
 {
+	IndexBuffer::~IndexBuffer()
+	{
+		Release();
+	}
 
-	bool IndexBuffer::Define(ResourceUsage usage_, size_t numIndices_, size_t indexSize_, bool useShadowData, const void* data)
+	bool IndexBuffer::Define(
+		ResourceUsage usage,
+		uint32_t numIndices, 
+		uint32_t indexSize,
+		bool useShadowData,
+		const void* data)
 	{
 		ALIMER_PROFILE(DefineIndexBuffer);
 
 		Release();
 
-		if (!numIndices_)
+		if (!numIndices)
 		{
 			LOGERROR("Can not define index buffer with no indices");
 			return false;
 		}
-		if (usage_ == USAGE_RENDERTARGET)
+		if (usage == USAGE_RENDERTARGET)
 		{
 			LOGERROR("Rendertarget usage is illegal for index buffers");
 			return false;
 		}
-		if (usage_ == USAGE_IMMUTABLE && !data)
+		if (usage == USAGE_IMMUTABLE && !data)
 		{
 			LOGERROR("Immutable index buffer must define initial data");
 			return false;
 		}
-		if (indexSize_ != sizeof(unsigned) && indexSize_ != sizeof(unsigned short))
+		if (indexSize != sizeof(uint32_t)
+			&& indexSize != sizeof(uint16_t))
 		{
 			LOGERROR("Index buffer index size must be 2 or 4");
 			return false;
 		}
 
-		numIndices = numIndices_;
-		indexSize = indexSize_;
-		usage = usage_;
+		_indexCount = numIndices;
+		_indexSize = indexSize;
+		_usage = usage;
 
 		// If buffer is reinitialized with the same shadow data, no need to reallocate
 		if (useShadowData && (!data || data != _shadowData.get()))

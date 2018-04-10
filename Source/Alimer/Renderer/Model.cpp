@@ -129,9 +129,9 @@ bool Model::BeginLoad(Stream& source)
     {
         IndexBufferDesc& ibDesc = ibDescs[i];
     
-        ibDesc.numIndices = source.Read<unsigned>();
-        ibDesc.indexSize = source.Read<unsigned>();
-        ibDesc.indexData = new unsigned char[ibDesc.numIndices * ibDesc.indexSize];
+        ibDesc.numIndices = source.Read<uint32_t>();
+        ibDesc.indexSize = source.Read<uint32_t>();
+        ibDesc.indexData = new uint8_t[ibDesc.numIndices * ibDesc.indexSize];
         source.Read(&ibDesc.indexData[0], ibDesc.numIndices * ibDesc.indexSize);
     }
 

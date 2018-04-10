@@ -11,108 +11,111 @@
 namespace Alimer
 {
 
-Shader::Shader() :
-    stage(SHADER_VS)
-{
-}
+	Shader::Shader() :
+		stage(SHADER_VS)
+	{
+	}
 
-Shader::~Shader()
-{
-}
+	Shader::~Shader()
+	{
+	}
 
-void Shader::RegisterObject()
-{
-    RegisterFactory<Shader>();
-}
+	void Shader::RegisterObject()
+	{
+		RegisterFactory<Shader>();
+	}
 
-bool Shader::BeginLoad(Stream& source)
-{
-    String extension = Extension(source.Name());
-    stage = (extension == ".vs" || extension == ".vert") ? SHADER_VS : SHADER_PS;
-    sourceCode.Clear();
-    return ProcessIncludes(sourceCode, source);
-}
+	bool Shader::BeginLoad(Stream& source)
+	{
+		String extension = Extension(source.Name());
+		stage = (extension == ".vs" || extension == ".vert") ? SHADER_VS : SHADER_PS;
+		sourceCode.Clear();
+		return ProcessIncludes(sourceCode, source);
+	}
 
-bool Shader::EndLoad()
-{
-    // Release existing variations (if any) to allow them to be recompiled with changed code
-    for (auto it = variations.Begin(); it != variations.End(); ++it)
-        it->second->Release();
-    return true;
-}
+	bool Shader::EndLoad()
+	{
+		// Release existing variations (if any) to allow them to be recompiled with changed code
+		for (auto it = variations.begin(); it != variations.end(); ++it)
+		{
+			it->second->Release();
+		}
 
-void Shader::Define(ShaderStage stage_, const String& code)
-{
-    stage = stage_;
-    sourceCode = code;
-    EndLoad();
-}
+		return true;
+	}
 
-ShaderVariation* Shader::CreateVariation(const String& definesIn)
-{
-    StringHash definesHash(definesIn);
-    auto it = variations.Find(definesHash);
-    if (it != variations.End())
-        return it->second.Get();
-    
-    // If initially not found, normalize the defines and try again
-    String defines = NormalizeDefines(definesIn);
-    definesHash = defines;
-    it = variations.Find(definesHash);
-    if (it != variations.End())
-        return it->second.Get();
+	void Shader::Define(ShaderStage stage_, const String& code)
+	{
+		stage = stage_;
+		sourceCode = code;
+		EndLoad();
+	}
 
-    ShaderVariation* newVariation = new ShaderVariation(this, defines);
-    variations[definesHash] = newVariation;
-    return newVariation;
-}
+	ShaderVariation* Shader::CreateVariation(const String& definesIn)
+	{
+		StringHash definesHash(definesIn);
+		auto it = variations.find(definesHash);
+		if (it != variations.end())
+			return it->second.Get();
 
-bool Shader::ProcessIncludes(String& code, Stream& source)
-{
-    ResourceCache* cache = Subsystem<ResourceCache>();
+		// If initially not found, normalize the defines and try again
+		String defines = NormalizeDefines(definesIn);
+		definesHash = defines;
+		it = variations.find(definesHash);
+		if (it != variations.end())
+			return it->second.Get();
 
-    while (!source.IsEof())
-    {
-        String line = source.ReadLine();
+		ShaderVariation* newVariation = new ShaderVariation(this, defines);
+		variations[definesHash] = newVariation;
+		return newVariation;
+	}
 
-        if (line.StartsWith("#include"))
-        {
-            String includeFileName = Path(source.Name()) + line.Substring(9).Replaced("\"", "").Trimmed();
-            AutoPtr<Stream> includeStream = cache->OpenResource(includeFileName);
-            if (!includeStream)
-                return false;
+	bool Shader::ProcessIncludes(String& code, Stream& source)
+	{
+		ResourceCache* cache = Subsystem<ResourceCache>();
 
-            // Add the include file into the current code recursively
-            if (!ProcessIncludes(code, *includeStream))
-                return false;
-        }
-        else
-        {
-            code += line;
-            code += "\n";
-        }
-    }
+		while (!source.IsEof())
+		{
+			String line = source.ReadLine();
 
-    // Finally insert an empty line to mark the space between files
-    code += "\n";
+			if (line.StartsWith("#include"))
+			{
+				String includeFileName = Path(source.Name()) + line.Substring(9).Replaced("\"", "").Trimmed();
+				AutoPtr<Stream> includeStream = cache->OpenResource(includeFileName);
+				if (!includeStream)
+					return false;
 
-    return true;
-}
+				// Add the include file into the current code recursively
+				if (!ProcessIncludes(code, *includeStream))
+					return false;
+			}
+			else
+			{
+				code += line;
+				code += "\n";
+			}
+		}
 
-String Shader::NormalizeDefines(const String& defines)
-{
-    String ret;
-    Vector<String> definesVec = defines.ToUpper().Split(' ');
-    Sort(definesVec.Begin(), definesVec.End());
+		// Finally insert an empty line to mark the space between files
+		code += "\n";
 
-    for (auto it = definesVec.Begin(); it != definesVec.End(); ++it)
-    {
-        if (it != definesVec.Begin())
-            ret += " ";
-        ret += *it;
-    }
+		return true;
+	}
 
-    return ret;
-}
+	String Shader::NormalizeDefines(const String& defines)
+	{
+		String ret;
+		Vector<String> definesVec = defines.ToUpper().Split(' ');
+		Sort(definesVec.Begin(), definesVec.End());
+
+		for (auto it = definesVec.Begin(); it != definesVec.End(); ++it)
+		{
+			if (it != definesVec.Begin())
+				ret += " ";
+			ret += *it;
+		}
+
+		return ret;
+	}
 
 }

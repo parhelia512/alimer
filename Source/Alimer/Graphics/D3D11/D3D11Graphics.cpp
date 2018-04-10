@@ -28,7 +28,7 @@
 #include "../Shader.h"
 #include "D3D11Graphics.h"
 #include "D3D11ConstantBuffer.h"
-#include "D3D11IndexBuffer.h"
+#include "../IndexBuffer.h"
 #include "D3D11ShaderVariation.h"
 #include "../Texture.h"
 #include "D3D11VertexBuffer.h"
@@ -405,10 +405,16 @@ namespace Alimer
 		{
 			indexBuffer = buffer;
 			if (buffer)
-				impl->deviceContext->IASetIndexBuffer((ID3D11Buffer*)buffer->D3DBuffer(), buffer->IndexSize() ==
-					sizeof(unsigned short) ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT, 0);
+			{
+				impl->deviceContext->IASetIndexBuffer(
+					buffer->GetD3DBuffer(), 
+					buffer->IndexSize() == sizeof(uint16_t) ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT, 
+					0);
+			}
 			else
+			{
 				impl->deviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+			}
 		}
 	}
 
