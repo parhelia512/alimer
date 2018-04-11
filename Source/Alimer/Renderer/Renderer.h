@@ -104,19 +104,19 @@ namespace Alimer
 		/// Set number, size and format of shadow maps. These will be divided among the lights that need to render shadow maps.
 		void SetupShadowMaps(size_t num, int size, ImageFormat format);
 		/// Prepare a view for rendering. Convenience function that calls CollectObjects(), CollectLightInteractions() and CollectBatches() in one go. Return true on success.
-		bool PrepareView(Scene* scene, Camera* camera, const Vector<PassDesc>& passes);
+		bool PrepareView(Scene* scene, Camera* camera, const std::vector<PassDesc>& passes);
 		/// Initialize rendering of a new view and collect visible objects from the camera's point of view. Return true on success (scene, camera and octree are non-null.)
 		bool CollectObjects(Scene* scene, Camera* camera);
 		/// Collect light interactions with geometries from the current view. If lights are shadowed, collects batches for shadow casters.
 		void CollectLightInteractions();
 		/// Collect and sort batches from the visible objects. To not go through the objects several times, all the passes should be specified at once instead of multiple calls to CollectBatches().
-		void CollectBatches(const Vector<PassDesc>& passes);
+		void CollectBatches(const std::vector<PassDesc>& passes);
 		/// Collect and sort batches from the visible objects. Convenience function for one pass only.
 		void CollectBatches(const PassDesc& pass);
 		/// Render shadow maps. Should be called after all CollectBatches() calls but before RenderBatches(). Note that you must reassign your rendertarget and viewport after calling this.
 		void RenderShadowMaps();
 		/// Render several passes to the currently set rendertarget and viewport. Avoids setting the per-frame constants multiple times.
-		void RenderBatches(const Vector<PassDesc>& passes);
+		void RenderBatches(const std::vector<PassDesc>& passes);
 		/// Render a pass to the currently set rendertarget and viewport. Convenience function for one pass only.
 		void RenderBatches(const String& pass);
 

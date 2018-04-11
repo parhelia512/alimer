@@ -187,7 +187,7 @@ public:
 				instanceData[i] = Vector3(Random() * 2.0f - 1.0f, Random() * 2.0f - 1.0f, 0.0f);
 			ivb->SetData(0, NUM_OBJECTS, instanceData);
 
-			graphics->Clear(CLEAR_COLOR | CLEAR_DEPTH, Color(0.0f, 0.0f, 0.5f));
+			graphics->Clear(ClearFlags::Color | ClearFlags::Depth, Color(0.0f, 0.0f, 0.5f));
 			graphics->SetVertexBuffer(0, vb.get());
 			graphics->SetVertexBuffer(1, ivb);
 			graphics->SetIndexBuffer(ib.get());

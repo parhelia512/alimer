@@ -157,15 +157,15 @@ public:
 
 			{
 				ALIMER_PROFILE(RenderScene);
-				Vector<PassDesc> passes;
-				passes.Push(PassDesc("opaque", SORT_STATE, true));
-				passes.Push(PassDesc("alpha", SORT_BACK_TO_FRONT, true));
+				std::vector<PassDesc> passes;
+				passes.emplace_back("opaque", SORT_STATE, true);
+				passes.emplace_back("alpha", SORT_BACK_TO_FRONT, true);
 				renderer->PrepareView(scene, camera, passes);
 
 				renderer->RenderShadowMaps();
 				graphics->ResetRenderTargets();
 				graphics->ResetViewport();
-				graphics->Clear(CLEAR_COLOR | CLEAR_DEPTH, Color::BLACK);
+				graphics->Clear(ClearFlags::Color | ClearFlags::Depth, Color::BLACK);
 				renderer->RenderBatches(passes);
 			}
 			graphics->Present();

@@ -50,11 +50,11 @@ void StaticModel::OnPrepareRender(unsigned frameNumber, Camera* camera)
 
         for (size_t i = 0; i < batches.Size(); ++i)
         {
-            const Vector<SharedPtr<Geometry> >& lodGeometries = model->LodGeometries(i);
-            if (lodGeometries.Size() > 1)
+            const auto& lodGeometries = model->GetLodGeometries(i);
+            if (lodGeometries.size() > 1)
             {
                 size_t j;
-                for (j = 1; j < lodGeometries.Size(); ++j)
+                for (j = 1; j < lodGeometries.size(); ++j)
                 {
                     if (lodDistance <= lodGeometries[j]->lodDistance)
                         break;

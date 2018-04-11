@@ -398,7 +398,7 @@ namespace Alimer
 		return stage < MAX_SHADER_STAGES ? shaderDefines[stage] : String::EMPTY;
 	}
 
-	unsigned char Material::PassIndex(const String& name, bool createNew)
+	uint8_t Material::PassIndex(const String& name, bool createNew)
 	{
 		String nameLower = name.ToLower();
 		auto it = passIndices.find(nameLower);
@@ -411,11 +411,11 @@ namespace Alimer
 			passNames.Push(nameLower);
 			return nextPassIndex++;
 		}
-		else
-			return 0xff;
+		
+		return 0xff;
 	}
 
-	const String& Material::PassName(unsigned char index)
+	const String& Material::PassName(uint8_t index)
 	{
 		return index < passNames.Size() ? passNames[index] : String::EMPTY;
 	}

@@ -64,12 +64,12 @@ namespace Alimer
 
 		const bool hasVertexDeclarations = (fileID == "UMD2");
 
-		vbDescs.Clear();
-		ibDescs.Clear();
-		geomDescs.Clear();
+		vbDescs.clear();
+		ibDescs.clear();
+		geomDescs.clear();
 
 		uint32_t numVertexBuffers = source.ReadUInt();
-		vbDescs.Resize(numVertexBuffers);
+		vbDescs.resize(numVertexBuffers);
 		for (size_t i = 0; i < numVertexBuffers; ++i)
 		{
 			VertexBufferDesc& vbDesc = vbDescs[i];
@@ -131,12 +131,14 @@ namespace Alimer
 				vertexSize += 4;
 			}
 
-			vbDesc.vertexData = new unsigned char[vbDesc.numVertices * vertexSize];
-			source.Read(&vbDesc.vertexData[0], vbDesc.numVertices * vertexSize);
+			vbDesc.vertexData.reset(new uint8_t[vbDesc.numVertices * vertexSize]);
+			source.Read(
+				vbDesc.vertexData.get(), 
+				vbDesc.numVertices * vertexSize);
 		}
 
-		size_t numIndexBuffers = source.Read<unsigned>();
-		ibDescs.Resize(numIndexBuffers);
+		uint32_t numIndexBuffers = source.ReadUInt();
+		ibDescs.resize(numIndexBuffers);
 		for (size_t i = 0; i < numIndexBuffers; ++i)
 		{
 			IndexBufferDesc& ibDesc = ibDescs[i];
@@ -144,42 +146,42 @@ namespace Alimer
 			ibDesc.indexCount = source.ReadUInt();
 			uint32_t indexSize = source.ReadUInt();
 			ibDesc.indexType = indexSize == 2 ? IndexType::UInt16 : IndexType::UInt32;
-			ibDesc.indexData = new uint8_t[ibDesc.indexCount * indexSize];
-			source.Read(&ibDesc.indexData[0], ibDesc.indexCount * indexSize);
+			ibDesc.indexData.reset(new uint8_t[ibDesc.indexCount * indexSize]);
+			source.Read(ibDesc.indexData.get(), ibDesc.indexCount * indexSize);
 		}
 
-		size_t numGeometries = source.Read<unsigned>();
+		size_t numGeometries = source.ReadUInt();
 
-		geomDescs.Resize(numGeometries);
-		boneMappings.Resize(numGeometries);
+		geomDescs.resize(numGeometries);
+		boneMappings.resize(numGeometries);
 		for (size_t i = 0; i < numGeometries; ++i)
 		{
 			// Read bone mappings
-			size_t boneMappingCount = source.Read<unsigned>();
-			boneMappings[i].Resize(boneMappingCount);
+			size_t boneMappingCount = source.ReadUInt();
+			boneMappings[i].resize(boneMappingCount);
 			/// \todo Should read as a batch
 			for (size_t j = 0; j < boneMappingCount; ++j)
-				boneMappings[i][j] = source.Read<unsigned>();
+				boneMappings[i][j] = source.ReadUInt();
 
-			size_t numLodLevels = source.Read<unsigned>();
-			geomDescs[i].Resize(numLodLevels);
+			size_t numLodLevels = source.ReadUInt();
+			geomDescs[i].resize(numLodLevels);
 
 			for (size_t j = 0; j < numLodLevels; ++j)
 			{
 				GeometryDesc& geomDesc = geomDescs[i][j];
 
 				geomDesc.lodDistance = source.Read<float>();
-				source.Read<unsigned>(); // Primitive type
+				source.ReadUInt(); // Primitive type
 				geomDesc.primitiveType = TRIANGLE_LIST; // Always assume triangle list for now
-				geomDesc.vbRef = source.Read<unsigned>();
-				geomDesc.ibRef = source.Read<unsigned>();
-				geomDesc.drawStart = source.Read<unsigned>();
-				geomDesc.drawCount = source.Read<unsigned>();
+				geomDesc.vbRef = source.ReadUInt();
+				geomDesc.ibRef = source.ReadUInt();
+				geomDesc.drawStart = source.ReadUInt();
+				geomDesc.drawCount = source.ReadUInt();
 			}
 		}
 
 		// Read (skip) morphs
-		size_t numMorphs = source.Read<unsigned>();
+		size_t numMorphs = source.ReadUInt();
 		if (numMorphs)
 		{
 			LOGERROR("Models with vertex morphs are not supported for now");
@@ -187,9 +189,9 @@ namespace Alimer
 		}
 
 		// Read skeleton
-		size_t numBones = source.Read<unsigned>();
-		bones.Resize(numBones);
-		for (size_t i = 0; i < numBones; ++i)
+		uint32_t numBones = source.ReadUInt();
+		bones.resize(numBones);
+		for (uint32_t i = 0; i < numBones; ++i)
 		{
 			Bone& bone = bones[i];
 			bone.name = source.ReadString();
@@ -202,9 +204,9 @@ namespace Alimer
 			bone.initialScale = source.Read<Vector3>();
 			bone.offsetMatrix = source.Read<Matrix3x4>();
 
-			unsigned char boneCollisionType = source.Read<unsigned char>();
+			uint8_t boneCollisionType = source.ReadUByte();
 			if (boneCollisionType & 1)
-				bone.radius = source.Read<float>();
+				bone.radius = source.ReadFloat();
 			if (boneCollisionType & 2)
 				bone.boundingBox = source.Read<BoundingBox>();
 
@@ -221,17 +223,17 @@ namespace Alimer
 	bool Model::EndLoad()
 	{
 		Vector<SharedPtr<VertexBuffer> > vbs;
-		for (size_t i = 0; i < vbDescs.Size(); ++i)
+		for (size_t i = 0; i < vbDescs.size(); ++i)
 		{
 			const VertexBufferDesc& vbDesc = vbDescs[i];
 			SharedPtr<VertexBuffer> vb(new VertexBuffer());
 
-			vb->Define(USAGE_IMMUTABLE, vbDesc.numVertices, vbDesc.vertexElements, true, vbDesc.vertexData.Get());
+			vb->Define(USAGE_IMMUTABLE, vbDesc.numVertices, vbDesc.vertexElements, true, vbDesc.vertexData.get());
 			vbs.Push(vb);
 		}
 
 		Vector<SharedPtr<IndexBuffer> > ibs;
-		for (size_t i = 0; i < ibDescs.Size(); ++i)
+		for (size_t i = 0; i < ibDescs.size(); ++i)
 		{
 			const IndexBufferDesc& ibDesc = ibDescs[i];
 			SharedPtr<IndexBuffer> ib(new IndexBuffer());
@@ -241,16 +243,16 @@ namespace Alimer
 				ibDesc.indexCount,
 				ibDesc.indexType,
 				true,
-				ibDesc.indexData.Get());
+				ibDesc.indexData.get());
 			ibs.Push(ib);
 		}
 
 		// Set the buffers to each geometry
-		geometries.Resize(geomDescs.Size());
-		for (size_t i = 0; i < geomDescs.Size(); ++i)
+		geometries.resize(geomDescs.size());
+		for (size_t i = 0; i < geomDescs.size(); ++i)
 		{
-			geometries[i].Resize(geomDescs[i].Size());
-			for (size_t j = 0; j < geomDescs[i].Size(); ++j)
+			geometries[i].resize(geomDescs[i].size());
+			for (size_t j = 0; j < geomDescs[i].size(); ++j)
 			{
 				const GeometryDesc& geomDesc = geomDescs[i][j];
 				SharedPtr<Geometry> geom(new Geometry());
@@ -274,35 +276,35 @@ namespace Alimer
 			}
 		}
 
-		vbDescs.Clear();
-		ibDescs.Clear();
-		geomDescs.Clear();
+		vbDescs.clear();
+		ibDescs.clear();
+		geomDescs.clear();
 
 		return true;
 	}
 
 	void Model::SetNumGeometries(size_t num)
 	{
-		geometries.Resize(num);
+		geometries.resize(num);
 		// Ensure that each geometry has at least 1 LOD level
-		for (size_t i = 0; i < geometries.Size(); ++i)
+		for (size_t i = 0; i < geometries.size(); ++i)
 		{
-			if (!geometries[i].Size())
+			if (!geometries[i].size())
 				SetNumLodLevels(i, 1);
 		}
 	}
 
 	void Model::SetNumLodLevels(size_t index, size_t num)
 	{
-		if (index >= geometries.Size())
+		if (index >= geometries.size())
 		{
 			LOGERROR("Out of bounds geometry index for setting number of LOD levels");
 			return;
 		}
 
-		geometries[index].Resize(num);
+		geometries[index].resize(num);
 		// Ensure that a valid geometry object exists at each index
-		for (auto it = geometries[index].Begin(); it != geometries[index].End(); ++it)
+		for (auto it = geometries[index].begin(); it != geometries[index].end(); ++it)
 		{
 			if (it->IsNull())
 				*it = new Geometry();
@@ -314,25 +316,24 @@ namespace Alimer
 		boundingBox = box;
 	}
 
-	void Model::SetBones(const Vector<Bone>& bones_, size_t rootBoneIndex_)
+	void Model::SetBones(const std::vector<Bone>& bones_, size_t rootBoneIndex_)
 	{
 		bones = bones_;
 		rootBoneIndex = rootBoneIndex_;
 	}
 
-	void Model::SetBoneMappings(const Vector<Vector<size_t> >& boneMappings_)
+	void Model::SetBoneMappings(const std::vector<std::vector<size_t> >& boneMappings_)
 	{
 		boneMappings = boneMappings_;
 	}
 
 	size_t Model::NumLodLevels(size_t index) const
 	{
-		return index < geometries.Size() ? geometries[index].Size() : 0;
+		return index < geometries.size() ? geometries[index].size() : 0;
 	}
 
 	Geometry* Model::GetGeometry(size_t index, size_t lodLevel) const
 	{
-		return (index < geometries.Size() && lodLevel < geometries[index].Size()) ? geometries[index][lodLevel].Get() : nullptr;
+		return (index < geometries.size() && lodLevel < geometries[index].size()) ? geometries[index][lodLevel].Get() : nullptr;
 	}
-
 }

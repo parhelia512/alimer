@@ -21,7 +21,7 @@ namespace Alimer
 		/// Number of vertices.
 		size_t numVertices;
 		/// Vertex data.
-		SharedArrayPtr<unsigned char> vertexData;
+		std::unique_ptr<uint8_t[]> vertexData;
 	};
 
 	/// Load-time description of an index buffer, to be uploaded on the GPU later.
@@ -32,7 +32,7 @@ namespace Alimer
 		/// Number of indices.
 		uint32_t indexCount;
 		/// Index data.
-		SharedArrayPtr<uint8_t> indexData;
+		std::unique_ptr<uint8_t[]> indexData;
 	};
 
 	/// Load-time description of a geometry.
@@ -109,44 +109,44 @@ namespace Alimer
 		/// Set local space bounding box.
 		void SetLocalBoundingBox(const BoundingBox& box);
 		/// Set bones.
-		void SetBones(const Vector<Bone>& bones, size_t rootBoneIndex);
+		void SetBones(const std::vector<Bone>& bones, size_t rootBoneIndex);
 		/// Set per-geometry bone mappings.
-		void SetBoneMappings(const Vector<Vector<size_t> >& boneMappings);
+		void SetBoneMappings(const std::vector<std::vector<size_t> >& boneMappings);
 
 		/// Return number of geometries.
-		size_t NumGeometries() const { return geometries.Size(); }
+		size_t NumGeometries() const { return geometries.size(); }
 		/// Return number of LOD levels in a geometry.
 		size_t NumLodLevels(size_t index) const;
 		/// Return the geometry at batch index and LOD level.
 		Geometry* GetGeometry(size_t index, size_t lodLevel) const;
 		/// Return the LOD geometries at batch index.
-		const Vector<SharedPtr<Geometry> >& LodGeometries(size_t index) const { return geometries[index]; }
+		const std::vector<SharedPtr<Geometry> >& GetLodGeometries(size_t index) const { return geometries[index]; }
 		/// Return the local space bounding box.
 		const BoundingBox& LocalBoundingBox() const { return boundingBox; }
 		/// Return the model's bones.
-		const Vector<Bone>& Bones() const { return bones; }
+		const std::vector<Bone>& GetBones() const { return bones; }
 		/// Return the root bone index.
 		size_t RootBoneIndex() const { return rootBoneIndex; }
 		/// Return per-geometry bone mapping.
-		const Vector<Vector<size_t> > BoneMappings() const { return boneMappings; }
+		const std::vector<std::vector<size_t>> GetBoneMappings() const { return boneMappings; }
 
 	private:
 		/// Geometry LOD levels.
-		Vector<Vector<SharedPtr<Geometry> > > geometries;
+		std::vector<std::vector<SharedPtr<Geometry> > > geometries;
 		/// Local space bounding box.
 		BoundingBox boundingBox;
 		/// %Model's bones.
-		Vector<Bone> bones;
+		std::vector<Bone> bones;
 		/// Root bone index.
 		size_t rootBoneIndex;
 		/// Per-geometry bone mappings.
-		Vector<Vector<size_t> > boneMappings;
+		std::vector<std::vector<size_t>> boneMappings;
 		/// Vertex buffer data for loading.
-		Vector<VertexBufferDesc> vbDescs;
+		std::vector<VertexBufferDesc> vbDescs;
 		/// Index buffer data for loading.
-		Vector<IndexBufferDesc> ibDescs;
+		std::vector<IndexBufferDesc> ibDescs;
 		/// Geometry descriptions for loading.
-		Vector<Vector<GeometryDesc> > geomDescs;
+		std::vector<std::vector<GeometryDesc>> geomDescs;
 	};
 
 }

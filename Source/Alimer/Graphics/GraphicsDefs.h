@@ -30,15 +30,6 @@
 
 namespace Alimer
 {
-	/// Clear rendertarget color.
-	static const unsigned CLEAR_COLOR = 1;
-	/// Clear rendertarget depth.
-	static const unsigned CLEAR_DEPTH = 2;
-	/// Clear rendertarget stencil.
-	static const unsigned CLEAR_STENCIL = 4;
-	/// Clear color+depth+stencil.
-	static const unsigned CLEAR_ALL = 7;
-
 	/// Maximum simultaneous vertex buffers.
 	static const uint32_t MAX_VERTEX_STREAMS = 4;
 	/// Maximum simultaneous constant buffers.
@@ -64,6 +55,21 @@ namespace Alimer
 	static const unsigned char COLORMASK_A = 0x8;
 	/// Write to all color channels (default.)
 	static const unsigned char COLORMASK_ALL = 0xf;
+
+	enum class ClearFlags : uint32_t
+	{
+		None = 0,
+		/// Clear rendertarget color.
+		Color = 0x1,
+		/// Clear rendertarget depth.
+		Depth = 0x2,
+		/// Clear rendertarget stencil.
+		Stencil = 0x4,
+		/// Clear color+depth+stencil.
+		All = Color | Depth | Stencil,
+		Indirect = 0x10
+	};
+	ALIMER_BITMASK(ClearFlags);
 
 	/// Shader stages.
 	enum ShaderStage

@@ -156,9 +156,9 @@ namespace Alimer
 		const String& ShaderDefines(ShaderStage stage) const;
 
 		/// Return pass index from name. By default reserve a new index if the name was not known.
-		static unsigned char PassIndex(const String& name, bool createNew = true);
+		static uint8_t PassIndex(const String& name, bool createNew = true);
 		/// Return pass name by index.
-		static const String& PassName(unsigned char index);
+		static const String& PassName(uint8_t index);
 		/// Return a default opaque untextured material.
 		static Material* DefaultMaterial();
 

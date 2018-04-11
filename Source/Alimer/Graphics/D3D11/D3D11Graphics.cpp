@@ -550,19 +550,23 @@ namespace Alimer
 			SetTexture(i, nullptr);
 	}
 
-	void Graphics::Clear(unsigned clearFlags, const Color& clearColor, float clearDepth, unsigned char clearStencil)
+	void Graphics::Clear(ClearFlags clearFlags, const Color& clearColor, float clearDepth, unsigned char clearStencil)
 	{
 		PrepareTextures();
 
-		if ((clearFlags & CLEAR_COLOR) && impl->renderTargetViews[0])
-			impl->deviceContext->ClearRenderTargetView(impl->renderTargetViews[0], clearColor.Data());
-
-		if ((clearFlags & (CLEAR_DEPTH | CLEAR_STENCIL)) && impl->depthStencilView)
+		if (any(clearFlags & ClearFlags::Color)
+			&& impl->renderTargetViews[0])
 		{
-			unsigned depthClearFlags = 0;
-			if (clearFlags & CLEAR_DEPTH)
+			impl->deviceContext->ClearRenderTargetView(impl->renderTargetViews[0], clearColor.Data());
+		}
+
+		if (any(clearFlags & (ClearFlags::Depth | ClearFlags::Stencil))
+			&& impl->depthStencilView)
+		{
+			UINT depthClearFlags = 0;
+			if (any(clearFlags & ClearFlags::Depth))
 				depthClearFlags |= D3D11_CLEAR_DEPTH;
-			if (clearFlags & CLEAR_STENCIL)
+			if (any(clearFlags & ClearFlags::Stencil))
 				depthClearFlags |= D3D11_CLEAR_STENCIL;
 			impl->deviceContext->ClearDepthStencilView(impl->depthStencilView, depthClearFlags, clearDepth, clearStencil);
 		}

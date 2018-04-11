@@ -1,4 +1,25 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #include "../Debug/Log.h"
 #include "../Debug/Profiler.h"
@@ -18,7 +39,7 @@
 #include "StaticModel.h"
 #include "../Base/Sort.h"
 
-#include "../Debug/DebugNew.h"
+using namespace std;
 
 namespace Alimer
 {
@@ -93,7 +114,10 @@ namespace Alimer
 		}
 	}
 
-	bool Renderer::PrepareView(Scene* scene_, Camera* camera_, const Vector<PassDesc>& passes)
+	bool Renderer::PrepareView(
+		Scene* scene_,
+		Camera* camera_, 
+		const std::vector<PassDesc>& passes)
 	{
 		if (!CollectObjects(scene_, camera_))
 			return false;
@@ -427,17 +451,17 @@ namespace Alimer
 		}
 	}
 
-	void Renderer::CollectBatches(const Vector<PassDesc>& passes)
+	void Renderer::CollectBatches(const std::vector<PassDesc>& passes)
 	{
 		ALIMER_PROFILE(CollectBatches);
 
 		// Setup batch queues for each requested pass
-		static Vector<BatchQueue*> currentQueues;
-		currentQueues.Resize(passes.Size());
-		for (size_t i = 0; i < passes.Size(); ++i)
+		static std::vector<BatchQueue*> currentQueues;
+		currentQueues.resize(passes.size());
+		for (size_t i = 0; i < passes.size(); ++i)
 		{
 			const PassDesc& srcPass = passes[i];
-			unsigned char baseIndex = Material::PassIndex(srcPass.name);
+			uint8_t baseIndex = Material::PassIndex(srcPass.name);
 			BatchQueue* batchQueue = &batchQueues[baseIndex];
 			currentQueues[i] = batchQueue;
 			batchQueue->sort = srcPass.sort;
@@ -464,7 +488,7 @@ namespace Alimer
 				assert(material);
 
 				// Loop through requested queues
-				for (auto qIt = currentQueues.Begin(); qIt != currentQueues.End(); ++qIt)
+				for (auto qIt = currentQueues.begin(); qIt != currentQueues.end(); ++qIt)
 				{
 					BatchQueue& batchQueue = **qIt;
 					newBatch.pass = material->GetPass(batchQueue.baseIndex);
@@ -510,7 +534,7 @@ namespace Alimer
 
 		size_t oldSize = instanceTransforms.Size();
 
-		for (auto qIt = currentQueues.Begin(); qIt != currentQueues.End(); ++qIt)
+		for (auto qIt = currentQueues.begin(); qIt != currentQueues.end(); ++qIt)
 		{
 			BatchQueue& batchQueue = **qIt;
 			batchQueue.Sort(instanceTransforms);
@@ -523,7 +547,7 @@ namespace Alimer
 
 	void Renderer::CollectBatches(const PassDesc& pass)
 	{
-		static Vector<PassDesc> passDescs(1);
+		static vector<PassDesc> passDescs(1);
 		passDescs[0] = pass;
 		CollectBatches(passDescs);
 	}
@@ -541,7 +565,7 @@ namespace Alimer
 				continue;
 
 			graphics->SetRenderTarget(nullptr, it->texture);
-			graphics->Clear(CLEAR_DEPTH, Color::BLACK, 1.0f);
+			graphics->Clear(ClearFlags::Depth, Color::BLACK, 1.0f);
 
 			for (auto vIt = it->shadowViews.Begin(); vIt < it->shadowViews.End(); ++vIt)
 			{
@@ -553,11 +577,11 @@ namespace Alimer
 		}
 	}
 
-	void Renderer::RenderBatches(const Vector<PassDesc>& passes)
+	void Renderer::RenderBatches(const std::vector<PassDesc>& passes)
 	{
 		ALIMER_PROFILE(RenderBatches);
 
-		for (size_t i = 0; i < passes.Size(); ++i)
+		for (size_t i = 0, count = passes.size(); i < count; ++i)
 		{
 			unsigned char passIndex = Material::PassIndex(passes[i].name);
 			BatchQueue& batchQueue = batchQueues[passIndex];
