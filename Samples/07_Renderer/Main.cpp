@@ -46,23 +46,23 @@ public:
 		RegisterResourceLibrary();
 		RegisterRendererLibrary();
 
-		cache = new ResourceCache();
+		cache = std::make_unique<ResourceCache>();
 		cache->AddResourceDir(ExecutableDir() + "Data");
 
-		log = new Log();
-		input = new Input();
-		profiler = new Profiler();
-		graphics = new Graphics();
-		renderer = new Renderer();
+		log = std::make_unique<Log>();
+		input = std::make_unique<Input>();
+		profiler = std::make_unique<Profiler>();
+		graphics = std::make_unique<Graphics>();
+		renderer = std::make_unique<Renderer>();
 
-		graphics->RenderWindow()->SetTitle("Renderer test");
-		graphics->RenderWindow()->SetMouseVisible(false);
+		graphics->GetRenderWindow()->SetTitle("Renderer test");
+		graphics->GetRenderWindow()->SetMouseVisible(false);
 		if (!graphics->SetMode(IntVector2(800, 600), false, true))
 			return;
 
 		renderer->SetupShadowMaps(1, 2048, FMT_D16);
 
-		SubscribeToEvent(graphics->RenderWindow()->closeRequestEvent, &RendererTest::HandleCloseRequest);
+		SubscribeToEvent(graphics->GetRenderWindow()->closeRequestEvent, &RendererTest::HandleCloseRequest);
 
 		SharedPtr<Scene> scene = new Scene();
 		scene->CreateChild<Octree>();
@@ -182,12 +182,12 @@ public:
 		graphics->Close();
 	}
 
-	AutoPtr<ResourceCache> cache;
-	AutoPtr<Graphics> graphics;
-	AutoPtr<Renderer> renderer;
-	AutoPtr<Input> input;
-	AutoPtr<Log> log;
-	AutoPtr<Profiler> profiler;
+	std::unique_ptr<ResourceCache> cache;
+	std::unique_ptr<Graphics> graphics;
+	std::unique_ptr<Renderer> renderer;
+	std::unique_ptr<Input> input;
+	std::unique_ptr<Log> log;
+	std::unique_ptr<Profiler> profiler;
 };
 
 int main()

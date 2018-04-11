@@ -43,18 +43,18 @@ public:
 		RegisterGraphicsLibrary();
 		RegisterResourceLibrary();
 
-		cache = new ResourceCache();
+		cache = std::make_unique<ResourceCache>();
 		cache->AddResourceDir(ExecutableDir() + "Data");
 
-		log = new Log();
-		input = new Input();
+		log = std::make_unique<Log>();
+		input = std::make_unique<Input>();
 
-		graphics = new Graphics();
-		graphics->RenderWindow()->SetTitle("Graphics test");
+		graphics = std::make_unique<Graphics>();
+		graphics->GetRenderWindow()->SetTitle("Graphics test");
 		if (!graphics->SetMode(IntVector2(800, 600), false, true))
 			return;
 
-		SubscribeToEvent(graphics->RenderWindow()->closeRequestEvent, &GraphicsTest::HandleCloseRequest);
+		SubscribeToEvent(graphics->GetRenderWindow()->closeRequestEvent, &GraphicsTest::HandleCloseRequest);
 
 		const size_t NUM_OBJECTS = 1000;
 
@@ -68,7 +68,8 @@ public:
 		std::vector<VertexElement> vertexDeclaration;
 		vertexDeclaration.push_back(VertexElement(ELEM_VECTOR3, SEM_POSITION));
 		vertexDeclaration.push_back(VertexElement(ELEM_VECTOR2, SEM_TEXCOORD));
-		AutoPtr<VertexBuffer> vb = new VertexBuffer();
+		
+		auto vb = std::make_unique<VertexBuffer>();
 		vb->Define(USAGE_IMMUTABLE, 3, vertexDeclaration, true, vertexData);
 
 		std::vector<VertexElement> instanceVertexDeclaration;
@@ -86,7 +87,8 @@ public:
 		ib->Define(USAGE_IMMUTABLE, 3, IndexType::UInt16, true, indexData);
 
 		Constant pc(ELEM_VECTOR4, "Color");
-		AutoPtr<ConstantBuffer> pcb = new ConstantBuffer();
+		
+		auto pcb = std::make_unique<ConstantBuffer>();
 		pcb->Define(USAGE_IMMUTABLE, 1, &pc);
 		pcb->SetConstant("Color", Color::WHITE);
 		pcb->Apply();
@@ -122,7 +124,7 @@ public:
 			"}\n";
 #endif
 
-		AutoPtr<Shader> vs = new Shader();
+		auto vs = std::make_unique<Shader>();
 		vs->SetName("Test.vs");
 		vs->Define(SHADER_VS, vsCode);
 		ShaderVariation* vsv = vs->CreateVariation();
@@ -159,7 +161,7 @@ public:
 			"}\n";
 #endif
 
-		AutoPtr<Shader> ps = new Shader();
+		auto ps = std::make_unique<Shader>();
 		ps->SetName("Test.ps");
 		ps->Define(SHADER_PS, psCode);
 		ShaderVariation* psv = ps->CreateVariation();
@@ -186,10 +188,10 @@ public:
 			ivb->SetData(0, NUM_OBJECTS, instanceData);
 
 			graphics->Clear(CLEAR_COLOR | CLEAR_DEPTH, Color(0.0f, 0.0f, 0.5f));
-			graphics->SetVertexBuffer(0, vb);
+			graphics->SetVertexBuffer(0, vb.get());
 			graphics->SetVertexBuffer(1, ivb);
 			graphics->SetIndexBuffer(ib.get());
-			graphics->SetConstantBuffer(SHADER_PS, 0, pcb);
+			graphics->SetConstantBuffer(SHADER_PS, 0, pcb.get());
 			graphics->SetShaders(vsv, psv);
 			graphics->SetTexture(0, tex);
 			graphics->SetDepthState(CMP_LESS_EQUAL, true);
@@ -206,10 +208,10 @@ public:
 		graphics->Close();
 	}
 
-	AutoPtr<ResourceCache> cache;
-	AutoPtr<Graphics> graphics;
-	AutoPtr<Input> input;
-	AutoPtr<Log> log;
+	std::unique_ptr<ResourceCache> cache;
+	std::unique_ptr<Graphics> graphics;
+	std::unique_ptr<Input> input;
+	std::unique_ptr<Log> log;
 };
 
 int main()

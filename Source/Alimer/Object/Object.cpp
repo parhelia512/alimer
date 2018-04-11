@@ -22,11 +22,12 @@
 //
 
 #include "Object.h"
+using namespace std;
 
 namespace Alimer
 {
-	std::map<StringHash, Object*> Object::subsystems;
-	std::map<StringHash, AutoPtr<ObjectFactory> > Object::factories;
+	map<StringHash, Object*> Object::subsystems;
+	map<StringHash, unique_ptr<ObjectFactory> > Object::factories;
 
 	ObjectFactory::~ObjectFactory()
 	{
@@ -86,7 +87,7 @@ namespace Alimer
 		if (!factory)
 			return;
 
-		factories[factory->Type()] = factory;
+		factories[factory->Type()].reset(factory);
 	}
 
 	Object* Object::Create(StringHash type)

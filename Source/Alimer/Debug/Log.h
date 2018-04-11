@@ -23,10 +23,10 @@
 
 #pragma once
 
-#include "../Base/AutoPtr.h"
 #include "../Object/Object.h"
 #include <list>
 #include <mutex>
+#include <memory>
 
 namespace Alimer
 {
@@ -125,7 +125,7 @@ namespace Alimer
 		/// %Log messages from other threads.
 		std::list<StoredLogMessage> _threadMessages;
 		/// %Log file.
-		AutoPtr<File> logFile;
+		std::unique_ptr<File> _logFile;
 		/// Last log message.
 		String lastMessage;
 		/// Logging level.

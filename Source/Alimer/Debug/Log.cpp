@@ -65,30 +65,32 @@ namespace Alimer
 		if (fileName.IsEmpty())
 			return;
 
-		if (logFile && logFile->IsOpen())
+		if (_logFile && _logFile->IsOpen())
 		{
-			if (logFile->Name() == fileName)
+			if (_logFile->Name() == fileName)
 				return;
-			else
-				Close();
+
+			Close();
 		}
 
-		logFile = new File();
-		if (logFile->Open(fileName, FILE_WRITE))
+		_logFile = std::make_unique<File>();
+		if (_logFile->Open(fileName, FILE_WRITE))
+		{
 			LOGINFO("Opened log file " + fileName);
+		}
 		else
 		{
-			logFile.Reset();
+			_logFile.reset();
 			LOGERROR("Failed to create log file " + fileName);
 		}
 	}
 
 	void Log::Close()
 	{
-		if (logFile && logFile->IsOpen())
+		if (_logFile && _logFile->IsOpen())
 		{
-			logFile->Close();
-			logFile.Reset();
+			_logFile->Close();
+			_logFile.reset();
 		}
 	}
 
@@ -163,10 +165,10 @@ namespace Alimer
 		else
 			PrintUnicodeLine(formattedMessage, msgLevel == LOG_ERROR);
 
-		if (instance->logFile)
+		if (instance->_logFile)
 		{
-			instance->logFile->WriteLine(formattedMessage);
-			instance->logFile->Flush();
+			instance->_logFile->WriteLine(formattedMessage);
+			instance->_logFile->Flush();
 		}
 
 		instance->inWrite = true;
@@ -208,10 +210,10 @@ namespace Alimer
 		else
 			PrintUnicode(message, error);
 
-		if (instance->logFile)
+		if (instance->_logFile)
 		{
-			instance->logFile->Write(message.CString(), message.Length());
-			instance->logFile->Flush();
+			instance->_logFile->Write(message.CString(), message.Length());
+			instance->_logFile->Flush();
 		}
 
 		instance->inWrite = true;

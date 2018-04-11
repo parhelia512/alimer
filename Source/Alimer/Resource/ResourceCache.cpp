@@ -201,14 +201,14 @@ namespace Alimer
 		if (!resource)
 			return false;
 
-		AutoPtr<Stream> stream = OpenResource(resource->Name());
+		std::unique_ptr<Stream> stream = OpenResource(resource->Name());
 		return stream ? resource->Load(*stream) : false;
 	}
 
-	AutoPtr<Stream> ResourceCache::OpenResource(const String& nameIn)
+	std::unique_ptr<Stream> ResourceCache::OpenResource(const String& nameIn)
 	{
 		String name = SanitateResourceName(nameIn);
-		AutoPtr<Stream> ret;
+		std::unique_ptr<Stream> ret;
 
 		for (size_t i = 0; i < resourceDirs.size(); ++i)
 		{
@@ -216,19 +216,19 @@ namespace Alimer
 			{
 				// Construct the file first with full path, then rename it to not contain the resource path,
 				// so that the file's name can be used in further OpenResource() calls (for example over the network)
-				ret = new File(resourceDirs[i] + name);
+				ret = std::make_unique<File>(resourceDirs[i] + name);
 				break;
 			}
 		}
 
 		// Fallback using absolute path
 		if (!ret)
-			ret = new File(name);
+			ret = std::make_unique<File>(name);
 
 		if (!ret->IsReadable())
 		{
 			LOGERROR("Could not open resource file " + name);
-			ret.Reset();
+			ret.reset();
 		}
 
 		return ret;
@@ -262,7 +262,7 @@ namespace Alimer
 		}
 
 		// Attempt to load the resource
-		AutoPtr<Stream> stream = OpenResource(name);
+		std::unique_ptr<Stream> stream = OpenResource(name);
 		if (!stream)
 			return nullptr;
 

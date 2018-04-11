@@ -84,7 +84,7 @@ namespace Alimer
 		/// Registered subsystems.
 		static std::map<StringHash, Object*> subsystems;
 		/// Registered object factories.
-		static std::map<StringHash, AutoPtr<ObjectFactory> > factories;
+		static std::map<StringHash, std::unique_ptr<ObjectFactory>> factories;
 	};
 
 	/// Base class for object factories.

@@ -30,7 +30,7 @@ namespace Alimer
 		/// Remove a resource directory.
 		void RemoveResourceDir(const String& pathName);
 		/// Open a resource file stream from the resource directories. Return a pointer to the stream, or null if not found.
-		AutoPtr<Stream> OpenResource(const String& name);
+		std::unique_ptr<Stream> OpenResource(const String& name);
 		/// Load and return a resource.
 		Resource* LoadResource(StringHash type, const String& name);
 		/// Unload resource. Optionally force removal even if referenced.

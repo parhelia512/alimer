@@ -162,7 +162,7 @@ namespace Alimer
 		/// Return whether is using vertical sync.
 		bool VSync() const { return vsync; }
 		/// Return the rendering window.
-		Window* RenderWindow() const;
+		Window* GetRenderWindow() const { return window.get(); }
 		/// Return the current color rendertarget by index, or null if rendering to the backbuffer.
 		Texture* RenderTarget(size_t index) const;
 		/// Return the current depth-stencil buffer, or null if rendering to the backbuffer.
@@ -224,9 +224,9 @@ namespace Alimer
 		void ResetState();
 
 		/// Implementation for holding OS-specific API objects.
-		AutoPtr<GraphicsImpl> impl;
+		std::unique_ptr<GraphicsImpl> impl;
 		/// OS-level rendering window.
-		AutoPtr<Window> window;
+		std::unique_ptr<Window> window;
 		/// Current size of the backbuffer.
 		IntVector2 backbufferSize;
 		/// Current size of the active rendertarget.

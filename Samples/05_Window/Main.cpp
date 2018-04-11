@@ -40,8 +40,8 @@ class WindowTest : public Object
 public:
 	void Run()
 	{
-		input = new Input();
-		window = new Window();
+		input = std::make_unique<Input>();
+		window = std::make_unique<Window>();
 		window->SetTitle("Window test");
 		window->SetSize(IntVector2(800, 600), false, true);
 		printf("Window opened\n");
@@ -129,8 +129,8 @@ public:
 		printf("Touch end id %d position %d %d\n", event.id, event.position.x, event.position.y);
 	}
 
-	AutoPtr<Input> input;
-	AutoPtr<Window> window;
+	std::unique_ptr<Input> input;
+	std::unique_ptr<Window> window;
 };
 
 int main()

@@ -261,7 +261,7 @@ namespace Alimer
 
 			for (size_t i = startIndex; i < usedShadowViews; ++i)
 			{
-				ShadowView* view = shadowViews[i].Get();
+				ShadowView* view = shadowViews[i].get();
 				Frustum shadowFrustum = view->shadowCamera.WorldFrustum();
 				BatchQueue& shadowQueue = view->shadowQueue;
 				shadowQueue.sort = SORT_STATE;
@@ -618,7 +618,7 @@ namespace Alimer
 		psLightConstantBuffer->Define(USAGE_DEFAULT, constants);
 
 		// Instance vertex buffer contains texcoords 4-6 which define the instances' world matrices
-		instanceVertexBuffer = new VertexBuffer();
+		instanceVertexBuffer = std::make_unique<VertexBuffer>();
 		instanceVertexElements.push_back(VertexElement(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD, true));
 		instanceVertexElements.push_back(VertexElement(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD + 1, true));
 		instanceVertexElements.push_back(VertexElement(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD + 2, true));
@@ -628,8 +628,8 @@ namespace Alimer
 		ambientLightPass.psBits = LPS_AMBIENT;
 
 		// Setup point light face selection textures
-		faceSelectionTexture1 = new Texture();
-		faceSelectionTexture2 = new Texture();
+		faceSelectionTexture1 = std::make_unique<Texture>();
+		faceSelectionTexture2 = std::make_unique<Texture>();
 		DefineFaceSelectionTextures();
 	}
 
@@ -815,8 +815,8 @@ namespace Alimer
 			DefineFaceSelectionTextures();
 
 		// Bind point light shadow face selection textures
-		graphics->SetTexture(MAX_MATERIAL_TEXTURE_UNITS + MAX_LIGHTS_PER_PASS, faceSelectionTexture1);
-		graphics->SetTexture(MAX_MATERIAL_TEXTURE_UNITS + MAX_LIGHTS_PER_PASS + 1, faceSelectionTexture2);
+		graphics->SetTexture(MAX_MATERIAL_TEXTURE_UNITS + MAX_LIGHTS_PER_PASS, faceSelectionTexture1.get());
+		graphics->SetTexture(MAX_MATERIAL_TEXTURE_UNITS + MAX_LIGHTS_PER_PASS + 1, faceSelectionTexture2.get());
 
 		// If rendering to a texture on OpenGL, flip the camera vertically to ensure similar texture coordinate addressing
 #ifdef ALIMER_OPENGL
@@ -865,7 +865,7 @@ namespace Alimer
 			if (instanceVertexBuffer->NumVertices() < instanceTransforms.Size())
 				instanceVertexBuffer->Define(USAGE_DYNAMIC, NextPowerOfTwo(instanceTransforms.Size()), instanceVertexElements, false);
 			instanceVertexBuffer->SetData(0, instanceTransforms.Size(), &instanceTransforms[0]);
-			graphics->SetVertexBuffer(1, instanceVertexBuffer);
+			graphics->SetVertexBuffer(1, instanceVertexBuffer.get());
 			instanceTransformsDirty = false;
 		}
 

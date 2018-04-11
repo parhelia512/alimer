@@ -1,8 +1,28 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #pragma once
 
-#include "../Base/AutoPtr.h"
 #include "../Graphics/Texture.h"
 #include "../Math/Color.h"
 #include "../Math/Frustum.h"
@@ -11,7 +31,6 @@
 
 namespace Alimer
 {
-
 	class ConstantBuffer;
 	class GeometryNode;
 	class Octree;
@@ -165,17 +184,17 @@ namespace Alimer
 		/// Shadow maps.
 		Vector<ShadowMap> shadowMaps;
 		/// Shadow views.
-		Vector<AutoPtr<ShadowView> > shadowViews;
+		std::vector<std::unique_ptr<ShadowView>> shadowViews;
 		/// Used shadow views so far.
 		size_t usedShadowViews;
 		/// Instance transform vertex buffer.
-		AutoPtr<VertexBuffer> instanceVertexBuffer;
+		std::unique_ptr<VertexBuffer> instanceVertexBuffer;
 		/// Vertex elements for the instance vertex buffer.
 		std::vector<VertexElement> instanceVertexElements;
 		/// First point light face selection cube map.
-		AutoPtr<Texture> faceSelectionTexture1;
+		std::unique_ptr<Texture> faceSelectionTexture1;
 		/// Second point light face selection cube map.
-		AutoPtr<Texture> faceSelectionTexture2;
+		std::unique_ptr<Texture> faceSelectionTexture2;
 	};
 
 	/// Register Renderer related object factories and attributes.

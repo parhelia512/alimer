@@ -291,14 +291,17 @@ namespace Alimer
 		shadowRect = shadowRect_;
 	}
 
-	void Light::SetupShadowViews(Camera* mainCamera, Vector<AutoPtr<ShadowView> >& shadowViews, size_t& useIndex)
+	void Light::SetupShadowViews(
+		Camera* mainCamera, 
+		std::vector<std::unique_ptr<ShadowView>>& shadowViews,
+		size_t& useIndex)
 	{
 		size_t numViews = NumShadowViews();
 		if (!numViews)
 			return;
 
-		if (shadowViews.Size() < useIndex + numViews)
-			shadowViews.Resize(useIndex + numViews);
+		if (shadowViews.size() < useIndex + numViews)
+			shadowViews.resize(useIndex + numViews);
 
 		int numVerticalSplits = (lightType == LIGHT_POINT || (lightType == LIGHT_DIRECTIONAL && NumShadowSplits() > 2)) ? 2 : 1;
 		int actualShadowMapSize = shadowRect.Height() / numVerticalSplits;
@@ -306,9 +309,9 @@ namespace Alimer
 		for (size_t i = 0; i < numViews; ++i)
 		{
 			if (!shadowViews[useIndex + i])
-				shadowViews[useIndex + i] = new ShadowView();
+				shadowViews[useIndex + i] = std::make_unique<ShadowView>();
 
-			ShadowView* view = shadowViews[useIndex + i].Get();
+			ShadowView* view = shadowViews[useIndex + i].get();
 			view->Clear();
 			view->light = this;
 			Camera& shadowCamera = view->shadowCamera;
@@ -424,7 +427,7 @@ namespace Alimer
 
 			for (size_t i = 0; i < numViews; ++i)
 			{
-				ShadowView* view = shadowViews[useIndex + i].Get();
+				ShadowView* view = shadowViews[useIndex + i].get();
 
 				Camera& shadowCamera = view->shadowCamera;
 				float width = (float)shadowMap->GetWidth();

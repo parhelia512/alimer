@@ -200,7 +200,7 @@ int main()
 
 		TestSerializable::RegisterObject();
 
-		AutoPtr<TestSerializable> instance(new TestSerializable());
+		std::unique_ptr<TestSerializable> instance(new TestSerializable());
 		instance->SetIntVariable(100);
 		instance->SetStringVariable("Test!");
 
@@ -212,12 +212,12 @@ int main()
 		instance->Save(binarySaveData);
 		printf("Object binary data size: %d\n", binarySaveData.Size());
 
-		AutoPtr<TestSerializable> instance2(new TestSerializable());
+		std::unique_ptr<TestSerializable> instance2(new TestSerializable());
 		ObjectResolver res;
 		instance2->LoadJSON(saveData, res);
 		printf("Loaded variables (JSON): int %d string: %s\n", instance2->IntVariable(), instance2->StringVariable().CString());
 		
-		AutoPtr<TestSerializable> instance3(new TestSerializable());
+		std::unique_ptr<TestSerializable> instance3(new TestSerializable());
 		ObjectResolver res2;
 		binarySaveData.Seek(0);
 		instance3->Load(binarySaveData, res2);

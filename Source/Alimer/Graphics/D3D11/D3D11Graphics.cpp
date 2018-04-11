@@ -36,13 +36,13 @@
 
 #include <cstdlib>
 
-#include "../../Debug/DebugNew.h"
-
 // Prefer the high-performance GPU on switchable GPU systems
 extern "C" {
 	__declspec(dllexport) DWORD NvOptimusEnablement = 1;
 	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
+
+using namespace std;
 
 namespace Alimer
 {
@@ -126,8 +126,8 @@ namespace Alimer
 		vsync(false)
 	{
 		RegisterSubsystem(this);
-		impl = new GraphicsImpl();
-		window = new Window();
+		impl = make_unique<GraphicsImpl>();
+		window = make_unique<Window>();
 		SubscribeToEvent(window->resizeEvent, &Graphics::HandleResize);
 		ResetState();
 	}
@@ -617,11 +617,6 @@ namespace Alimer
 	bool Graphics::IsResizable() const
 	{
 		return window->IsResizable();
-	}
-
-	Window* Graphics::RenderWindow() const
-	{
-		return window;
 	}
 
 	Texture* Graphics::RenderTarget(size_t index) const

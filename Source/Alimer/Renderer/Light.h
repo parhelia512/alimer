@@ -103,7 +103,11 @@ namespace Alimer
 		/// Set shadow map and viewport within it. Called by Renderer.
 		void SetShadowMap(Texture* shadowMap, const IntRect& shadowRect = IntRect::ZERO);
 		/// Setup shadow cameras and viewports. Called by Renderer.
-		void SetupShadowViews(Camera* mainCamera, Vector<AutoPtr<ShadowView> >& shadowViews, size_t& useIndex);
+		void SetupShadowViews(
+			Camera* mainCamera,
+			std::vector<std::unique_ptr<ShadowView>>& shadowViews,
+			size_t& useIndex);
+
 		/// Return shadow map.
 		Texture* ShadowMap() const { return shadowMap; }
 		/// Return actual shadow map rectangle. May be smaller than the requested total shadow map size.

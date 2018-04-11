@@ -82,7 +82,7 @@ namespace Alimer
 			if (line.StartsWith("#include"))
 			{
 				String includeFileName = Path(source.Name()) + line.Substring(9).Replaced("\"", "").Trimmed();
-				AutoPtr<Stream> includeStream = cache->OpenResource(includeFileName);
+				std::unique_ptr<Stream> includeStream = cache->OpenResource(includeFileName);
 				if (!includeStream)
 					return false;
 

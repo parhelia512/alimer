@@ -74,37 +74,6 @@ int main()
     printf("Size of RefCounted: %d\n", sizeof(RefCounted));
 
     {
-        printf("\nTesting AutoPtr assignment\n");
-        AutoPtr<Test> ptr1(new Test);
-        AutoPtr<Test> ptr2;
-        ptr2 = ptr1;
-    }
-
-    {
-        printf("\nTesting AutoPtr copy construction\n");
-        AutoPtr<Test> ptr1(new Test);
-        AutoPtr<Test> ptr2(ptr1);
-    }
-
-    {
-        printf("\nTesting AutoPtr detaching\n");
-        AutoPtr<Test> ptr1(new Test);
-        // We would now have a memory leak if we don't manually delete the object
-        Test* object = ptr1.Detach();
-        delete object;
-    }
-
-    {
-        printf("\nTesting AutoPtr inside a vector\n");
-        Vector<AutoPtr<Test> > vec;
-        printf("Filling vector\n");
-        for (size_t i = 0; i < 4; ++i)
-            vec.Push(new Test());
-        printf("Clearing vector\n");
-        vec.Clear();
-    }
-    
-    {
         printf("\nTesting SharedPtr\n");
         SharedPtr<TestRefCounted> ptr1(new TestRefCounted);
         SharedPtr<TestRefCounted> ptr2(ptr1);
