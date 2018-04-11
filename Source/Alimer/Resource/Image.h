@@ -70,9 +70,9 @@ namespace Alimer
 
 	public:
 		/// Construct.
-		Image();
+		Image() = default;
 		/// Destruct.
-		~Image();
+		~Image() = default;
 
 		/// Register object factory.
 		static void RegisterObject();
@@ -104,7 +104,7 @@ namespace Alimer
 		/// Return whether is a compressed image.
 		bool IsCompressed() const { return format >= FMT_DXT1; }
 		/// Return number of mip levels contained in the image data.
-		size_t NumLevels() const { return numLevels; }
+		uint32_t GetMipLevels() const { return _mipLevels; }
 		/// Calculate the next mip image with halved width and height. Supports uncompressed 8 bits per pixel images only. Return true on success.
 		bool GenerateMipImage(Image& dest) const;
 		/// Return the data for a mip level. Images loaded from eg. PNG or JPG formats will only have one (index 0) level.
@@ -122,16 +122,16 @@ namespace Alimer
 
 	private:
 		/// Decode image pixel data using the stb_image library.
-		static unsigned char* DecodePixelData(Stream& source, int& width, int& height, unsigned& components);
+		static uint8_t* DecodePixelData(Stream& source, int& width, int& height, unsigned& components);
 		/// Free the decoded pixel data.
-		static void FreePixelData(unsigned char* pixelData);
+		static void FreePixelData(uint8_t* pixelData);
 
 		/// Image dimensions.
-		IntVector2 size;
+		IntVector2 size{ IntVector2::ZERO };
 		/// Image format.
-		ImageFormat format;
+		ImageFormat format{ FMT_NONE };
 		/// Number of mip levels. 1 for uncompressed images.
-		size_t numLevels;
+		uint32_t _mipLevels{ 1 };
 		/// Image pixel data.
 		std::unique_ptr<uint8_t[]> _data;
 	};

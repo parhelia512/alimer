@@ -39,7 +39,7 @@ void OctreeNode::OnPrepareRender(unsigned frameNumber, Camera* camera)
     distance = camera->Distance(WorldPosition());
 }
 
-void OctreeNode::OnRaycast(Vector<RaycastResult>& dest, const Ray& ray, float maxDistance)
+void OctreeNode::OnRaycast(std::vector<RaycastResult>& dest, const Ray& ray, float maxDistance)
 {
     float distance = ray.HitDistance(WorldBoundingBox());
     if (distance < maxDistance)
@@ -50,7 +50,7 @@ void OctreeNode::OnRaycast(Vector<RaycastResult>& dest, const Ray& ray, float ma
         res.distance = distance;
         res.node = this;
         res.subObject = 0;
-        dest.Push(res);
+        dest.push_back(res);
     }
 }
 

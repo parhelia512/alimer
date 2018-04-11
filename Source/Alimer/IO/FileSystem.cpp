@@ -34,6 +34,7 @@
 #include <memory>
 
 #ifdef _WIN32
+#	undef DeleteFile
 #	include <Windows.h>
 #	include <sys/types.h>
 #	include <sys/utime.h>
@@ -104,7 +105,7 @@ namespace Alimer
 #endif
 	}
 
-	bool DeleteFIle(const String& fileName)
+	bool DeleteFile(const String& fileName)
 	{
 #ifdef _WIN32
 		return DeleteFileW(WideNativePath(fileName).CString()) != 0;

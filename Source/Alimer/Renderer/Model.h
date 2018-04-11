@@ -17,7 +17,7 @@ namespace Alimer
 	struct ALIMER_API VertexBufferDesc
 	{
 		/// Vertex declaration.
-		Vector<VertexElement> vertexElements;
+		std::vector<VertexElement> vertexElements;
 		/// Number of vertices.
 		size_t numVertices;
 		/// Vertex data.
@@ -28,9 +28,9 @@ namespace Alimer
 	struct ALIMER_API IndexBufferDesc
 	{
 		/// Index size.
-		uint32_t indexSize;
+		IndexType indexType;
 		/// Number of indices.
-		uint32_t numIndices;
+		uint32_t indexCount;
 		/// Index data.
 		SharedArrayPtr<uint8_t> indexData;
 	};

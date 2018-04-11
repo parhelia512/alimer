@@ -67,7 +67,7 @@ void ProfilerBlock::EndFrame()
     maxTime = 0;
     count = 0;
 
-    for (auto it = children.Begin(); it != children.End(); ++it)
+    for (auto it = children.begin(); it != children.end(); ++it)
         (*it)->EndFrame();
 }
 
@@ -77,27 +77,27 @@ void ProfilerBlock::BeginInterval()
     intervalMaxTime = 0;
     intervalCount = 0;
 
-    for (auto it = children.Begin(); it != children.End(); ++it)
+    for (auto it = children.begin(); it != children.end(); ++it)
         (*it)->BeginInterval();
 }
 
 ProfilerBlock* ProfilerBlock::FindOrCreateChild(const char* name_)
 {
     // First check using string pointers only, then resort to actual strcmp
-    for (auto it = children.Begin(); it != children.End(); ++it)
+    for (auto it = children.begin(); it != children.end(); ++it)
     {
         if ((*it)->name == name_)
             return *it;
     }
 
-    for (auto it = children.Begin(); it != children.End(); ++it)
+    for (auto it = children.begin(); it != children.end(); ++it)
     {
         if (!String::Compare((*it)->name, name_))
             return *it;
     }
 
     ProfilerBlock* newBlock = new ProfilerBlock(this, name_);
-    children.Push(newBlock);
+    children.push_back(newBlock);
 
     return newBlock;
 }
@@ -237,7 +237,7 @@ void Profiler::OutputResults(ProfilerBlock* block, String& output, size_t depth,
         ++depth;
     }
 
-    for (auto it = block->children.Begin(); it != block->children.End(); ++it)
+    for (auto it = block->children.begin(); it != block->children.end(); ++it)
         OutputResults(*it, output, depth, maxDepth, showUnused, showTotal);
 }
 

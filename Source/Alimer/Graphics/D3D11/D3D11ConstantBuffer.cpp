@@ -27,7 +27,7 @@
 #include "../../Math/Matrix3.h"
 #include "../../Math/Matrix3x4.h"
 #include "D3D11ConstantBuffer.h"
-#include "D3D11Graphics.h"
+#include "../Graphics.h"
 
 #include <d3d11.h>
 
@@ -35,7 +35,6 @@ namespace Alimer
 {
 	ConstantBuffer::ConstantBuffer() :
 		buffer(nullptr),
-		byteSize(0),
 		usage(USAGE_DEFAULT),
 		dirty(false)
 	{
@@ -72,7 +71,7 @@ namespace Alimer
 	{
 		if (copyToShadow)
 		{
-			memcpy(_shadowData.get(), data, byteSize);
+			memcpy(_shadowData.get(), data, _byteSize);
 		}
 
 		if (usage == USAGE_IMMUTABLE)
@@ -97,7 +96,7 @@ namespace Alimer
 				d3dDeviceContext->Map((ID3D11Buffer*)buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
 				if (mappedData.pData)
 				{
-					memcpy((unsigned char*)mappedData.pData, data, byteSize);
+					memcpy((unsigned char*)mappedData.pData, data, _byteSize);
 					d3dDeviceContext->Unmap((ID3D11Buffer*)buffer, 0);
 				}
 				else
@@ -120,13 +119,10 @@ namespace Alimer
 
 		if (graphics && graphics->IsInitialized())
 		{
-			D3D11_BUFFER_DESC bufferDesc;
-			D3D11_SUBRESOURCE_DATA initialData;
-			memset(&bufferDesc, 0, sizeof bufferDesc);
-			memset(&initialData, 0, sizeof initialData);
-			initialData.pSysMem = data;
+			D3D11_SUBRESOURCE_DATA initialData = { data, 0, 0 };
 
-			bufferDesc.ByteWidth = (unsigned)byteSize;
+			D3D11_BUFFER_DESC bufferDesc = {};
+			bufferDesc.ByteWidth = _byteSize;
 			bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 			bufferDesc.CPUAccessFlags = (usage == USAGE_DYNAMIC) ? D3D11_CPU_ACCESS_WRITE : 0;
 			bufferDesc.Usage = (D3D11_USAGE)usage;
@@ -139,8 +135,8 @@ namespace Alimer
 				LOGERROR("Failed to create constant buffer");
 				return false;
 			}
-			else
-				LOGDEBUGF("Created constant buffer size %u", (unsigned)byteSize);
+			
+			LOGDEBUGF("Created constant buffer size %u", _byteSize);
 		}
 
 		return true;

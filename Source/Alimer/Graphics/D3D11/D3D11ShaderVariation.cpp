@@ -24,7 +24,7 @@
 #include "../../Debug/Log.h"
 #include "../../Debug/Profiler.h"
 #include "../Shader.h"
-#include "D3D11Graphics.h"
+#include "../Graphics.h"
 #include "D3D11ShaderVariation.h"
 #include "D3D11VertexBuffer.h"
 

@@ -23,59 +23,65 @@
 
 #include "../Debug/Log.h"
 #include "../Debug/Profiler.h"
-#include "IndexBuffer.h"
+#include "Buffer.h"
+#include "Graphics.h"
 
 namespace Alimer
 {
-	IndexBuffer::IndexBuffer()
-		: Buffer(BufferUsage::Index)
+	Buffer::Buffer(BufferUsage usage)
+		: _usage(usage)
 	{
 
 	}
 
-	IndexBuffer::~IndexBuffer()
+	Buffer::~Buffer()
 	{
 		Release();
 	}
 
-	bool IndexBuffer::Define(
-		ResourceUsage usage,
-		uint32_t indexCount, 
-		IndexType indexType,
-		bool useShadowData,
-		const void* data)
+	void Buffer::Release()
 	{
-		ALIMER_PROFILE(DefineIndexBuffer);
+#ifdef ALIMER_D3D11
+		graphics->DestroyBuffer(_handle.ptr);
+		_handle.ptr = nullptr;
+#endif
+	}
 
-		Release();
-
-		if (!indexCount)
+	static const char* BufferUsageToString(BufferUsage usage)
+	{
+		switch (usage)
 		{
-			LOGERROR("Can not define index buffer with no indices");
+		case BufferUsage::Vertex:	return "vertex";
+		case BufferUsage::Index:	return "index";
+		case BufferUsage::Uniform:	return "uniform";
+		default: return "unknown";
+		}
+	}
+
+	bool Buffer::Create(bool useShadowData, const void* initialData)
+	{
+		if (!graphics || !graphics->IsInitialized())
+			return false;
+
+		// If buffer is reinitialized with the same shadow data, no need to reallocate
+		if (useShadowData && (!initialData || initialData != _shadowData.get()))
+		{
+			_shadowData.reset(new uint8_t[_size]);
+			if (initialData)
+				memcpy(_shadowData.get(), initialData, _size);
+		}
+
+		_handle.ptr = graphics->CreateBuffer(_usage, _size, _stride, _resourceUsage, initialData);
+		if (_handle.ptr == nullptr)
+		{
+			LOGERRORF("Failed to create %s buffer", BufferUsageToString(_usage));
 			return false;
 		}
 
-		if (usage == USAGE_RENDERTARGET)
-		{
-			LOGERROR("Rendertarget usage is illegal for index buffers");
-			return false;
-		}
-		if (usage == USAGE_IMMUTABLE && !data)
-		{
-			LOGERROR("Immutable index buffer must define initial data");
-			return false;
-		}
-		if (indexType != IndexType::UInt16
-			&& indexType != IndexType::UInt32)
-		{
-			LOGERROR("Index type must be UInt16 or UInt32");
-			return false;
-		}
-
-		_stride = indexType == IndexType::UInt16 ? 2 : 4;
-		_size = indexCount * _stride;
-		_resourceUsage = usage;
-
-		return Buffer::Create(useShadowData, data);
+		LOGDEBUGF("Created %s buffer [size: %u, stride %u]",
+			BufferUsageToString(_usage),
+			_size,
+			_stride);
+		return true;
 	}
 }

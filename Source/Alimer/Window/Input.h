@@ -155,11 +155,11 @@ namespace Alimer
 		/// Return whether a mouse button was pressed on this frame.
 		bool IsMouseButtonPress(unsigned button) const;
 		/// Return number of active touches.
-		size_t NumTouches() const { return touches.Size(); }
+		size_t NumTouches() const { return touches.size(); }
 		/// Return an active touch by id, or null if not found.
 		const Touch* FindTouch(unsigned id) const;
 		/// Return all touches.
-		const Vector<Touch>& Touches() const { return touches; }
+		const std::vector<Touch>& Touches() const { return touches; }
 
 		/// React to a key press or release. Called by window message handling.
 		void OnKey(unsigned keyCode, unsigned rawKeyCode, bool pressed);
@@ -193,15 +193,15 @@ namespace Alimer
 
 	private:
 		/// Key code held down status.
-		HashMap<unsigned, bool> keyDown;
+		std::map<unsigned, bool> keyDown;
 		/// Key code pressed status.
-		HashMap<unsigned, bool> keyPressed;
+		std::map<unsigned, bool> keyPressed;
 		/// Raw key code held down status.
-		HashMap<unsigned, bool> rawKeyDown;
+		std::map<unsigned, bool> rawKeyDown;
 		/// Raw key code pressed status.
-		HashMap<unsigned, bool> rawKeyPress;
+		std::map<unsigned, bool> rawKeyPress;
 		/// Active touches.
-		Vector<Touch> touches;
+		std::vector<Touch> touches;
 		/// Accumulated mouse move since last frame.
 		IntVector2 mouseMove;
 		/// Mouse buttons bitmask.

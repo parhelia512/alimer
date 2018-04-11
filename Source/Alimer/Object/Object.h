@@ -27,6 +27,7 @@
 #include "Event.h"
 #include <string>
 #include <vector>
+#include <map>
 
 namespace Alimer
 {
@@ -81,9 +82,9 @@ namespace Alimer
 
 	private:
 		/// Registered subsystems.
-		static HashMap<StringHash, Object*> subsystems;
+		static std::map<StringHash, Object*> subsystems;
 		/// Registered object factories.
-		static HashMap<StringHash, AutoPtr<ObjectFactory> > factories;
+		static std::map<StringHash, AutoPtr<ObjectFactory> > factories;
 	};
 
 	/// Base class for object factories.

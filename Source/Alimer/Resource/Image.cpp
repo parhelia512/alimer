@@ -217,17 +217,6 @@ namespace Alimer
 	};
 	/// \endcond
 
-	Image::Image() :
-		size(IntVector2::ZERO),
-		format(FMT_NONE),
-		numLevels(1)
-	{
-	}
-
-	Image::~Image()
-	{
-	}
-
 	void Image::RegisterObject()
 	{
 		RegisterFactory<Image>();
@@ -238,7 +227,7 @@ namespace Alimer
 		ALIMER_PROFILE(LoadImage);
 
 		// Check for DDS, KTX or PVR compressed format
-		String fileID = source.ReadFileID();
+		std::string fileID = source.ReadFileID();
 
 		if (fileID == "DDS ")
 		{
@@ -268,7 +257,7 @@ namespace Alimer
 			size_t dataSize = source.Size() - source.Position();
 			_data.reset(new uint8_t[dataSize]);
 			size = IntVector2(ddsd.dwWidth, ddsd.dwHeight);
-			numLevels = ddsd.dwMipMapCount ? ddsd.dwMipMapCount : 1;
+			_mipLevels = ddsd.dwMipMapCount ? ddsd.dwMipMapCount : 1;
 			source.Read(_data.get(), dataSize);
 		}
 		else if (fileID == "\253KTX")
@@ -360,7 +349,7 @@ namespace Alimer
 
 			_data.reset(new uint8_t[dataSize]);
 			size = IntVector2(imageWidth, imageHeight);
-			numLevels = mipmaps;
+			_mipLevels = mipmaps;
 
 			size_t dataOffset = 0;
 			for (size_t i = 0; i < mipmaps; ++i)
@@ -452,7 +441,7 @@ namespace Alimer
 
 			_data.reset(new uint8_t[dataSize]);
 			size = IntVector2(imageWidth, imageHeight);
-			numLevels = mipmapCount;
+			_mipLevels = mipmapCount;
 
 			source.Read(_data.get(), dataSize);
 		}
@@ -547,7 +536,7 @@ namespace Alimer
 		_data.reset(new uint8_t[newSize.x * newSize.y * pixelByteSizes[newFormat]]);
 		size = newSize;
 		format = newFormat;
-		numLevels = 1;
+		_mipLevels = 1;
 	}
 
 	void Image::SetData(const unsigned char* pixelData)
@@ -648,7 +637,7 @@ namespace Alimer
 	{
 		ImageLevel level;
 
-		if (index >= numLevels)
+		if (index >= _mipLevels)
 			return level;
 
 		size_t i = 0;
@@ -678,7 +667,7 @@ namespace Alimer
 			return false;
 		}
 
-		if (index >= numLevels)
+		if (index >= _mipLevels)
 		{
 			LOGERROR("Mip level index out of bounds for DecompressLevel");
 			return false;

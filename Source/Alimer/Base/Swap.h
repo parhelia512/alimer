@@ -7,8 +7,6 @@
 namespace Alimer
 {
 
-class HashBase;
-class ListBase;
 class VectorBase;
 class String;
 
@@ -19,12 +17,6 @@ template<class T> inline void Swap(T& first, T& second)
     first = second;
     second = temp;
 }
-
-/// Swap two hash sets/maps.
-template<> ALIMER_API void Swap<HashBase>(HashBase& first, HashBase& second);
-
-/// Swap two lists.
-template<> ALIMER_API void Swap<ListBase>(ListBase& first, ListBase& second);
 
 /// Swap two vectors.
 template<> ALIMER_API void Swap<VectorBase>(VectorBase& first, VectorBase& second);

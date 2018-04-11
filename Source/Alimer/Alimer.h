@@ -26,8 +26,6 @@
 // Convenience header file for including commonly needed engine classes. Note: intentionally does not include Debug/DebugNew.h
 // so that placement new works as expected.
 
-#include "Base/HashSet.h"
-#include "Base/List.h"
 #include "Base/Ptr.h"
 #include "Debug/Log.h"
 #include "Debug/Profiler.h"
@@ -60,8 +58,6 @@
 #include "Resource/JSONFile.h"
 #include "Resource/ResourceCache.h"
 #include "Scene/Scene.h"
-#include "Thread/Condition.h"
-#include "Thread/Mutex.h"
 #include "Thread/Thread.h"
 #include "Thread/Timer.h"
 #include "Window/Input.h"

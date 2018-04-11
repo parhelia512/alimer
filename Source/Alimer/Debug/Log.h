@@ -1,125 +1,146 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #pragma once
 
 #include "../Base/AutoPtr.h"
-#include "../Base/List.h"
-#include "../Thread/Mutex.h"
 #include "../Object/Object.h"
+#include <list>
+#include <mutex>
 
 namespace Alimer
 {
 
-/// Fictional message level to indicate a stored raw message.
-static const int LOG_RAW = -1;
-/// Debug message level. By default only shown in debug mode.
-static const int LOG_DEBUG = 0;
-/// Informative message level.
-static const int LOG_INFO = 1;
-/// Warning message level.
-static const int LOG_WARNING = 2;
-/// Error message level.
-static const int LOG_ERROR = 3;
-/// Disable all log messages.
-static const int LOG_NONE = 4;
+	/// Fictional message level to indicate a stored raw message.
+	static const int LOG_RAW = -1;
+	/// Debug message level. By default only shown in debug mode.
+	static const int LOG_DEBUG = 0;
+	/// Informative message level.
+	static const int LOG_INFO = 1;
+	/// Warning message level.
+	static const int LOG_WARNING = 2;
+	/// Error message level.
+	static const int LOG_ERROR = 3;
+	/// Disable all log messages.
+	static const int LOG_NONE = 4;
 
-class File;
+	class File;
 
-/// Stored log message from another thread.
-struct ALIMER_API StoredLogMessage
-{
-    /// Construct undefined.
-    StoredLogMessage()
-    {
-    }
-    
-    /// Construct with parameters.
-    StoredLogMessage(const String& message_, int level_, bool error_) :
-        message(message_),
-        level(level_),
-        error(error_)
-    {
-    }
-    
-    /// Message text.
-    String message;
-    /// Message level. -1 for raw messages.
-    int level;
-    /// Error flag for raw messages.
-    bool error;
-};
+	/// Stored log message from another thread.
+	struct ALIMER_API StoredLogMessage
+	{
+		/// Construct undefined.
+		StoredLogMessage()
+		{
+		}
 
-/// %Log message event.
-class ALIMER_API LogMessageEvent : public Event
-{
-public:
-    /// Message.
-    String message;
-    /// Message level.
-    int level;
-};
+		/// Construct with parameters.
+		StoredLogMessage(const String& message_, int level_, bool error_) 
+			: message(message_)
+			, level(level_)
+			, error(error_)
+		{
+		}
 
-/// Logging subsystem.
-class ALIMER_API Log : public Object
-{
-    OBJECT(Log);
+		/// Message text.
+		String message;
+		/// Message level. -1 for raw messages.
+		int level;
+		/// Error flag for raw messages.
+		bool error;
+	};
 
-public:
-    /// Construct and register subsystem.
-    Log();
-    /// Destruct. Close the log file if open.
-    ~Log();
+	/// %Log message event.
+	class ALIMER_API LogMessageEvent : public Event
+	{
+	public:
+		/// Message.
+		String message;
+		/// Message level.
+		int level;
+	};
 
-    /// Open the log file.
-    void Open(const String& fileName);
-    /// Close the log file.
-    void Close();
-    /// Set logging level.
-    void SetLevel(int newLevel);
-    /// Set whether to timestamp log messages.
-    void SetTimeStamp(bool enable);
-    /// Set quiet mode, ie. only output error messages to the standard error stream.
-    void SetQuiet(bool enable);
-    /// Process threaded log messages at the end of a frame.
-    void EndFrame();
+	/// Logging subsystem.
+	class ALIMER_API Log : public Object
+	{
+		OBJECT(Log);
 
-    /// Return logging level.
-    int Level() const { return level; }
-    /// Return whether log messages are timestamped.
-    bool HasTimeStamp() const { return timeStamp; }
-    /// Return last log message.
-    String LastMessage() const { return lastMessage; }
+	public:
+		/// Construct and register subsystem.
+		Log();
+		/// Destruct. Close the log file if open.
+		~Log();
 
-    /// Write to the log. If logging level is higher than the level of the message, the message is ignored.
-    static void Write(int msgLevel, const String& message);
-    /// Write raw output to the log.
-    static void WriteRaw(const String& message, bool error = false);
+		/// Open the log file.
+		void Open(const String& fileName);
+		/// Close the log file.
+		void Close();
+		/// Set logging level.
+		void SetLevel(int newLevel);
+		/// Set whether to timestamp log messages.
+		void SetTimeStamp(bool enable);
+		/// Set quiet mode, ie. only output error messages to the standard error stream.
+		void SetQuiet(bool enable);
+		/// Process threaded log messages at the end of a frame.
+		void EndFrame();
 
-    /// %Log message event.
-    LogMessageEvent logMessageEvent;
+		/// Return logging level.
+		int Level() const { return level; }
+		/// Return whether log messages are timestamped.
+		bool HasTimeStamp() const { return timeStamp; }
+		/// Return last log message.
+		String LastMessage() const { return lastMessage; }
 
-private:
-    /// Mutex for threaded operation.
-    Mutex logMutex;
-    /// %Log messages from other threads.
-    List<StoredLogMessage> threadMessages;
-    /// %Log file.
-    AutoPtr<File> logFile;
-    /// Last log message.
-    String lastMessage;
-    /// Logging level.
-    int level;
-    /// Use timestamps flag.
-    bool timeStamp;
-    /// In write flag to prevent recursion.
-    bool inWrite;
-    /// Quite mode flag.
-    bool quiet;
-};
+		/// Write to the log. If logging level is higher than the level of the message, the message is ignored.
+		static void Write(int msgLevel, const String& message);
+		/// Write raw output to the log.
+		static void WriteRaw(const String& message, bool error = false);
+
+		/// %Log message event.
+		LogMessageEvent logMessageEvent;
+
+	private:
+		/// Mutex for threaded operation.
+		std::mutex _logMutex;
+		/// %Log messages from other threads.
+		std::list<StoredLogMessage> _threadMessages;
+		/// %Log file.
+		AutoPtr<File> logFile;
+		/// Last log message.
+		String lastMessage;
+		/// Logging level.
+		int level;
+		/// Use timestamps flag.
+		bool timeStamp;
+		/// In write flag to prevent recursion.
+		bool inWrite;
+		/// Quite mode flag.
+		bool quiet;
+	};
 
 }
 
-#ifdef ALIMEr_LOGGING
+#ifdef ALIMER_LOGGING
 
 #	define LOGDEBUG(message) Alimer::Log::Write(Alimer::LOG_DEBUG, message)
 #	define LOGINFO(message) Alimer::Log::Write(Alimer::LOG_INFO, message)

@@ -21,61 +21,43 @@
 // THE SOFTWARE.
 //
 
-#include "../Debug/Log.h"
-#include "../Debug/Profiler.h"
-#include "IndexBuffer.h"
+#pragma once
+
+#include "D3D11Prerequisites.h"
+#include "../GraphicsDefs.h"
 
 namespace Alimer
 {
-	IndexBuffer::IndexBuffer()
-		: Buffer(BufferUsage::Index)
+	namespace d3d11
 	{
-
-	}
-
-	IndexBuffer::~IndexBuffer()
-	{
-		Release();
-	}
-
-	bool IndexBuffer::Define(
-		ResourceUsage usage,
-		uint32_t indexCount, 
-		IndexType indexType,
-		bool useShadowData,
-		const void* data)
-	{
-		ALIMER_PROFILE(DefineIndexBuffer);
-
-		Release();
-
-		if (!indexCount)
+		static inline D3D11_USAGE Convert(ResourceUsage usage)
 		{
-			LOGERROR("Can not define index buffer with no indices");
-			return false;
+			switch (usage)
+			{
+			case USAGE_DEFAULT: return D3D11_USAGE_DEFAULT;
+			case USAGE_IMMUTABLE: return D3D11_USAGE_IMMUTABLE;
+			case USAGE_DYNAMIC: return D3D11_USAGE_DYNAMIC;
+			default:
+				return D3D11_USAGE_DEFAULT;
+			}
 		}
-
-		if (usage == USAGE_RENDERTARGET)
+		
+		static inline UINT Convert(BufferUsage usage)
 		{
-			LOGERROR("Rendertarget usage is illegal for index buffers");
-			return false;
-		}
-		if (usage == USAGE_IMMUTABLE && !data)
-		{
-			LOGERROR("Immutable index buffer must define initial data");
-			return false;
-		}
-		if (indexType != IndexType::UInt16
-			&& indexType != IndexType::UInt32)
-		{
-			LOGERROR("Index type must be UInt16 or UInt32");
-			return false;
-		}
+			if (any(usage & BufferUsage::Uniform))
+				return D3D11_BIND_CONSTANT_BUFFER;
 
-		_stride = indexType == IndexType::UInt16 ? 2 : 4;
-		_size = indexCount * _stride;
-		_resourceUsage = usage;
+			UINT d3dUsage = 0;
+			if (any(usage & BufferUsage::Vertex))
+				d3dUsage |= D3D11_BIND_VERTEX_BUFFER;
 
-		return Buffer::Create(useShadowData, data);
+			if (any(usage & BufferUsage::Index))
+				d3dUsage |= D3D11_BIND_INDEX_BUFFER;
+
+			if (any(usage & BufferUsage::Storage))
+				d3dUsage |= D3D11_BIND_UNORDERED_ACCESS;
+
+			return d3dUsage;
+		}
 	}
 }

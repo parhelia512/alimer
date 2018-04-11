@@ -37,16 +37,16 @@ namespace Alimer
 		String fixedPath = SanitateResourceDirName(pathName);
 
 		// Check that the same path does not already exist
-		for (size_t i = 0; i < resourceDirs.Size(); ++i)
+		for (size_t i = 0; i < resourceDirs.size(); ++i)
 		{
 			if (!resourceDirs[i].Compare(fixedPath, false))
 				return true;
 		}
 
 		if (addFirst)
-			resourceDirs.Insert(0, fixedPath);
+			resourceDirs.insert(resourceDirs.begin(), fixedPath);
 		else
-			resourceDirs.Push(fixedPath);
+			resourceDirs.push_back(fixedPath);
 
 		LOGINFO("Added resource path " + fixedPath);
 		return true;
@@ -66,7 +66,7 @@ namespace Alimer
 			return false;
 		}
 
-		resources[MakePair(resource->Type(), StringHash(resource->Name()))] = resource;
+		resources[std::make_pair(resource->Type(), StringHash(resource->Name()))] = resource;
 		return true;
 	}
 
@@ -75,11 +75,11 @@ namespace Alimer
 		// Convert path to absolute
 		String fixedPath = SanitateResourceDirName(pathName);
 
-		for (size_t i = 0; i < resourceDirs.Size(); ++i)
+		for (size_t i = 0; i < resourceDirs.size(); ++i)
 		{
 			if (!resourceDirs[i].Compare(fixedPath, false))
 			{
-				resourceDirs.Erase(i);
+				resourceDirs.erase(resourceDirs.begin() + i);
 				LOGINFO("Removed resource path " + fixedPath);
 				return;
 			}
@@ -88,14 +88,14 @@ namespace Alimer
 
 	void ResourceCache::UnloadResource(StringHash type, const String& name, bool force)
 	{
-		auto key = MakePair(type, StringHash(name));
-		auto it = resources.Find(key);
-		if (it == resources.End())
+		auto key = std::make_pair(type, StringHash(name));
+		auto it = resources.find(key);
+		if (it == resources.end())
 			return;
 
 		Resource* resource = it->second;
 		if (resource->Refs() == 1 || force)
-			resources.Erase(key);
+			resources.erase(key);
 	}
 
 	void ResourceCache::UnloadResources(StringHash type, bool force)
@@ -105,7 +105,7 @@ namespace Alimer
 		{
 			size_t unloaded = 0;
 
-			for (auto it = resources.Begin(); it != resources.End();)
+			for (auto it = resources.begin(); it != resources.end();)
 			{
 				auto current = it++;
 				if (current->first.first == type)
@@ -113,7 +113,7 @@ namespace Alimer
 					Resource* resource = current->second;
 					if (resource->Refs() == 1 || force)
 					{
-						resources.Erase(current);
+						resources.erase(current);
 						++unloaded;
 					}
 				}
@@ -131,7 +131,7 @@ namespace Alimer
 		{
 			size_t unloaded = 0;
 
-			for (auto it = resources.Begin(); it != resources.End();)
+			for (auto it = resources.begin(); it != resources.end();)
 			{
 				auto current = it++;
 				if (current->first.first == type)
@@ -139,7 +139,7 @@ namespace Alimer
 					Resource* resource = current->second;
 					if (resource->Name().StartsWith(partialName) && (resource->Refs() == 1 || force))
 					{
-						resources.Erase(current);
+						resources.erase(current);
 						++unloaded;
 					}
 				}
@@ -157,13 +157,13 @@ namespace Alimer
 		{
 			size_t unloaded = 0;
 
-			for (auto it = resources.Begin(); it != resources.End();)
+			for (auto it = resources.begin(); it != resources.end();)
 			{
 				auto current = it++;
 				Resource* resource = current->second;
 				if (resource->Name().StartsWith(partialName) && (!resource->Refs() == 1 || force))
 				{
-					resources.Erase(current);
+					resources.erase(current);
 					++unloaded;
 				}
 			}
@@ -180,13 +180,13 @@ namespace Alimer
 		{
 			size_t unloaded = 0;
 
-			for (auto it = resources.Begin(); it != resources.End();)
+			for (auto it = resources.begin(); it != resources.end();)
 			{
 				auto current = it++;
 				Resource* resource = current->second;
 				if (resource->Refs() == 1 || force)
 				{
-					resources.Erase(current);
+					resources.erase(current);
 					++unloaded;
 				}
 			}
@@ -210,7 +210,7 @@ namespace Alimer
 		String name = SanitateResourceName(nameIn);
 		AutoPtr<Stream> ret;
 
-		for (size_t i = 0; i < resourceDirs.Size(); ++i)
+		for (size_t i = 0; i < resourceDirs.size(); ++i)
 		{
 			if (FileExists(resourceDirs[i] + name))
 			{
@@ -243,21 +243,21 @@ namespace Alimer
 			return nullptr;
 
 		// Check for existing resource
-		auto key = MakePair(type, StringHash(name));
-		auto it = resources.Find(key);
-		if (it != resources.End())
+		auto key = std::make_pair(type, StringHash(name));
+		auto it = resources.find(key);
+		if (it != resources.end())
 			return it->second;
 
 		SharedPtr<Object> newObject = Create(type);
 		if (!newObject)
 		{
-			LOGERROR("Could not load unknown resource type " + String(type));
+			LOGERRORF("Could not load unknown resource type %s", type.ToString().c_str());
 			return nullptr;
 		}
 		Resource* newResource = dynamic_cast<Resource*>(newObject.Get());
 		if (!newResource)
 		{
-			LOGERROR("Type " + String(type) + " is not a resource");
+			LOGERRORF("Type %s is not a resource", type.ToString().c_str());
 			return nullptr;
 		}
 
@@ -280,7 +280,7 @@ namespace Alimer
 	{
 		result.Clear();
 
-		for (auto it = resources.Begin(); it != resources.End(); ++it)
+		for (auto it = resources.begin(); it != resources.end(); ++it)
 		{
 			if (it->second->Type() == type)
 				result.Push(it->second);
@@ -291,7 +291,7 @@ namespace Alimer
 	{
 		String name = SanitateResourceName(nameIn);
 
-		for (size_t i = 0; i < resourceDirs.Size(); ++i)
+		for (size_t i = 0; i < resourceDirs.size(); ++i)
 		{
 			if (FileExists(resourceDirs[i] + name))
 				return true;
@@ -303,7 +303,7 @@ namespace Alimer
 
 	String ResourceCache::ResourceFileName(const String& name) const
 	{
-		for (unsigned i = 0; i < resourceDirs.Size(); ++i)
+		for (size_t i = 0; i < resourceDirs.size(); ++i)
 		{
 			if (FileExists(resourceDirs[i] + name))
 				return resourceDirs[i] + name;
@@ -320,11 +320,11 @@ namespace Alimer
 		name.Replace("./", "");
 
 		// If the path refers to one of the resource directories, normalize the resource name
-		if (resourceDirs.Size())
+		if (resourceDirs.size())
 		{
 			String namePath = Path(name);
 			String exePath = ExecutableDir();
-			for (unsigned i = 0; i < resourceDirs.Size(); ++i)
+			for (size_t i = 0; i < resourceDirs.size(); ++i)
 			{
 				String relativeResourcePath = resourceDirs[i];
 				if (relativeResourcePath.StartsWith(exePath))

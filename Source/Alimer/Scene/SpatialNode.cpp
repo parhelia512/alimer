@@ -302,10 +302,9 @@ void SpatialNode::OnTransformChanged()
 {
     SetFlag(NF_WORLD_TRANSFORM_DIRTY, true);
 
-    const Vector<SharedPtr<Node> >& children = Children();
-    for (auto it = children.Begin(); it != children.End(); ++it)
+    const std::vector<SharedPtr<Node> >& children = Children();
+    for (Node* child : children)
     {
-        Node* child = *it;
         if (child->TestFlag(NF_SPATIAL))
             static_cast<SpatialNode*>(child)->OnTransformChanged();
     }

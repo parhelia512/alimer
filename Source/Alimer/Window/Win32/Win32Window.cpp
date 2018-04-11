@@ -454,10 +454,10 @@ namespace Alimer
 		case WM_TOUCH:
 			if (input && LOWORD(wParam))
 			{
-				Vector<TOUCHINPUT> touches(LOWORD(wParam));
-				if (getTouchInputInfo((HTOUCHINPUT)lParam, (unsigned)touches.Size(), &touches[0], sizeof(TOUCHINPUT)))
+				std::vector<TOUCHINPUT> touches(LOWORD(wParam));
+				if (getTouchInputInfo((HTOUCHINPUT)lParam, (unsigned)touches.size(), &touches[0], sizeof(TOUCHINPUT)))
 				{
-					for (auto it = touches.Begin(); it != touches.End(); ++it)
+					for (auto it = touches.begin(); it != touches.end(); ++it)
 					{
 						// Translate touch points inside window
 						POINT point;

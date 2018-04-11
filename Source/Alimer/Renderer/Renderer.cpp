@@ -16,6 +16,7 @@
 #include "Octree.h"
 #include "Renderer.h"
 #include "StaticModel.h"
+#include "../Base/Sort.h"
 
 #include "../Debug/DebugNew.h"
 
@@ -81,8 +82,8 @@ namespace Alimer
 		for (auto it = shadowMaps.Begin(); it != shadowMaps.End(); ++it)
 		{
 			if (it->texture->Define(
-				TextureType::Type2D, 
-				USAGE_RENDERTARGET, 
+				TextureType::Type2D,
+				USAGE_RENDERTARGET,
 				IntVector2(size, size),
 				format, 1))
 			{
@@ -113,9 +114,9 @@ namespace Alimer
 		geometries.Clear();
 		lights.Clear();
 		instanceTransforms.Clear();
-		lightLists.Clear();
-		lightPasses.Clear();
-		for (auto it = batchQueues.Begin(); it != batchQueues.End(); ++it)
+		lightLists.clear();
+		lightPasses.clear();
+		for (auto it = batchQueues.begin(); it != batchQueues.end(); ++it)
 			it->second.Clear();
 		for (auto it = shadowMaps.Begin(); it != shadowMaps.End(); ++it)
 			it->Clear();
@@ -158,7 +159,7 @@ namespace Alimer
 			Light* light = *it;
 			unsigned lightMask = light->LightMask();
 
-			litGeometries.Clear();
+			litGeometries.clear();
 			bool hasReceivers = false;
 
 			// Create a light list that contains only this light. It will be used for nodes that have no light interactions so far
@@ -183,9 +184,9 @@ namespace Alimer
 				break;
 
 			case LIGHT_POINT:
-				octree->FindNodes(reinterpret_cast<Vector<OctreeNode*>&>(litGeometries), light->WorldSphere(), NF_ENABLED |
+				octree->FindNodes(reinterpret_cast<std::vector<OctreeNode*>&>(litGeometries), light->WorldSphere(), NF_ENABLED |
 					NF_GEOMETRY, lightMask);
-				for (auto gIt = litGeometries.Begin(), gEnd = litGeometries.End(); gIt != gEnd; ++gIt)
+				for (auto gIt = litGeometries.begin(), gEnd = litGeometries.end(); gIt != gEnd; ++gIt)
 				{
 					GeometryNode* node = *gIt;
 					// Add light only to nodes which are actually inside the frustum this frame
@@ -198,9 +199,9 @@ namespace Alimer
 				break;
 
 			case LIGHT_SPOT:
-				octree->FindNodes(reinterpret_cast<Vector<OctreeNode*>&>(litGeometries), light->WorldFrustum(), NF_ENABLED |
+				octree->FindNodes(reinterpret_cast<std::vector<OctreeNode*>&>(litGeometries), light->WorldFrustum(), NF_ENABLED |
 					NF_GEOMETRY, lightMask);
-				for (auto gIt = litGeometries.Begin(), gEnd = litGeometries.End(); gIt != gEnd; ++gIt)
+				for (auto gIt = litGeometries.begin(), gEnd = litGeometries.end(); gIt != gEnd; ++gIt)
 				{
 					GeometryNode* node = *gIt;
 					if (node->LastFrameNumber() == frameNumber)
@@ -273,8 +274,8 @@ namespace Alimer
 				case LIGHT_DIRECTIONAL:
 					// Directional light needs a new frustum query for each split, as the shadow cameras are typically far outside
 					// the main view
-					litGeometries.Clear();
-					octree->FindNodes(reinterpret_cast<Vector<OctreeNode*>&>(litGeometries),
+					litGeometries.clear();
+					octree->FindNodes(reinterpret_cast<std::vector<OctreeNode*>&>(litGeometries),
 						shadowFrustum, NF_ENABLED | NF_GEOMETRY | NF_CASTSHADOWS, light->LightMask());
 					CollectShadowBatches(litGeometries, shadowQueue, shadowFrustum, false, false);
 					break;
@@ -315,7 +316,7 @@ namespace Alimer
 		{
 			ALIMER_PROFILE(BuildLightPasses);
 
-			for (auto it = lightLists.Begin(), end = lightLists.End(); it != end; ++it)
+			for (auto it = lightLists.begin(), end = lightLists.end(); it != end; ++it)
 			{
 				LightList& list = it->second;
 				if (!list.useCount)
@@ -366,8 +367,8 @@ namespace Alimer
 					if (list.lightPasses.IsEmpty())
 						++passKey; // First pass includes ambient light
 
-					HashMap<unsigned long long, LightPass>::Iterator lpIt = lightPasses.Find(passKey);
-					if (lpIt != lightPasses.End())
+					auto lpIt = lightPasses.find(passKey);
+					if (lpIt != lightPasses.end())
 						list.lightPasses.Push(&lpIt->second);
 					else
 					{
@@ -396,9 +397,11 @@ namespace Alimer
 								newLightPass->psBits |= 4 << (i * 3 + 4);
 								newLightPass->shadowMaps[i] = light->ShadowMap();
 
-								const Vector<Matrix4>& shadowMatrices = light->ShadowMatrices();
-								for (size_t j = 0; j < shadowMatrices.Size() && numShadowCoords < MAX_LIGHTS_PER_PASS; ++j)
+								const std::vector<Matrix4>& shadowMatrices = light->ShadowMatrices();
+								for (size_t j = 0; j < shadowMatrices.size() && numShadowCoords < MAX_LIGHTS_PER_PASS; ++j)
+								{
 									newLightPass->shadowMatrices[numShadowCoords++] = shadowMatrices[j];
+								}
 
 								newLightPass->shadowParameters[i] = light->ShadowParameters();
 
@@ -578,47 +581,47 @@ namespace Alimer
 		graphics = Subsystem<Graphics>();
 		assert(graphics && graphics->IsInitialized());
 
-		Vector<Constant> constants;
+		std::vector<Constant> constants;
 
 		vsFrameConstantBuffer = new ConstantBuffer();
-		constants.Push(Constant(ELEM_MATRIX3X4, "viewMatrix"));
-		constants.Push(Constant(ELEM_MATRIX4, "projectionMatrix"));
-		constants.Push(Constant(ELEM_MATRIX4, "viewProjMatrix"));
-		constants.Push(Constant(ELEM_VECTOR4, "depthParameters"));
+		constants.push_back(Constant(ELEM_MATRIX3X4, "viewMatrix"));
+		constants.push_back(Constant(ELEM_MATRIX4, "projectionMatrix"));
+		constants.push_back(Constant(ELEM_MATRIX4, "viewProjMatrix"));
+		constants.push_back(Constant(ELEM_VECTOR4, "depthParameters"));
 		vsFrameConstantBuffer->Define(USAGE_DEFAULT, constants);
 
 		psFrameConstantBuffer = new ConstantBuffer();
-		constants.Clear();
-		constants.Push(Constant(ELEM_VECTOR4, "ambientColor"));
+		constants.clear();
+		constants.push_back(Constant(ELEM_VECTOR4, "ambientColor"));
 		psFrameConstantBuffer->Define(USAGE_DEFAULT, constants);
 
 		vsObjectConstantBuffer = new ConstantBuffer();
-		constants.Clear();
-		constants.Push(Constant(ELEM_MATRIX3X4, "worldMatrix"));
+		constants.clear();
+		constants.push_back(Constant(ELEM_MATRIX3X4, "worldMatrix"));
 		vsObjectConstantBuffer->Define(USAGE_DEFAULT, constants);
 
 		vsLightConstantBuffer = new ConstantBuffer();
-		constants.Clear();
-		constants.Push(Constant(ELEM_MATRIX4, "shadowMatrices", MAX_LIGHTS_PER_PASS));
+		constants.clear();
+		constants.push_back(Constant(ELEM_MATRIX4, "shadowMatrices", MAX_LIGHTS_PER_PASS));
 		vsLightConstantBuffer->Define(USAGE_DEFAULT, constants);
 
 		psLightConstantBuffer = new ConstantBuffer();
-		constants.Clear();
-		constants.Push(Constant(ELEM_VECTOR4, "lightPositions", MAX_LIGHTS_PER_PASS));
-		constants.Push(Constant(ELEM_VECTOR4, "lightDirections", MAX_LIGHTS_PER_PASS));
-		constants.Push(Constant(ELEM_VECTOR4, "lightColors", MAX_LIGHTS_PER_PASS));
-		constants.Push(Constant(ELEM_VECTOR4, "lightAttenuations", MAX_LIGHTS_PER_PASS));
-		constants.Push(Constant(ELEM_VECTOR4, "shadowParameters", MAX_LIGHTS_PER_PASS));
-		constants.Push(Constant(ELEM_VECTOR4, "pointShadowParameters", MAX_LIGHTS_PER_PASS));
-		constants.Push(Constant(ELEM_VECTOR4, "dirShadowSplits"));
-		constants.Push(Constant(ELEM_VECTOR4, "dirShadowFade"));
+		constants.clear();
+		constants.push_back(Constant(ELEM_VECTOR4, "lightPositions", MAX_LIGHTS_PER_PASS));
+		constants.push_back(Constant(ELEM_VECTOR4, "lightDirections", MAX_LIGHTS_PER_PASS));
+		constants.push_back(Constant(ELEM_VECTOR4, "lightColors", MAX_LIGHTS_PER_PASS));
+		constants.push_back(Constant(ELEM_VECTOR4, "lightAttenuations", MAX_LIGHTS_PER_PASS));
+		constants.push_back(Constant(ELEM_VECTOR4, "shadowParameters", MAX_LIGHTS_PER_PASS));
+		constants.push_back(Constant(ELEM_VECTOR4, "pointShadowParameters", MAX_LIGHTS_PER_PASS));
+		constants.push_back(Constant(ELEM_VECTOR4, "dirShadowSplits"));
+		constants.push_back(Constant(ELEM_VECTOR4, "dirShadowFade"));
 		psLightConstantBuffer->Define(USAGE_DEFAULT, constants);
 
 		// Instance vertex buffer contains texcoords 4-6 which define the instances' world matrices
 		instanceVertexBuffer = new VertexBuffer();
-		instanceVertexElements.Push(VertexElement(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD, true));
-		instanceVertexElements.Push(VertexElement(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD + 1, true));
-		instanceVertexElements.Push(VertexElement(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD + 2, true));
+		instanceVertexElements.push_back(VertexElement(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD, true));
+		instanceVertexElements.push_back(VertexElement(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD + 1, true));
+		instanceVertexElements.push_back(VertexElement(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD + 2, true));
 
 		// Setup ambient light only -pass
 		ambientLightPass.vsBits = 0;
@@ -673,7 +676,9 @@ namespace Alimer
 		faceSelectionTexture2->SetDataLost(false);
 	}
 
-	void Renderer::CollectGeometriesAndLights(Vector<OctreeNode*>::ConstIterator begin, Vector<OctreeNode*>::ConstIterator end,
+	void Renderer::CollectGeometriesAndLights(
+		std::vector<OctreeNode*>::const_iterator begin,
+		std::vector<OctreeNode*>::const_iterator end,
 		bool inside)
 	{
 		if (inside)
@@ -739,10 +744,10 @@ namespace Alimer
 		{
 			// Create new light list based on the node's existing one
 			--oldList->useCount;
-			unsigned long long newListKey = oldList->key;
-			newListKey += (unsigned long long)light << ((oldList->lights.Size() & 3) * 16);
-			HashMap<unsigned long long, LightList>::Iterator it = lightLists.Find(newListKey);
-			if (it != lightLists.End())
+			uint64_t newListKey = oldList->key;
+			newListKey += (uint64_t)light << ((oldList->lights.Size() & 3) * 16);
+			auto it = lightLists.find(newListKey);
+			if (it != lightLists.end())
 			{
 				LightList* newList = &it->second;
 				node->SetLightList(newList);
@@ -760,13 +765,17 @@ namespace Alimer
 		}
 	}
 
-	void Renderer::CollectShadowBatches(const Vector<GeometryNode*>& nodes, BatchQueue& batchQueue, const Frustum& frustum,
-		bool checkShadowCaster, bool checkFrustum)
+	void Renderer::CollectShadowBatches(
+		const std::vector<GeometryNode*>& nodes,
+		BatchQueue& batchQueue,
+		const Frustum& frustum,
+		bool checkShadowCaster,
+		bool checkFrustum)
 	{
 		Batch newBatch;
 		newBatch.lights = nullptr;
 
-		for (auto gIt = nodes.Begin(), gEnd = nodes.End(); gIt != gEnd; ++gIt)
+		for (auto gIt = nodes.begin(), gEnd = nodes.end(); gIt != gEnd; ++gIt)
 		{
 			GeometryNode* node = *gIt;
 			if (checkShadowCaster && !(node->Flags() & NF_CASTSHADOWS))
@@ -990,41 +999,39 @@ namespace Alimer
 	ShaderVariation* Renderer::FindShaderVariation(ShaderStage stage, Pass* pass, unsigned short bits)
 	{
 		/// \todo Evaluate whether the hash lookup is worth the memory save vs using just straightforward vectors
-		HashMap<unsigned short, WeakPtr<ShaderVariation> >& variations = pass->shaderVariations[stage];
-		HashMap<unsigned short, WeakPtr<ShaderVariation> >::Iterator it = variations.Find(bits);
+		auto& variations = pass->shaderVariations[stage];
+		auto it = variations.find(bits);
 
-		if (it != variations.End())
+		if (it != variations.end())
 			return it->second.Get();
+
+		if (stage == SHADER_VS)
+		{
+			String vsString = pass->CombinedShaderDefines(stage) + " " + geometryDefines[bits & LVS_GEOMETRY];
+			if (bits & LVS_NUMSHADOWCOORDS)
+				vsString += " " + lightDefines[1] + "=" + String((bits & LVS_NUMSHADOWCOORDS) >> 2);
+
+			variations.insert(std::make_pair(bits, WeakPtr<ShaderVariation>(pass->shaders[stage]->CreateVariation(vsString.Trimmed()))));
+			return variations[bits].Get();
+		}
 		else
 		{
-			if (stage == SHADER_VS)
+			String psString = pass->CombinedShaderDefines(stage);
+			if (bits & LPS_AMBIENT)
+				psString += " " + lightDefines[0];
+			if (bits & LPS_NUMSHADOWCOORDS)
+				psString += " " + lightDefines[1] + "=" + String((bits & LPS_NUMSHADOWCOORDS) >> 1);
+			for (size_t i = 0; i < MAX_LIGHTS_PER_PASS; ++i)
 			{
-				String vsString = pass->CombinedShaderDefines(stage) + " " + geometryDefines[bits & LVS_GEOMETRY];
-				if (bits & LVS_NUMSHADOWCOORDS)
-					vsString += " " + lightDefines[1] + "=" + String((bits & LVS_NUMSHADOWCOORDS) >> 2);
-
-				it = variations.Insert(MakePair(bits, WeakPtr<ShaderVariation>(pass->shaders[stage]->CreateVariation(vsString.Trimmed()))));
-				return it->second.Get();
+				unsigned short lightBits = (bits >> (i * 3 + 4)) & 7;
+				if (lightBits)
+					psString += " " + lightDefines[(lightBits & 3) + 1] + String((int)i);
+				if (lightBits & 4)
+					psString += " " + lightDefines[5] + String((int)i);
 			}
-			else
-			{
-				String psString = pass->CombinedShaderDefines(stage);
-				if (bits & LPS_AMBIENT)
-					psString += " " + lightDefines[0];
-				if (bits & LPS_NUMSHADOWCOORDS)
-					psString += " " + lightDefines[1] + "=" + String((bits & LPS_NUMSHADOWCOORDS) >> 1);
-				for (size_t i = 0; i < MAX_LIGHTS_PER_PASS; ++i)
-				{
-					unsigned short lightBits = (bits >> (i * 3 + 4)) & 7;
-					if (lightBits)
-						psString += " " + lightDefines[(lightBits & 3) + 1] + String((int)i);
-					if (lightBits & 4)
-						psString += " " + lightDefines[5] + String((int)i);
-				}
 
-				it = variations.Insert(MakePair(bits, WeakPtr<ShaderVariation>(pass->shaders[stage]->CreateVariation(psString.Trimmed()))));
-				return it->second.Get();
-			}
+			variations.insert(std::make_pair(bits, WeakPtr<ShaderVariation>(pass->shaders[stage]->CreateVariation(psString.Trimmed()))));
+			return variations[bits].Get();
 		}
 	}
 

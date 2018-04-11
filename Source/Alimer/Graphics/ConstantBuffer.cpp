@@ -50,7 +50,7 @@ namespace Alimer
 		if (source.Contains("usage"))
 			usage_ = (ResourceUsage)String::ListIndex(source["usage"].GetString(), resourceUsageNames, USAGE_DEFAULT);
 
-		Vector<Constant> constants_;
+		std::vector<Constant> constants;
 
 		const JSONValue& jsonConstants = source["constants"];
 		for (size_t i = 0; i < jsonConstants.Size(); ++i)
@@ -69,13 +69,13 @@ namespace Alimer
 			if (jsonConstant.Contains("numElements"))
 				newConstant.numElements = (int)jsonConstant["numElements"].GetNumber();
 
-			constants_.Push(newConstant);
+			constants.push_back(newConstant);
 		}
 
-		if (!Define(usage_, constants_))
+		if (!Define(usage_, constants))
 			return false;
 
-		for (size_t i = 0; i < constants.Size() && i < jsonConstants.Size(); ++i)
+		for (uint32_t i = 0; i < constants.size() && i < jsonConstants.Size(); ++i)
 		{
 			const JSONValue& value = jsonConstants[i]["value"];
 			AttributeType attrType = elementToAttribute[constants[i].type];
@@ -83,10 +83,12 @@ namespace Alimer
 			if (value.IsArray())
 			{
 				for (size_t j = 0; j < value.Size(); ++j)
-					Attribute::FromJSON(attrType, const_cast<void*>(ConstantValue(i, j)), value[j]);
+				{
+					Attribute::FromJSON(attrType, const_cast<void*>(GetConstantValue(i, j)), value[j]);
+				}
 			}
 			else
-				Attribute::FromJSON(attrType, const_cast<void*>(ConstantValue(i)), value);
+				Attribute::FromJSON(attrType, const_cast<void*>(GetConstantValue(i)), value);
 		}
 
 		dirty = true;
@@ -100,9 +102,9 @@ namespace Alimer
 		dest["usage"] = resourceUsageNames[usage];
 		dest["constants"].SetEmptyArray();
 
-		for (size_t i = 0; i < constants.Size(); ++i)
+		for (size_t i = 0; i < _constants.size(); ++i)
 		{
-			const Constant& constant = constants[i];
+			const Constant& constant = _constants[i];
 			AttributeType attrType = elementToAttribute[constant.type];
 
 			JSONValue jsonConstant;
@@ -112,24 +114,29 @@ namespace Alimer
 				jsonConstant["numElements"] = (int)constant.numElements;
 
 			if (constant.numElements == 1)
-				Attribute::ToJSON(attrType, jsonConstant["value"], ConstantValue(i));
+			{
+				Attribute::ToJSON(attrType, jsonConstant["value"], GetConstantValue(i));
+			}
 			else
 			{
 				jsonConstant["value"].Resize(constant.numElements);
 				for (size_t j = 0; j < constant.numElements; ++j)
-					Attribute::ToJSON(attrType, jsonConstant["value"][j], ConstantValue(i, j));
+					Attribute::ToJSON(attrType, jsonConstant["value"][j], GetConstantValue(i, j));
 			}
 
 			dest["constants"].Push(jsonConstant);
 		}
 	}
 
-	bool ConstantBuffer::Define(ResourceUsage usage_, const Vector<Constant>& srcConstants)
+	bool ConstantBuffer::Define(ResourceUsage usage_, const std::vector<Constant>& srcConstants)
 	{
-		return Define(usage_, srcConstants.Size(), srcConstants.Size() ? &srcConstants[0] : nullptr);
+		return Define(
+			usage_, 
+			static_cast<uint32_t>(srcConstants.size()), 
+			srcConstants.empty() ? nullptr : srcConstants.data());
 	}
 
-	bool ConstantBuffer::Define(ResourceUsage usage_, size_t numConstants, const Constant* srcConstants)
+	bool ConstantBuffer::Define(ResourceUsage usage_, uint32_t numConstants, const Constant* srcConstants)
 	{
 		ALIMER_PROFILE(DefineConstantBuffer);
 
@@ -146,8 +153,8 @@ namespace Alimer
 			return false;
 		}
 
-		constants.Clear();
-		byteSize = 0;
+		_constants.clear();
+		_byteSize = 0;
 		usage = usage_;
 
 		while (numConstants--)
@@ -155,8 +162,8 @@ namespace Alimer
 			if (srcConstants->type == ELEM_UBYTE4)
 			{
 				LOGERROR("UBYTE4 type is not supported in constant buffers");
-				constants.Clear();
-				byteSize = 0;
+				_constants.clear();
+				_byteSize = 0;
 				return false;
 			}
 
@@ -166,21 +173,21 @@ namespace Alimer
 			newConstant.numElements = srcConstants->numElements;
 			newConstant.elementSize = elementSizes[newConstant.type];
 			// If element crosses 16 byte boundary or is larger than 16 bytes, align to next 16 bytes
-			if ((newConstant.elementSize <= 16 && ((byteSize + newConstant.elementSize - 1) >> 4) != (byteSize >> 4)) ||
-				(newConstant.elementSize > 16 && (byteSize & 15)))
-				byteSize += 16 - (byteSize & 15);
-			newConstant.offset = byteSize;
-			constants.Push(newConstant);
+			if ((newConstant.elementSize <= 16 && ((_byteSize + newConstant.elementSize - 1) >> 4) != (_byteSize >> 4)) ||
+				(newConstant.elementSize > 16 && (_byteSize & 15)))
+				_byteSize += 16 - (_byteSize & 15);
+			newConstant.offset = _byteSize;
+			_constants.push_back(newConstant);
 
-			byteSize += newConstant.elementSize * newConstant.numElements;
+			_byteSize += newConstant.elementSize * newConstant.numElements;
 			++srcConstants;
 		}
 
 		// Align the final buffer size to a multiple of 16 bytes
-		if (byteSize & 15)
-			byteSize += 16 - (byteSize & 15);
+		if (_byteSize & 15)
+			_byteSize += 16 - (_byteSize & 15);
 
-		_shadowData.reset(new uint8_t[byteSize]);
+		_shadowData.reset(new uint8_t[_byteSize]);
 
 		if (usage != USAGE_IMMUTABLE)
 			return Create();
@@ -188,12 +195,12 @@ namespace Alimer
 		return true;
 	}
 
-	bool ConstantBuffer::SetConstant(size_t index, const void* data, size_t numElements)
+	bool ConstantBuffer::SetConstant(uint32_t index, const void* data, uint32_t numElements)
 	{
-		if (index >= constants.Size())
+		if (index >= _constants.size())
 			return false;
 
-		const Constant& constant = constants[index];
+		const Constant& constant = _constants[index];
 
 		if (!numElements || numElements > constant.numElements)
 			numElements = constant.numElements;
@@ -203,16 +210,16 @@ namespace Alimer
 		return true;
 	}
 
-	bool ConstantBuffer::SetConstant(const String& name, const void* data, size_t numElements)
+	bool ConstantBuffer::SetConstant(const String& name, const void* data, uint32_t numElements)
 	{
 		return SetConstant(name.CString(), data, numElements);
 	}
 
-	bool ConstantBuffer::SetConstant(const char* name, const void* data, size_t numElements)
+	bool ConstantBuffer::SetConstant(const char* name, const void* data, uint32_t numElements)
 	{
-		for (size_t i = 0; i < constants.Size(); ++i)
+		for (size_t i = 0; i < _constants.size(); ++i)
 		{
-			if (constants[i].name == name)
+			if (_constants[i].name == name)
 				return SetConstant(i, data, numElements);
 		}
 
@@ -231,29 +238,29 @@ namespace Alimer
 
 	size_t ConstantBuffer::FindConstantIndex(const char* name) const
 	{
-		for (size_t i = 0; i < constants.Size(); ++i)
+		for (size_t i = 0; i < _constants.size(); ++i)
 		{
-			if (constants[i].name == name)
+			if (_constants[i].name == name)
 				return i;
 		}
 
-		return NPOS;
+		return static_cast<uint32_t>(-1);
 	}
 
-	const void* ConstantBuffer::ConstantValue(size_t index, size_t elementIndex) const
+	const void* ConstantBuffer::GetConstantValue(size_t index, uint32_t elementIndex) const
 	{
-		return (index < constants.Size() && elementIndex < constants[index].numElements) ? _shadowData.get() +
-			constants[index].offset + elementIndex * constants[index].elementSize : nullptr;
+		return (index < _constants.size() && elementIndex < _constants[index].numElements) ? _shadowData.get() +
+			_constants[index].offset + elementIndex * _constants[index].elementSize : nullptr;
 	}
 
-	const void* ConstantBuffer::ConstantValue(const String& name, size_t elementIndex) const
+	const void* ConstantBuffer::GetConstantValue(const String& name, uint32_t elementIndex) const
 	{
-		return ConstantValue(FindConstantIndex(name), elementIndex);
+		return GetConstantValue(FindConstantIndex(name), elementIndex);
 	}
 
-	const void* ConstantBuffer::ConstantValue(const char* name, size_t elementIndex) const
+	const void* ConstantBuffer::GetConstantValue(const char* name, uint32_t elementIndex) const
 	{
-		return ConstantValue(FindConstantIndex(name), elementIndex);
+		return GetConstantValue(FindConstantIndex(name), elementIndex);
 	}
 
 }

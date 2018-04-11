@@ -1,14 +1,35 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #pragma once
 
 #include "../AlimerConfig.h"
+#include "../Base/Utils.h"
 #include "../Base/String.h"
 #include "../Math/IntRect.h"
 
 namespace Alimer
 {
-
 	/// Clear rendertarget color.
 	static const unsigned CLEAR_COLOR = 1;
 	/// Clear rendertarget depth.
@@ -19,17 +40,17 @@ namespace Alimer
 	static const unsigned CLEAR_ALL = 7;
 
 	/// Maximum simultaneous vertex buffers.
-	static const size_t MAX_VERTEX_STREAMS = 4;
+	static const uint32_t MAX_VERTEX_STREAMS = 4;
 	/// Maximum simultaneous constant buffers.
-	static const size_t MAX_CONSTANT_BUFFERS = 15;
+	static const uint32_t MAX_CONSTANT_BUFFERS = 15;
 	/// Maximum number of textures in use at once.
-	static const size_t MAX_TEXTURE_UNITS = 16;
+	static const uint32_t MAX_TEXTURE_UNITS = 16;
 	/// Maximum number of textures reserved for materials, starting from 0.
-	static const size_t MAX_MATERIAL_TEXTURE_UNITS = 8;
+	static const uint32_t MAX_MATERIAL_TEXTURE_UNITS = 8;
 	/// Maximum number of color rendertargets in use at once.
-	static const size_t MAX_RENDERTARGETS = 4;
+	static const uint32_t MAX_RENDERTARGETS = 4;
 	/// Number of cube map faces.
-	static const size_t MAX_CUBE_FACES = 6;
+	static const uint32_t MAX_CUBE_FACES = 6;
 
 	/// Disable color write.
 	static const unsigned char COLORMASK_NONE = 0x0;
@@ -211,6 +232,24 @@ namespace Alimer
 		ADDRESS_MIRROR_ONCE
 	};
 
+	enum class BufferUsage : uint32_t
+	{
+		None = 0,
+		Vertex = 0x1,
+		Index = 0x2,
+		Uniform = 0x4,
+		Storage = 0x8,
+		Indirect = 0x10
+	};
+	ALIMER_BITMASK(BufferUsage);
+
+	/// Texture types.
+	enum class IndexType : uint8_t
+	{
+		UInt16 = 0,
+		UInt32
+	};
+
 	/// Description of an element in a vertex declaration.
 	struct ALIMER_API VertexElement
 	{
@@ -256,18 +295,18 @@ namespace Alimer
 		}
 
 		/// Construct with type, name and optional number of elements.
-		Constant(ElementType type_, const String& name_, size_t numElements_ = 1) :
-			type(type_),
-			name(name_),
-			numElements(numElements_)
+		Constant(ElementType type_, const String& name_, uint32_t numElements_ = 1)
+			: type(type_)
+			, name(name_)
+			, numElements(numElements_)
 		{
 		}
 
 		/// Construct with type, name and optional number of elements.
-		Constant(ElementType type_, const char* name_, size_t numElements_ = 1) :
-			type(type_),
-			name(name_),
-			numElements(numElements_)
+		Constant(ElementType type_, const char* name_, uint32_t numElements_ = 1)
+			: type(type_)
+			, name(name_)
+			, numElements(numElements_)
 		{
 		}
 
@@ -276,11 +315,11 @@ namespace Alimer
 		/// Name of constant.
 		String name;
 		/// Number of elements. Default 1.
-		size_t numElements;
+		uint32_t numElements;
 		/// Element size. Filled by ConstantBuffer.
-		size_t elementSize;
+		uint32_t elementSize;
 		/// Offset from the beginning of the buffer. Filled by ConstantBuffer.
-		size_t offset;
+		uint32_t offset;
 	};
 
 	/// Description of a blend mode.
@@ -445,7 +484,7 @@ namespace Alimer
 	};
 
 	/// Vertex element sizes by element type.
-	extern ALIMER_API const size_t elementSizes[];
+	extern ALIMER_API const uint32_t elementSizes[];
 	/// Resource usage names.
 	extern ALIMER_API const char* resourceUsageNames[];
 	/// Element type names.

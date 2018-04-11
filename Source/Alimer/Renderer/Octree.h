@@ -55,7 +55,7 @@ namespace Alimer
 		/// Subdivision level.
 		int level;
 		/// Nodes contained in the octant.
-		Vector<OctreeNode*> nodes;
+		std::vector<OctreeNode*> nodes;
 		/// Child octants.
 		Octant* children[NUM_OCTANTS];
 		/// Parent octant.
@@ -89,26 +89,26 @@ namespace Alimer
 		/// Cancel a pending reinsertion.
 		void CancelUpdate(OctreeNode* node);
 		/// Query for nodes with a raycast and return all results.
-		void Raycast(Vector<RaycastResult>& result, const Ray& ray, unsigned short nodeFlags, float maxDistance = M_INFINITY, unsigned layerMask = LAYERMASK_ALL);
+		void Raycast(std::vector<RaycastResult>& result, const Ray& ray, unsigned short nodeFlags, float maxDistance = M_INFINITY, unsigned layerMask = LAYERMASK_ALL);
 		/// Query for nodes with a raycast and return the closest result.
 		RaycastResult RaycastSingle(const Ray& ray, unsigned short nodeFlags, float maxDistance = M_INFINITY, unsigned layerMask = LAYERMASK_ALL);
 
 		/// Query for nodes using a volume such as frustum or sphere.
-		template <class T> void FindNodes(Vector<OctreeNode*>& result, const T& volume, unsigned short nodeFlags, unsigned layerMask = LAYERMASK_ALL) const
+		template <class T> void FindNodes(std::vector<OctreeNode*>& result, const T& volume, unsigned short nodeFlags, unsigned layerMask = LAYERMASK_ALL) const
 		{
 			ALIMER_PROFILE(QueryOctree);
 			CollectNodes(result, &root, volume, nodeFlags, layerMask);
 		}
 
 		/// Query for nodes using a volume such as frustum or sphere. Invoke a function for each octant.
-		template <class T> void FindNodes(const T& volume, void(*callback)(Vector<OctreeNode*>::ConstIterator, Vector<OctreeNode*>::ConstIterator, bool)) const
+		template <class T> void FindNodes(const T& volume, void(*callback)(std::vector<OctreeNode*>::const_iterator, std::vector<OctreeNode*>::const_iterator, bool)) const
 		{
-			PROFILE(QueryOctree);
+			ALIMER_PROFILE(QueryOctree);
 			CollectNodesCallback(&root, volume, callback);
 		}
 
 		/// Query for nodes using a volume such as frustum or sphere. Invoke a member function for each octant.
-		template <class T, class U> void FindNodes(const T& volume, U* object, void (U::*callback)(Vector<OctreeNode*>::ConstIterator, Vector<OctreeNode*>::ConstIterator, bool)) const
+		template <class T, class U> void FindNodes(const T& volume, U* object, void (U::*callback)(std::vector<OctreeNode*>::const_iterator, std::vector<OctreeNode*>::const_iterator, bool)) const
 		{
 			ALIMER_PROFILE(QueryOctree);
 			CollectNodesMemberCallback(&root, volume, object, callback);
@@ -134,16 +134,16 @@ namespace Alimer
 		/// Delete a child octant hierarchy. If not deleting the octree for good, moves any nodes back to the root octant.
 		void DeleteChildOctants(Octant* octant, bool deletingOctree);
 		/// Get all nodes from an octant recursively.
-		void CollectNodes(Vector<OctreeNode*>& result, const Octant* octant) const;
+		void CollectNodes(std::vector<OctreeNode*>& result, const Octant* octant) const;
 		/// Get all visible nodes matching flags from an octant recursively.
-		void CollectNodes(Vector<OctreeNode*>& result, const Octant* octant, unsigned short nodeFlags, unsigned layerMask) const;
+		void CollectNodes(std::vector<OctreeNode*>& result, const Octant* octant, unsigned short nodeFlags, unsigned layerMask) const;
 		/// Get all visible nodes matching flags along a ray.
-		void CollectNodes(Vector<RaycastResult>& result, const Octant* octant, const Ray& ray, unsigned short nodeFlags, float maxDistance, unsigned layerMask) const;
+		void CollectNodes(std::vector<RaycastResult>& result, const Octant* octant, const Ray& ray, unsigned short nodeFlags, float maxDistance, unsigned layerMask) const;
 		/// Get all visible nodes matching flags that could be potential raycast hits.
-		void CollectNodes(Vector<Pair<OctreeNode*, float> >& result, const Octant* octant, const Ray& ray, unsigned short nodeFlags, float maxDistance, unsigned layerMask) const;
+		void CollectNodes(std::vector<std::pair<OctreeNode*, float> >& result, const Octant* octant, const Ray& ray, unsigned short nodeFlags, float maxDistance, unsigned layerMask) const;
 
 		/// Collect nodes matching flags using a volume such as frustum or sphere.
-		template <class T> void CollectNodes(Vector<OctreeNode*>& result, const Octant* octant, const T& volume, unsigned short nodeFlags, unsigned layerMask) const
+		template <class T> void CollectNodes(std::vector<OctreeNode*>& result, const Octant* octant, const T& volume, unsigned short nodeFlags, unsigned layerMask) const
 		{
 			Intersection res = volume.IsInside(octant->cullingBox);
 			if (res == OUTSIDE)
@@ -154,13 +154,15 @@ namespace Alimer
 				CollectNodes(result, octant, nodeFlags, layerMask);
 			else
 			{
-				const Vector<OctreeNode*>& octantNodes = octant->nodes;
-				for (auto it = octantNodes.Begin(); it != octantNodes.End(); ++it)
+				const std::vector<OctreeNode*>& octantNodes = octant->nodes;
+				for (auto it = octantNodes.begin(); it != octantNodes.end(); ++it)
 				{
 					OctreeNode* node = *it;
 					if ((node->Flags() & nodeFlags) == nodeFlags && (node->LayerMask() & layerMask) &&
 						volume.IsInsideFast(node->WorldBoundingBox()) != OUTSIDE)
-						result.Push(node);
+					{
+						result.push_back(node);
+					}
 				}
 
 				for (size_t i = 0; i < NUM_OCTANTS; ++i)
@@ -172,10 +174,11 @@ namespace Alimer
 		}
 
 		/// Collect nodes from octant and child octants. Invoke a function for each octant.
-		void CollectNodesCallback(const Octant* octant, void(*callback)(Vector<OctreeNode*>::ConstIterator, Vector<OctreeNode*>::ConstIterator, bool)) const
+		void CollectNodesCallback(const Octant* octant,
+			void(*callback)(std::vector<OctreeNode*>::const_iterator, std::vector<OctreeNode*>::const_iterator, bool)) const
 		{
-			const Vector<OctreeNode*>& octantNodes = octant->nodes;
-			callback(octantNodes.Begin(), octantNodes.End(), true);
+			const std::vector<OctreeNode*>& octantNodes = octant->nodes;
+			callback(octantNodes.begin(), octantNodes.end(), true);
 
 			for (size_t i = 0; i < NUM_OCTANTS; ++i)
 			{
@@ -185,7 +188,7 @@ namespace Alimer
 		}
 
 		/// Collect nodes using a volume such as frustum or sphere. Invoke a function for each octant.
-		template <class T> void CollectNodesCallback(const Octant* octant, const T& volume, void(*callback)(Vector<OctreeNode*>::ConstIterator, Vector<OctreeNode*>::ConstIterator, bool)) const
+		template <class T> void CollectNodesCallback(const Octant* octant, const T& volume, void(*callback)(std::vector<OctreeNode*>::const_iterator, std::vector<OctreeNode*>::const_iterator, bool)) const
 		{
 			Intersection res = volume.IsInside(octant->cullingBox);
 			if (res == OUTSIDE)
@@ -196,8 +199,8 @@ namespace Alimer
 				CollectNodesCallback(octant, callback);
 			else
 			{
-				const Vector<OctreeNode*>& octantNodes = octant->nodes;
-				callback(octantNodes.Begin(), octantNodes.End(), false);
+				const std::vector<OctreeNode*>& octantNodes = octant->nodes;
+				callback(octantNodes.begin(), octantNodes.end(), false);
 
 				for (size_t i = 0; i < NUM_OCTANTS; ++i)
 				{
@@ -208,10 +211,10 @@ namespace Alimer
 		}
 
 		/// Collect nodes from octant and child octants. Invoke a member function for each octant.
-		template <class T> void CollectNodesMemberCallback(const Octant* octant, T* object, void (T::*callback)(Vector<OctreeNode*>::ConstIterator, Vector<OctreeNode*>::ConstIterator, bool)) const
+		template <class T> void CollectNodesMemberCallback(const Octant* octant, T* object, void (T::*callback)(std::vector<OctreeNode*>::const_iterator, std::vector<OctreeNode*>::const_iterator, bool)) const
 		{
-			const Vector<OctreeNode*>& octantNodes = octant->nodes;
-			(object->*callback)(octantNodes.Begin(), octantNodes.End(), true);
+			const std::vector<OctreeNode*>& octantNodes = octant->nodes;
+			(object->*callback)(octantNodes.begin(), octantNodes.end(), true);
 
 			for (size_t i = 0; i < NUM_OCTANTS; ++i)
 			{
@@ -221,7 +224,7 @@ namespace Alimer
 		}
 
 		/// Collect nodes using a volume such as frustum or sphere. Invoke a member function for each octant.
-		template <class T, class U> void CollectNodesMemberCallback(const Octant* octant, const T& volume, U* object, void (U::*callback)(Vector<OctreeNode*>::ConstIterator, Vector<OctreeNode*>::ConstIterator, bool)) const
+		template <class T, class U> void CollectNodesMemberCallback(const Octant* octant, const T& volume, U* object, void (U::*callback)(std::vector<OctreeNode*>::const_iterator, std::vector<OctreeNode*>::const_iterator, bool)) const
 		{
 			Intersection res = volume.IsInside(octant->cullingBox);
 			if (res == OUTSIDE)
@@ -232,8 +235,8 @@ namespace Alimer
 				CollectNodesMemberCallback(octant, object, callback);
 			else
 			{
-				const Vector<OctreeNode*>& octantNodes = octant->nodes;
-				(object->*callback)(octantNodes.Begin(), octantNodes.End(), false);
+				const std::vector<OctreeNode*>& octantNodes = octant->nodes;
+				(object->*callback)(octantNodes.begin(), octantNodes.end(), false);
 
 				for (size_t i = 0; i < NUM_OCTANTS; ++i)
 				{
@@ -244,11 +247,11 @@ namespace Alimer
 		}
 
 		/// Queue of nodes to be reinserted.
-		Vector<OctreeNode*> updateQueue;
+		std::vector<OctreeNode*> updateQueue;
 		/// RaycastSingle initial coarse result.
-		Vector<Pair<OctreeNode*, float> > initialRes;
+		std::vector<std::pair<OctreeNode*, float> > initialRes;
 		/// RaycastSingle final result.
-		Vector<RaycastResult> finalRes;
+		std::vector<RaycastResult> finalRes;
 		/// Allocator for child octants.
 		Allocator<Octant> allocator;
 		/// Root octant.

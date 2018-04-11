@@ -1,5 +1,6 @@
 // For conditions of distribution and use, see copyright notice in License.txt
 
+#include "../Base/Sort.h"
 #include "../Debug/Log.h"
 #include "../Debug/Profiler.h"
 #include "../Resource/ResourceCache.h"
@@ -106,7 +107,7 @@ namespace Alimer
 	{
 		String ret;
 		Vector<String> definesVec = defines.ToUpper().Split(' ');
-		Sort(definesVec.Begin(), definesVec.End());
+		Alimer::Sort(definesVec.Begin(), definesVec.End());
 
 		for (auto it = definesVec.Begin(); it != definesVec.End(); ++it)
 		{

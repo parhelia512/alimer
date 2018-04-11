@@ -71,8 +71,6 @@ int main()
     
     printf("Size of String: %d\n", sizeof(String));
     printf("Size of Vector: %d\n", sizeof(Vector<int>));
-    printf("Size of List: %d\n", sizeof(List<int>));
-    printf("Size of HashMap: %d\n", sizeof(HashMap<int, int>));
     printf("Size of RefCounted: %d\n", sizeof(RefCounted));
 
     {
@@ -143,36 +141,6 @@ int main()
         printf("Counted vector items %d, sum: %d\n", count, sum);
         printf("Processing took %d usec\n", usec);
     }
-
-    {
-        printf("\nTesting List\n");
-        HiresTimer t;
-        List<int> list;
-        SetRandomSeed(0);
-        for (size_t i = 0; i < NUM_ITEMS; ++i)
-            list.Push(Rand());
-        int sum = 0;
-        int count = 0;
-        for (auto it = list.Begin(); it != list.End(); ++it)
-        {
-            sum += *it;
-            ++count;
-        }
-        int usec = (int)t.ElapsedUSec();
-        printf("Size: %d\n", list.Size());
-        printf("Counted list items %d, sum: %d\n", count, sum);
-        printf("Processing took %d usec\n", usec);
-
-        printf("\nTesting List insertion\n");
-        List<int> list2;
-        List<int> list3;
-        for (int i = 0; i < 10; ++i)
-            list3.Push(i);
-        list2.Insert(list2.End(), list3);
-        for (auto it = list2.Begin(); it != list2.End(); ++it)
-            printf("%d ", *it);
-        printf("\n");
-    }
     
     {
         printf("\nTesting String\n");
@@ -189,52 +157,6 @@ int main()
         printf(test2.CString());
         int usec = (int)t.ElapsedUSec();
         printf("Processing took %d usec\n", usec);
-    }
-    
-    {
-        printf("\nTesting HashSet\n");
-        HiresTimer t;
-        size_t found = 0;
-        unsigned sum = 0;
-        HashSet<int> testHashSet;
-        srand(0);
-        found = 0;
-        sum = 0;
-        printf("Insert, search and iteration, %d keys\n", NUM_ITEMS);
-        for (size_t i = 0; i < NUM_ITEMS; ++i)
-        {
-            int number = (rand() & 32767);
-            testHashSet.Insert(number);
-        }
-        for (int i = 0; i < 32768; ++i)
-        {
-            if (testHashSet.Find(i) != testHashSet.End())
-                ++found;
-        }
-        for (auto it = testHashSet.Begin(); it != testHashSet.End(); ++it)
-            sum += *it;
-        int usec = (int)t.ElapsedUSec();
-        printf("Set size and sum: %d %d\n", testHashSet.Size(), sum);
-        printf("Processing took %d usec\n", usec);
-    }
-
-    {
-        printf("\nTesting HashMap\n");
-        HashMap<int, int> testHashMap;
-
-        for (int i = 0; i < 10; ++i)
-            testHashMap.Insert(MakePair(i, rand() & 32767));
-
-        printf("Keys: ");
-        Vector<int> keys = testHashMap.Keys();
-        for (size_t i = 0; i < keys.Size(); ++i)
-            printf("%d ", keys[i]);
-        printf("\n");
-        printf("Values: ");
-        Vector<int> values = testHashMap.Values();
-        for (size_t i = 0; i < values.Size(); ++i)
-            printf("%d ", values[i]);
-        printf("\n");
     }
 
     return 0;

@@ -21,61 +21,38 @@
 // THE SOFTWARE.
 //
 
-#include "../Debug/Log.h"
-#include "../Debug/Profiler.h"
-#include "IndexBuffer.h"
+#pragma once
 
-namespace Alimer
-{
-	IndexBuffer::IndexBuffer()
-		: Buffer(BufferUsage::Index)
-	{
+#include <d3d11.h>
 
-	}
+#pragma warning(push)
+#pragma warning(disable : 4005)
 
-	IndexBuffer::~IndexBuffer()
-	{
-		Release();
-	}
+#ifndef WIN32_LEAN_AND_MEAN
+#	define WIN32_LEAN_AND_MEAN
+#endif
 
-	bool IndexBuffer::Define(
-		ResourceUsage usage,
-		uint32_t indexCount, 
-		IndexType indexType,
-		bool useShadowData,
-		const void* data)
-	{
-		ALIMER_PROFILE(DefineIndexBuffer);
+#ifndef NOMINMAX
+#	define NOMINMAX
+#endif 
 
-		Release();
+#define NODRAWTEXT
+#define NOGDI
+#define NOBITMAP
+#define NOMCX
+#define NOSERVICE
+#define NOHELP
+#pragma warning(pop)
 
-		if (!indexCount)
-		{
-			LOGERROR("Can not define index buffer with no indices");
-			return false;
-		}
+#include <windows.h>
 
-		if (usage == USAGE_RENDERTARGET)
-		{
-			LOGERROR("Rendertarget usage is illegal for index buffers");
-			return false;
-		}
-		if (usage == USAGE_IMMUTABLE && !data)
-		{
-			LOGERROR("Immutable index buffer must define initial data");
-			return false;
-		}
-		if (indexType != IndexType::UInt16
-			&& indexType != IndexType::UInt32)
-		{
-			LOGERROR("Index type must be UInt16 or UInt32");
-			return false;
-		}
+#ifndef _WIN32_WINNT_WIN10
+#	define _WIN32_WINNT_WIN10 0x0A00
+#endif
 
-		_stride = indexType == IndexType::UInt16 ? 2 : 4;
-		_size = indexCount * _stride;
-		_resourceUsage = usage;
-
-		return Buffer::Create(useShadowData, data);
-	}
-}
+#if defined(_XBOX_ONE) && defined(_TITLE)
+#	include <d3d11_x.h>
+#	define DCOMMON_H_INCLUDED
+#else
+#	include <d3d11_1.h>
+#endif

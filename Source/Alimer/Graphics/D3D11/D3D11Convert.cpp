@@ -21,61 +21,9 @@
 // THE SOFTWARE.
 //
 
-#include "../Debug/Log.h"
-#include "../Debug/Profiler.h"
-#include "IndexBuffer.h"
+#include "D3D11Convert.h"
 
 namespace Alimer
 {
-	IndexBuffer::IndexBuffer()
-		: Buffer(BufferUsage::Index)
-	{
-
-	}
-
-	IndexBuffer::~IndexBuffer()
-	{
-		Release();
-	}
-
-	bool IndexBuffer::Define(
-		ResourceUsage usage,
-		uint32_t indexCount, 
-		IndexType indexType,
-		bool useShadowData,
-		const void* data)
-	{
-		ALIMER_PROFILE(DefineIndexBuffer);
-
-		Release();
-
-		if (!indexCount)
-		{
-			LOGERROR("Can not define index buffer with no indices");
-			return false;
-		}
-
-		if (usage == USAGE_RENDERTARGET)
-		{
-			LOGERROR("Rendertarget usage is illegal for index buffers");
-			return false;
-		}
-		if (usage == USAGE_IMMUTABLE && !data)
-		{
-			LOGERROR("Immutable index buffer must define initial data");
-			return false;
-		}
-		if (indexType != IndexType::UInt16
-			&& indexType != IndexType::UInt32)
-		{
-			LOGERROR("Index type must be UInt16 or UInt32");
-			return false;
-		}
-
-		_stride = indexType == IndexType::UInt16 ? 2 : 4;
-		_size = indexCount * _stride;
-		_resourceUsage = usage;
-
-		return Buffer::Create(useShadowData, data);
-	}
+	
 }

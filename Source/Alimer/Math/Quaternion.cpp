@@ -1,4 +1,25 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #include "../Base/String.h"
 #include "Quaternion.h"
@@ -6,296 +27,293 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "../Debug/DebugNew.h"
-
 namespace Alimer
 {
+	const Quaternion Quaternion::IDENTITY(0.0f, 0.0f, 0.0f, 1.0f);
 
-const Quaternion Quaternion::IDENTITY(1.0f, 0.0f, 0.0f, 0.0f);
+	void Quaternion::FromAngleAxis(float angle, const Vector3& axis)
+	{
+		Vector3 normAxis = axis.Normalized();
+		angle *= M_DEGTORAD_2;
+		float sinAngle = sinf(angle);
+		float cosAngle = cosf(angle);
 
-void Quaternion::FromAngleAxis(float angle, const Vector3& axis)
-{
-    Vector3 normAxis = axis.Normalized();
-    angle *= M_DEGTORAD_2;
-    float sinAngle = sinf(angle);
-    float cosAngle = cosf(angle);
-    
-    w = cosAngle;
-    x = normAxis.x * sinAngle;
-    y = normAxis.y * sinAngle;
-    z = normAxis.z * sinAngle;
-}
+		x = normAxis.x * sinAngle;
+		y = normAxis.y * sinAngle;
+		z = normAxis.z * sinAngle;
+		w = cosAngle;
+	}
 
-void Quaternion::FromEulerAngles(float x_, float y_, float z_)
-{
-    // Order of rotations: Z first, then X, then Y (mimics typical FPS camera with gimbal lock at top/bottom)
-    x_ *= M_DEGTORAD_2;
-    y_ *= M_DEGTORAD_2;
-    z_ *= M_DEGTORAD_2;
-    float sinX = sinf(x_);
-    float cosX = cosf(x_);
-    float sinY = sinf(y_);
-    float cosY = cosf(y_);
-    float sinZ = sinf(z_);
-    float cosZ = cosf(z_);
-    
-    w = cosY * cosX * cosZ + sinY * sinX * sinZ;
-    x = cosY * sinX * cosZ + sinY * cosX * sinZ;
-    y = sinY * cosX * cosZ - cosY * sinX * sinZ;
-    z = cosY * cosX * sinZ - sinY * sinX * cosZ;
-}
+	void Quaternion::FromEulerAngles(float x_, float y_, float z_)
+	{
+		// Order of rotations: Z first, then X, then Y (mimics typical FPS camera with gimbal lock at top/bottom)
+		x_ *= M_DEGTORAD_2;
+		y_ *= M_DEGTORAD_2;
+		z_ *= M_DEGTORAD_2;
+		float sinX = sinf(x_);
+		float cosX = cosf(x_);
+		float sinY = sinf(y_);
+		float cosY = cosf(y_);
+		float sinZ = sinf(z_);
+		float cosZ = cosf(z_);
 
-void Quaternion::FromRotationTo(const Vector3& start, const Vector3& end)
-{
-    Vector3 normStart = start.Normalized();
-    Vector3 normEnd = end.Normalized();
-    float d = normStart.DotProduct(normEnd);
-    
-    if (d > -1.0f + M_EPSILON)
-    {
-        Vector3 c = normStart.CrossProduct(normEnd);
-        float s = sqrtf((1.0f + d) * 2.0f);
-        float invS = 1.0f / s;
-        
-        x = c.x * invS;
-        y = c.y * invS;
-        z = c.z * invS;
-        w = 0.5f * s;
-    }
-    else
-    {
-        Vector3 axis = Vector3::RIGHT.CrossProduct(normStart);
-        if (axis.Length() < M_EPSILON)
-            axis = Vector3::UP.CrossProduct(normStart);
-        
-        FromAngleAxis(180.f, axis);
-    }
-}
+		x = cosY * sinX * cosZ + sinY * cosX * sinZ;
+		y = sinY * cosX * cosZ - cosY * sinX * sinZ;
+		z = cosY * cosX * sinZ - sinY * sinX * cosZ;
+		w = cosY * cosX * cosZ + sinY * sinX * sinZ;
+	}
 
-void Quaternion::FromAxes(const Vector3& xAxis, const Vector3& yAxis, const Vector3& zAxis)
-{
-    Matrix3 matrix(
-        xAxis.x, yAxis.x, zAxis.x,
-        xAxis.y, yAxis.y, zAxis.y,
-        xAxis.z, yAxis.z, zAxis.z
-    );
-    
-    FromRotationMatrix(matrix);
-}
+	void Quaternion::FromRotationTo(const Vector3& start, const Vector3& end)
+	{
+		Vector3 normStart = start.Normalized();
+		Vector3 normEnd = end.Normalized();
+		float d = normStart.DotProduct(normEnd);
 
-void Quaternion::FromRotationMatrix(const Matrix3& matrix)
-{
-    float t = matrix.m00 + matrix.m11 + matrix.m22;
-    
-    if (t > 0.0f)
-    {
-        float invS = 0.5f / sqrtf(1.0f + t);
-        
-        x = (matrix.m21 - matrix.m12) * invS;
-        y = (matrix.m02 - matrix.m20) * invS;
-        z = (matrix.m10 - matrix.m01) * invS;
-        w = 0.25f / invS;
-    }
-    else
-    {
-        if (matrix.m00 > matrix.m11 && matrix.m00 > matrix.m22)
-        {
-            float invS = 0.5f / sqrtf(1.0f + matrix.m00 - matrix.m11 - matrix.m22);
-            
-            x = 0.25f / invS;
-            y = (matrix.m01 + matrix.m10) * invS;
-            z = (matrix.m20 + matrix.m02) * invS;
-            w = (matrix.m21 - matrix.m12) * invS;
-        }
-        else if (matrix.m11 > matrix.m22)
-        {
-            float invS = 0.5f / sqrtf(1.0f + matrix.m11 - matrix.m00 - matrix.m22);
-            
-            x = (matrix.m01 + matrix.m10) * invS;
-            y = 0.25f / invS;
-            z = (matrix.m12 + matrix.m21) * invS;
-            w = (matrix.m02 - matrix.m20) * invS;
-        }
-        else
-        {
-            float invS = 0.5f / sqrtf(1.0f + matrix.m22 - matrix.m00 - matrix.m11);
-            
-            x = (matrix.m02 + matrix.m20) * invS;
-            y = (matrix.m12 + matrix.m21) * invS;
-            z = 0.25f / invS;
-            w = (matrix.m10 - matrix.m01) * invS;
-        }
-    }
-}
+		if (d > -1.0f + M_EPSILON)
+		{
+			Vector3 c = normStart.CrossProduct(normEnd);
+			float s = sqrtf((1.0f + d) * 2.0f);
+			float invS = 1.0f / s;
 
-bool Quaternion::FromLookRotation(const Vector3& direction, const Vector3& upDirection)
-{
-    Quaternion ret;
-    Vector3 forward = direction.Normalized();
+			x = c.x * invS;
+			y = c.y * invS;
+			z = c.z * invS;
+			w = 0.5f * s;
+		}
+		else
+		{
+			Vector3 axis = Vector3::RIGHT.CrossProduct(normStart);
+			if (axis.Length() < M_EPSILON)
+				axis = Vector3::UP.CrossProduct(normStart);
 
-    Vector3 v = forward.CrossProduct(upDirection);
-    // If direction & upDirection are parallel and crossproduct becomes zero, use FromRotationTo() fallback
-    if (v.LengthSquared() >= M_EPSILON)
-    {
-        v.Normalize();
-        Vector3 up = v.CrossProduct(forward);
-        Vector3 right = up.CrossProduct(forward);
-        ret.FromAxes(right, up, forward);
-    }
-    else
-        ret.FromRotationTo(Vector3::FORWARD, forward);
+			FromAngleAxis(180.f, axis);
+		}
+	}
 
-    if (!ret.IsNaN())
-    {
-        (*this) = ret;
-        return true;
-    }
-    else
-        return false;
-}
+	void Quaternion::FromAxes(const Vector3& xAxis, const Vector3& yAxis, const Vector3& zAxis)
+	{
+		Matrix3 matrix(
+			xAxis.x, yAxis.x, zAxis.x,
+			xAxis.y, yAxis.y, zAxis.y,
+			xAxis.z, yAxis.z, zAxis.z
+		);
+
+		FromRotationMatrix(matrix);
+	}
+
+	void Quaternion::FromRotationMatrix(const Matrix3& matrix)
+	{
+		float t = matrix.m00 + matrix.m11 + matrix.m22;
+
+		if (t > 0.0f)
+		{
+			float invS = 0.5f / sqrtf(1.0f + t);
+
+			x = (matrix.m21 - matrix.m12) * invS;
+			y = (matrix.m02 - matrix.m20) * invS;
+			z = (matrix.m10 - matrix.m01) * invS;
+			w = 0.25f / invS;
+		}
+		else
+		{
+			if (matrix.m00 > matrix.m11 && matrix.m00 > matrix.m22)
+			{
+				float invS = 0.5f / sqrtf(1.0f + matrix.m00 - matrix.m11 - matrix.m22);
+
+				x = 0.25f / invS;
+				y = (matrix.m01 + matrix.m10) * invS;
+				z = (matrix.m20 + matrix.m02) * invS;
+				w = (matrix.m21 - matrix.m12) * invS;
+			}
+			else if (matrix.m11 > matrix.m22)
+			{
+				float invS = 0.5f / sqrtf(1.0f + matrix.m11 - matrix.m00 - matrix.m22);
+
+				x = (matrix.m01 + matrix.m10) * invS;
+				y = 0.25f / invS;
+				z = (matrix.m12 + matrix.m21) * invS;
+				w = (matrix.m02 - matrix.m20) * invS;
+			}
+			else
+			{
+				float invS = 0.5f / sqrtf(1.0f + matrix.m22 - matrix.m00 - matrix.m11);
+
+				x = (matrix.m02 + matrix.m20) * invS;
+				y = (matrix.m12 + matrix.m21) * invS;
+				z = 0.25f / invS;
+				w = (matrix.m10 - matrix.m01) * invS;
+			}
+		}
+	}
+
+	bool Quaternion::FromLookRotation(const Vector3& direction, const Vector3& upDirection)
+	{
+		Quaternion ret;
+		Vector3 forward = direction.Normalized();
+
+		Vector3 v = forward.CrossProduct(upDirection);
+		// If direction & upDirection are parallel and crossproduct becomes zero, use FromRotationTo() fallback
+		if (v.LengthSquared() >= M_EPSILON)
+		{
+			v.Normalize();
+			Vector3 up = v.CrossProduct(forward);
+			Vector3 right = up.CrossProduct(forward);
+			ret.FromAxes(right, up, forward);
+		}
+		else
+			ret.FromRotationTo(Vector3::FORWARD, forward);
+
+		if (!ret.IsNaN())
+		{
+			(*this) = ret;
+			return true;
+		}
+		else
+			return false;
+	}
 
 
-bool Quaternion::FromString(const String& str)
-{
-    return FromString(str.CString());
-}
+	bool Quaternion::FromString(const String& str)
+	{
+		return FromString(str.CString());
+	}
 
-bool Quaternion::FromString(const char* str)
-{
-    size_t elements = String::CountElements(str, ' ');
-    if (elements < 3)
-        return false;
-    
-    char* ptr = (char*)str;
-    if (elements < 4)
-    {
-        // 3 coords specified: conversion from Euler angles
-        float x_, y_, z_;
-        x_ = (float)strtod(ptr, &ptr);
-        y_ = (float)strtod(ptr, &ptr);
-        z_ = (float)strtod(ptr, &ptr);
-        FromEulerAngles(x_, y_, z_);
-    }
-    else
-    {
-        // 4 coords specified: full quaternion
-        w = (float)strtod(ptr, &ptr);
-        x = (float)strtod(ptr, &ptr);
-        y = (float)strtod(ptr, &ptr);
-        z = (float)strtod(ptr, &ptr);
-    }
-    
-    return true;
-}
+	bool Quaternion::FromString(const char* str)
+	{
+		size_t elements = String::CountElements(str, ' ');
+		if (elements < 3)
+			return false;
 
-Vector3 Quaternion::EulerAngles() const
-{
-    // Derivation from http://www.geometrictools.com/Documentation/EulerAngles.pdf
-    // Order of rotations: Z first, then X, then Y
-    float check = 2.0f * (-y * z + w * x);
-    
-    if (check < -0.995f)
-    {
-        return Vector3(
-            -90.0f,
-            0.0f,
-            -atan2f(2.0f * (x * z - w * y), 1.0f - 2.0f * (y * y + z * z)) * M_RADTODEG
-        );
-    }
-    else if (check > 0.995f)
-    {
-        return Vector3(
-            90.0f,
-            0.0f,
-            atan2f(2.0f * (x * z - w * y), 1.0f - 2.0f * (y * y + z * z)) * M_RADTODEG
-        );
-    }
-    else
-    {
-        return Vector3(
-            asinf(check) * M_RADTODEG,
-            atan2f(2.0f * (x * z + w * y), 1.0f - 2.0f * (x * x + y * y)) * M_RADTODEG,
-            atan2f(2.0f * (x * y + w * z), 1.0f - 2.0f * (x * x + z * z)) * M_RADTODEG
-        );
-    }
-}
+		char* ptr = (char*)str;
+		if (elements < 4)
+		{
+			// 3 coords specified: conversion from Euler angles
+			float x_, y_, z_;
+			x_ = (float)strtod(ptr, &ptr);
+			y_ = (float)strtod(ptr, &ptr);
+			z_ = (float)strtod(ptr, &ptr);
+			FromEulerAngles(x_, y_, z_);
+		}
+		else
+		{
+			// 4 coords specified: full quaternion
+			w = (float)strtod(ptr, &ptr);
+			x = (float)strtod(ptr, &ptr);
+			y = (float)strtod(ptr, &ptr);
+			z = (float)strtod(ptr, &ptr);
+		}
 
-float Quaternion::YawAngle() const
-{
-    return EulerAngles().y;
-}
+		return true;
+	}
 
-float Quaternion::PitchAngle() const
-{
-    return EulerAngles().x;
-}
+	Vector3 Quaternion::EulerAngles() const
+	{
+		// Derivation from http://www.geometrictools.com/Documentation/EulerAngles.pdf
+		// Order of rotations: Z first, then X, then Y
+		float check = 2.0f * (-y * z + w * x);
 
-float Quaternion::RollAngle() const
-{
-    return EulerAngles().z;
-}
+		if (check < -0.995f)
+		{
+			return Vector3(
+				-90.0f,
+				0.0f,
+				-atan2f(2.0f * (x * z - w * y), 1.0f - 2.0f * (y * y + z * z)) * M_RADTODEG
+			);
+		}
+		else if (check > 0.995f)
+		{
+			return Vector3(
+				90.0f,
+				0.0f,
+				atan2f(2.0f * (x * z - w * y), 1.0f - 2.0f * (y * y + z * z)) * M_RADTODEG
+			);
+		}
+		else
+		{
+			return Vector3(
+				asinf(check) * M_RADTODEG,
+				atan2f(2.0f * (x * z + w * y), 1.0f - 2.0f * (x * x + y * y)) * M_RADTODEG,
+				atan2f(2.0f * (x * y + w * z), 1.0f - 2.0f * (x * x + z * z)) * M_RADTODEG
+			);
+		}
+	}
 
-Matrix3 Quaternion::RotationMatrix() const
-{
-    return Matrix3(
-        1.0f - 2.0f * y * y - 2.0f * z * z,
-        2.0f * x * y - 2.0f * w * z,
-        2.0f * x * z + 2.0f * w * y,
-        2.0f * x * y + 2.0f * w * z,
-        1.0f - 2.0f * x * x - 2.0f * z * z,
-        2.0f * y * z - 2.0f * w * x,
-        2.0f * x * z - 2.0f * w * y,
-        2.0f * y * z + 2.0f * w * x,
-        1.0f - 2.0f * x * x - 2.0f * y * y
-    );
-}
+	float Quaternion::YawAngle() const
+	{
+		return EulerAngles().y;
+	}
 
-Quaternion Quaternion::Slerp(Quaternion rhs, float t) const
-{
-    float cosAngle = DotProduct(rhs);
-    // Enable shortest path rotation
-    if (cosAngle < 0.0f)
-    {
-        cosAngle = -cosAngle;
-        rhs = -rhs;
-    }
-    
-    float angle = acosf(cosAngle);
-    float sinAngle = sinf(angle);
-    float t1, t2;
-    
-    if (sinAngle > 0.001f)
-    {
-        float invSinAngle = 1.0f / sinAngle;
-        t1 = sinf((1.0f - t) * angle) * invSinAngle;
-        t2 = sinf(t * angle) * invSinAngle;
-    }
-    else
-    {
-        t1 = 1.0f - t;
-        t2 = t;
-    }
-    
-    return *this * t1 + rhs * t2;
-}
+	float Quaternion::PitchAngle() const
+	{
+		return EulerAngles().x;
+	}
 
-Quaternion Quaternion::Nlerp(Quaternion rhs, float t, bool shortestPath) const
-{
-    Quaternion result;
-    float fCos = DotProduct(rhs);
-    if (fCos < 0.0f && shortestPath)
-        result = (*this) + (((-rhs) - (*this)) * t);
-    else
-        result = (*this) + ((rhs - (*this)) * t);
-    result.Normalize();
-    return result;
-}
+	float Quaternion::RollAngle() const
+	{
+		return EulerAngles().z;
+	}
 
-String Quaternion::ToString() const
-{
-    char tempBuffer[CONVERSION_BUFFER_LENGTH];
-    sprintf(tempBuffer, "%g %g %g %g", w, x, y, z);
-    return String(tempBuffer);
-}
+	Matrix3 Quaternion::RotationMatrix() const
+	{
+		return Matrix3(
+			1.0f - 2.0f * y * y - 2.0f * z * z,
+			2.0f * x * y - 2.0f * w * z,
+			2.0f * x * z + 2.0f * w * y,
+			2.0f * x * y + 2.0f * w * z,
+			1.0f - 2.0f * x * x - 2.0f * z * z,
+			2.0f * y * z - 2.0f * w * x,
+			2.0f * x * z - 2.0f * w * y,
+			2.0f * y * z + 2.0f * w * x,
+			1.0f - 2.0f * x * x - 2.0f * y * y
+		);
+	}
+
+	Quaternion Quaternion::Slerp(Quaternion rhs, float t) const
+	{
+		float cosAngle = DotProduct(rhs);
+		// Enable shortest path rotation
+		if (cosAngle < 0.0f)
+		{
+			cosAngle = -cosAngle;
+			rhs = -rhs;
+		}
+
+		float angle = acosf(cosAngle);
+		float sinAngle = sinf(angle);
+		float t1, t2;
+
+		if (sinAngle > 0.001f)
+		{
+			float invSinAngle = 1.0f / sinAngle;
+			t1 = sinf((1.0f - t) * angle) * invSinAngle;
+			t2 = sinf(t * angle) * invSinAngle;
+		}
+		else
+		{
+			t1 = 1.0f - t;
+			t2 = t;
+		}
+
+		return *this * t1 + rhs * t2;
+	}
+
+	Quaternion Quaternion::Nlerp(Quaternion rhs, float t, bool shortestPath) const
+	{
+		Quaternion result;
+		float fCos = DotProduct(rhs);
+		if (fCos < 0.0f && shortestPath)
+			result = (*this) + (((-rhs) - (*this)) * t);
+		else
+			result = (*this) + ((rhs - (*this)) * t);
+		result.Normalize();
+		return result;
+	}
+
+	String Quaternion::ToString() const
+	{
+		char tempBuffer[CONVERSION_BUFFER_LENGTH];
+		sprintf(tempBuffer, "%g %g %g %g", w, x, y, z);
+		return String(tempBuffer);
+	}
 
 }

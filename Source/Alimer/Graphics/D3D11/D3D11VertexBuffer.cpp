@@ -23,7 +23,7 @@
 
 #include "../../Debug/Log.h"
 #include "../../Debug/Profiler.h"
-#include "D3D11Graphics.h"
+#include "../Graphics.h"
 #include "D3D11VertexBuffer.h"
 
 #include <d3d11.h>

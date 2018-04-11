@@ -21,14 +21,12 @@
 // THE SOFTWARE.
 //
 
-#include "../Thread/Thread.h"
 #include "Object.h"
 
 namespace Alimer
 {
-
-	HashMap<StringHash, Object*> Object::subsystems;
-	HashMap<StringHash, AutoPtr<ObjectFactory> > Object::factories;
+	std::map<StringHash, Object*> Object::subsystems;
+	std::map<StringHash, AutoPtr<ObjectFactory> > Object::factories;
 
 	ObjectFactory::~ObjectFactory()
 	{
@@ -67,20 +65,20 @@ namespace Alimer
 		if (!subsystem)
 			return;
 
-		auto it = subsystems.Find(subsystem->Type());
-		if (it != subsystems.End() && it->second == subsystem)
-			subsystems.Erase(it);
+		auto it = subsystems.find(subsystem->Type());
+		if (it != subsystems.end() && it->second == subsystem)
+			subsystems.erase(it);
 	}
 
 	void Object::RemoveSubsystem(StringHash type)
 	{
-		subsystems.Erase(type);
+		subsystems.erase(type);
 	}
 
 	Object* Object::Subsystem(StringHash type)
 	{
-		auto it = subsystems.Find(type);
-		return it != subsystems.End() ? it->second : nullptr;
+		auto it = subsystems.find(type);
+		return it != subsystems.end() ? it->second : nullptr;
 	}
 
 	void Object::RegisterFactory(ObjectFactory* factory)
@@ -93,14 +91,14 @@ namespace Alimer
 
 	Object* Object::Create(StringHash type)
 	{
-		auto it = factories.Find(type);
-		return it != factories.End() ? it->second->Create() : nullptr;
+		auto it = factories.find(type);
+		return it != factories.end() ? it->second->Create() : nullptr;
 	}
 
 	const String& Object::TypeNameFromType(StringHash type)
 	{
-		auto it = factories.Find(type);
-		return it != factories.End() ? it->second->TypeName() : String::EMPTY;
+		auto it = factories.find(type);
+		return it != factories.end() ? it->second->TypeName() : String::EMPTY;
 	}
 
 }

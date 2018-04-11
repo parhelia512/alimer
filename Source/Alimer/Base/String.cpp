@@ -1,4 +1,25 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #include "String.h"
 #include "Swap.h"
@@ -8,11 +29,60 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-
-#include "../Debug/DebugNew.h"
+#include <algorithm>
 
 namespace Alimer
 {
+	std::string& str::Replace(std::string& dest, const std::string& find, const std::string& replace, uint32_t maxReplacements)
+	{
+		int pos = 0;
+		while ((pos = dest.find(find, pos)) != std::string::npos)
+		{
+			dest.replace(dest.find(find), find.size(), replace);
+			maxReplacements--;
+			pos += replace.size();
+			if (maxReplacements == 0)
+				break;
+		}
+		return dest;
+	}
+
+	std::string& str::Replace(std::string&& dest, const std::string& find, const std::string& replace, uint32_t maxReplacements)
+	{
+		return str::Replace(dest, find, replace, maxReplacements);
+	}
+
+	std::vector<std::string> str::Split(const std::string& value, const std::string& separator, bool keepEmpty)
+	{
+		assert(!separator.empty());
+		std::vector<std::string> result;
+		std::string::const_iterator itStart = value.begin(), itEnd;
+
+		for (;;)
+		{
+			itEnd = std::search(itStart, value.end(), separator.begin(), separator.end());
+			std::string token(itStart, itEnd);
+			if (keepEmpty || !token.empty())
+				result.push_back(token);
+			if (itEnd == value.end())
+				break;
+			itStart = itEnd + separator.size();
+		}
+		return result;
+	}
+
+	std::string str::Join(const std::vector<std::string>& collection, const std::string& glue)
+	{
+		std::string result;
+		if (!collection.empty())
+		{
+			result = collection.front();
+
+			for (auto it = collection.begin() + 1; it != collection.end(); it++)
+				result += glue + *it;
+		}
+		return result;
+	}
 
 	char String::endZero = 0;
 

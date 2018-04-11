@@ -65,14 +65,14 @@ public:
 			-0.05f, -0.05f, 0.0f,   0.0f, 1.0f
 		};
 
-		Vector<VertexElement> vertexDeclaration;
-		vertexDeclaration.Push(VertexElement(ELEM_VECTOR3, SEM_POSITION));
-		vertexDeclaration.Push(VertexElement(ELEM_VECTOR2, SEM_TEXCOORD));
+		std::vector<VertexElement> vertexDeclaration;
+		vertexDeclaration.push_back(VertexElement(ELEM_VECTOR3, SEM_POSITION));
+		vertexDeclaration.push_back(VertexElement(ELEM_VECTOR2, SEM_TEXCOORD));
 		AutoPtr<VertexBuffer> vb = new VertexBuffer();
 		vb->Define(USAGE_IMMUTABLE, 3, vertexDeclaration, true, vertexData);
 
-		Vector<VertexElement> instanceVertexDeclaration;
-		instanceVertexDeclaration.Push(VertexElement(ELEM_VECTOR3, SEM_TEXCOORD, 1, true));
+		std::vector<VertexElement> instanceVertexDeclaration;
+		instanceVertexDeclaration.push_back(VertexElement(ELEM_VECTOR3, SEM_TEXCOORD, 1, true));
 		SharedPtr<VertexBuffer> ivb = new VertexBuffer();
 		ivb->Define(USAGE_DYNAMIC, NUM_OBJECTS, instanceVertexDeclaration, true);
 
@@ -82,8 +82,8 @@ public:
 			2
 		};
 
-		AutoPtr<IndexBuffer> ib = new IndexBuffer();
-		ib->Define(USAGE_IMMUTABLE, 3, sizeof(unsigned short), true, indexData);
+		std::unique_ptr<IndexBuffer> ib = std::make_unique<IndexBuffer>();
+		ib->Define(USAGE_IMMUTABLE, 3, IndexType::UInt16, true, indexData);
 
 		Constant pc(ELEM_VECTOR4, "Color");
 		AutoPtr<ConstantBuffer> pcb = new ConstantBuffer();
@@ -188,7 +188,7 @@ public:
 			graphics->Clear(CLEAR_COLOR | CLEAR_DEPTH, Color(0.0f, 0.0f, 0.5f));
 			graphics->SetVertexBuffer(0, vb);
 			graphics->SetVertexBuffer(1, ivb);
-			graphics->SetIndexBuffer(ib);
+			graphics->SetIndexBuffer(ib.get());
 			graphics->SetConstantBuffer(SHADER_PS, 0, pcb);
 			graphics->SetShaders(vsv, psv);
 			graphics->SetTexture(0, tex);

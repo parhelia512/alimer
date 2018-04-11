@@ -41,8 +41,8 @@ namespace Alimer
 	{
 		Type1D = 0,
 		Type2D,
+		Type3D,
 		TypeCube,
-		Type3D
 	};
 
 	/// GPU Texture.
@@ -76,7 +76,7 @@ namespace Alimer
 		/// Return texture type.
 		TextureType GetTextureType() const { return _type; }
 		/// Return dimensions.
-		const IntVector2& GetSize() const { return IntVector2(_width, _height); }
+		IntVector2 GetSize() const { return IntVector2(_width, _height); }
 		/// Return width.
 		uint32_t GetWidth() const { return _width; }
 		/// Return height.

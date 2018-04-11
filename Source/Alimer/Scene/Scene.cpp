@@ -29,7 +29,7 @@ namespace Alimer
 		// so must tear down the scene tree already here
 		RemoveAllChildren();
 		RemoveNode(this);
-		assert(nodes.IsEmpty());
+		assert(nodes.empty());
 	}
 
 	void Scene::RegisterObject()
@@ -56,7 +56,7 @@ namespace Alimer
 
 		LOGINFO("Loading scene from " + source.Name());
 
-		String fileId = source.ReadFileID();
+		std::string fileId = source.ReadFileID();
 		if (fileId != "SCNE")
 		{
 			LOGERROR("File is not a binary scene file");
@@ -178,16 +178,16 @@ namespace Alimer
 			return;
 		}
 
-		if (layerNames.Size() <= index)
-			layerNames.Resize(index + 1);
+		if (layerNames.size() <= index)
+			layerNames.resize(index + 1);
 		layerNames[index] = name;
 		layers[name] = index;
 	}
 
 	void Scene::DefineTag(unsigned char index, const String& name)
 	{
-		if (tagNames.Size() <= index)
-			tagNames.Resize(index + 1);
+		if (tagNames.size() <= index)
+			tagNames.resize(index + 1);
 		tagNames[index] = name;
 		tags[name] = index;
 	}
@@ -200,8 +200,8 @@ namespace Alimer
 
 	Node* Scene::FindNode(unsigned id) const
 	{
-		auto it = nodes.Find(id);
-		return it != nodes.End() ? it->second : nullptr;
+		auto it = nodes.find(id);
+		return it != nodes.end() ? it->second : nullptr;
 	}
 
 	void Scene::AddNode(Node* node)
@@ -209,7 +209,7 @@ namespace Alimer
 		if (!node || node->ParentScene() == this)
 			return;
 
-		while (nodes.Contains(nextNodeId))
+		while (nodes.find(nextNodeId) != nodes.end())
 		{
 			++nextNodeId;
 			if (!nextNodeId)
@@ -219,8 +219,8 @@ namespace Alimer
 		Scene* oldScene = node->ParentScene();
 		if (oldScene)
 		{
-			unsigned oldId = node->Id();
-			oldScene->nodes.Erase(oldId);
+			uint32_t oldId = node->GetId();
+			oldScene->nodes.erase(oldId);
 		}
 		nodes[nextNodeId] = node;
 		node->SetScene(this);
@@ -231,8 +231,8 @@ namespace Alimer
 		// If node has children, add them to the scene as well
 		if (node->NumChildren())
 		{
-			const Vector<SharedPtr<Node> >& children = node->Children();
-			for (auto it = children.Begin(); it != children.End(); ++it)
+			const auto& children = node->Children();
+			for (auto it = children.begin(); it != children.end(); ++it)
 				AddNode(*it);
 		}
 	}
@@ -242,29 +242,29 @@ namespace Alimer
 		if (!node || node->ParentScene() != this)
 			return;
 
-		nodes.Erase(node->Id());
+		nodes.erase(node->GetId());
 		node->SetScene(nullptr);
 		node->SetId(0);
 
 		// If node has children, remove them from the scene as well
 		if (node->NumChildren())
 		{
-			const Vector<SharedPtr<Node> >& children = node->Children();
-			for (auto it = children.Begin(); it != children.End(); ++it)
+			const auto& children = node->Children();
+			for (auto it = children.begin(); it != children.end(); ++it)
 				RemoveNode(*it);
 		}
 	}
 
 	void Scene::SetLayerNamesAttr(JSONValue names)
 	{
-		layerNames.Clear();
-		layers.Clear();
+		layerNames.clear();
+		layers.clear();
 
 		const JSONArray& array = names.GetArray();
-		for (size_t i = 0; i < array.Size(); ++i)
+		for (size_t i = 0; i < array.size(); ++i)
 		{
 			const String& name = array[i].GetString();
-			layerNames.Push(name);
+			layerNames.push_back(name);
 			layers[name] = (unsigned char)i;
 		}
 	}
@@ -274,7 +274,7 @@ namespace Alimer
 		JSONValue ret;
 
 		ret.SetEmptyArray();
-		for (auto it = layerNames.Begin(); it != layerNames.End(); ++it)
+		for (auto it = layerNames.begin(); it != layerNames.end(); ++it)
 			ret.Push(*it);
 
 		return ret;
@@ -282,15 +282,15 @@ namespace Alimer
 
 	void Scene::SetTagNamesAttr(JSONValue names)
 	{
-		tagNames.Clear();
-		tags.Clear();
+		tagNames.clear();
+		tags.clear();
 
 		const JSONArray& array = names.GetArray();
-		for (size_t i = 0; i < array.Size(); ++i)
+		for (size_t i = 0; i < array.size(); ++i)
 		{
 			const String& name = array[i].GetString();
-			tagNames.Push(name);
-			tags[name] = (unsigned char)i;
+			tagNames.push_back(name);
+			tags[name] = (uint8_t)i;
 		}
 	}
 
@@ -299,7 +299,7 @@ namespace Alimer
 		JSONValue ret;
 
 		ret.SetEmptyArray();
-		for (auto it = tagNames.Begin(); it != tagNames.End(); ++it)
+		for (auto it = tagNames.begin(); it != tagNames.end(); ++it)
 			ret.Push(*it);
 
 		return ret;

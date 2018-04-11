@@ -38,7 +38,7 @@ namespace Alimer
 		/// Parent block.
 		ProfilerBlock* parent;
 		/// Child blocks.
-		Vector<AutoPtr<ProfilerBlock > > children;
+		std::vector<AutoPtr<ProfilerBlock > > children;
 		/// Current frame's accumulated time.
 		long long time;
 		/// Current frame's longest call.

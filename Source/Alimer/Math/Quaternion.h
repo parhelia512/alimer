@@ -1,4 +1,25 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #pragma once
 
@@ -16,29 +37,26 @@ namespace Alimer
 		}
 
 		/// Copy-construct.
-		Quaternion(const Quaternion& quat) :
-			w(quat.w),
-			x(quat.x),
-			y(quat.y),
-			z(quat.z)
+		Quaternion(const Quaternion& quat)
+			:  x(quat.x)
+			, y(quat.y)
+			, z(quat.z)
+			, w(quat.w)
 		{
 		}
 
 		/// Construct from values.
-		Quaternion(float w_, float x_, float y_, float z_) :
-			w(w_),
-			x(x_),
-			y(y_),
-			z(z_)
+		Quaternion(float x_, float y_, float z_, float w_) 
+			: x(x_), y(y_), z(z_), w(w_)
 		{
 		}
 
 		/// Construct from a float array.
-		Quaternion(const float* data) :
-			w(data[0]),
-			x(data[1]),
-			y(data[2]),
-			z(data[3])
+		Quaternion(const float* data) 
+			: x(data[0])
+			, y(data[1])
+			, z(data[2])
+			, w(data[3])
 		{
 		}
 
@@ -93,30 +111,30 @@ namespace Alimer
 		/// Assign from another quaternion.
 		Quaternion& operator = (const Quaternion& rhs)
 		{
-			w = rhs.w;
 			x = rhs.x;
 			y = rhs.y;
 			z = rhs.z;
+			w = rhs.w;
 			return *this;
 		}
 
 		/// Add-assign a quaternion.
 		Quaternion& operator += (const Quaternion& rhs)
 		{
-			w += rhs.w;
 			x += rhs.x;
 			y += rhs.y;
 			z += rhs.z;
+			w += rhs.w;
 			return *this;
 		}
 
 		/// Multiply-assign a scalar.
 		Quaternion& operator *= (float rhs)
 		{
-			w *= rhs;
 			x *= rhs;
 			y *= rhs;
 			z *= rhs;
+			w *= rhs;
 			return *this;
 		}
 
@@ -125,22 +143,22 @@ namespace Alimer
 		/// Test for inequality with another quaternion without epsilon.
 		bool operator != (const Quaternion& rhs) const { return !(*this == rhs); }
 		/// Multiply with a scalar.
-		Quaternion operator * (float rhs) const { return Quaternion(w * rhs, x * rhs, y * rhs, z * rhs); }
+		Quaternion operator * (float rhs) const { return Quaternion(x * rhs, y * rhs, z * rhs, w * rhs); }
 		/// Return negation.
-		Quaternion operator - () const { return Quaternion(-w, -x, -y, -z); }
+		Quaternion operator - () const { return Quaternion(-x, -y, -z, -w); }
 		/// Add a quaternion.
-		Quaternion operator + (const Quaternion& rhs) const { return Quaternion(w + rhs.w, x + rhs.x, y + rhs.y, z + rhs.z); }
+		Quaternion operator + (const Quaternion& rhs) const { return Quaternion(x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w); }
 		/// Subtract a quaternion.
-		Quaternion operator - (const Quaternion& rhs) const { return Quaternion(w - rhs.w, x - rhs.x, y - rhs.y, z - rhs.z); }
+		Quaternion operator - (const Quaternion& rhs) const { return Quaternion(x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w); }
 
 		/// Multiply a quaternion.
 		Quaternion operator * (const Quaternion& rhs) const
 		{
 			return Quaternion(
-				w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z,
 				w * rhs.x + x * rhs.w + y * rhs.z - z * rhs.y,
 				w * rhs.y + y * rhs.w + z * rhs.x - x * rhs.z,
-				w * rhs.z + z * rhs.w + x * rhs.y - y * rhs.x
+				w * rhs.z + z * rhs.w + x * rhs.y - y * rhs.x,
+				w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z
 			);
 		}
 
@@ -219,7 +237,7 @@ namespace Alimer
 		/// Return whether is NaN.
 		bool IsNaN() const { return Alimer::IsNaN(w) || Alimer::IsNaN(x) || Alimer::IsNaN(y) || Alimer::IsNaN(z); }
 		/// Return conjugate.
-		Quaternion Conjugate() const { return Quaternion(w, -x, -y, -z); }
+		Quaternion Conjugate() const { return Quaternion(-x, -y, -z, w); }
 
 		/// Return Euler angles in degrees.
 		Vector3 EulerAngles() const;
@@ -240,14 +258,15 @@ namespace Alimer
 		/// Return as string.
 		String ToString() const;
 
-		/// W coordinate.
-		float w;
+		
 		/// X coordinate.
 		float x;
 		/// Y coordinate.
 		float y;
 		/// Z coordinate.
 		float z;
+		/// W coordinate.
+		float w;
 
 		/// Identity quaternion.
 		static const Quaternion IDENTITY;

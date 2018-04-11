@@ -27,16 +27,15 @@
 
 namespace Alimer
 {
-
-	bool VertexBuffer::Define(ResourceUsage usage_, size_t numVertices_, const Vector<VertexElement>& elements_, bool useShadowData, const void* data)
+	bool VertexBuffer::Define(ResourceUsage usage_, size_t numVertices_, const std::vector<VertexElement>& elements_, bool useShadowData, const void* data)
 	{
-		if (!numVertices_ || !elements_.Size())
+		if (!numVertices_ || !elements_.size())
 		{
 			LOGERROR("Can not define vertex buffer with no vertices or no elements");
 			return false;
 		}
 
-		return Define(usage_, numVertices_, elements_.Size(), &elements_[0], useShadowData, data);
+		return Define(usage_, numVertices_, elements_.size(), elements_.data(), useShadowData, data);
 	}
 
 	bool VertexBuffer::Define(ResourceUsage usage_, size_t numVertices_, size_t numElements_, const VertexElement* elements_, bool useShadowData, const void* data)
@@ -76,7 +75,7 @@ namespace Alimer
 		// Determine offset of elements and the vertex size & element hash
 		vertexSize = 0;
 		elementHash = 0;
-		elements.Resize(numElements_);
+		elements.resize(numElements_);
 		for (size_t i = 0; i < numElements_; ++i)
 		{
 			elements[i] = elements_[i];

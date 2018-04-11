@@ -82,7 +82,7 @@ namespace Alimer
 
 		for (size_t i = 0; i < _loadImages.size(); ++i)
 		{
-			for (size_t j = 0; j < _loadImages[i]->NumLevels(); ++j)
+			for (uint32_t j = 0; j < _loadImages[i]->GetMipLevels(); ++j)
 			{
 				initialData.push_back(_loadImages[i]->GetLevel(j));
 			}

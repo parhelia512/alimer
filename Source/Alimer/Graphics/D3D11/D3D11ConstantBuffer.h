@@ -28,45 +28,45 @@ namespace Alimer
 		/// Save as JSON data.
 		void SaveJSON(JSONValue& dest);
 		/// Define the constants being used and create the GPU-side buffer. Return true on success.
-		bool Define(ResourceUsage usage, const Vector<Constant>& srcConstants);
+		bool Define(ResourceUsage usage, const std::vector<Constant>& srcConstants);
 		/// Define the constants being used and create the GPU-side buffer. Return true on success.
-		bool Define(ResourceUsage usage, size_t numConstants, const Constant* srcConstants);
+		bool Define(ResourceUsage usage, uint32_t numConstants, const Constant* srcConstants);
 		/// Set a constant by index. Optionally specify how many elements to update, default all. Return true on success.
-		bool SetConstant(size_t index, const void* data, size_t numElements = 0);
+		bool SetConstant(uint32_t index, const void* data, uint32_t numElements = 0);
 		/// Set a constant by name. Optionally specify how many elements to update, default all. Return true on success.
-		bool SetConstant(const String& name, const void* data, size_t numElements = 0);
+		bool SetConstant(const String& name, const void* data, uint32_t numElements = 0);
 		/// Set a constant by name. Optionally specify how many elements to update, default all. Return true on success.
-		bool SetConstant(const char* name, const void* data, size_t numElements = 0);
+		bool SetConstant(const char* name, const void* data, uint32_t numElements = 0);
 		/// Apply to the GPU-side buffer if has changes. Can only be used once on an immutable buffer. Return true on success.
 		bool Apply();
 		/// Set raw data directly to the GPU-side buffer. Optionally copy back to the shadow constants. Return true on success.
 		bool SetData(const void* data, bool copyToShadow = false);
 		/// Set a constant by index, template version.
-		template <class T> bool SetConstant(size_t index, const T& data, size_t numElements = 0) { return SetConstant(index, (const void*)&data, numElements); }
+		template <class T> bool SetConstant(uint32_t index, const T& data, uint32_t numElements = 0) { return SetConstant(index, (const void*)&data, numElements); }
 		/// Set a constant by name, template version.
-		template <class T> bool SetConstant(const String& name, const T& data, size_t numElements = 0) { return SetConstant(name, (const void*)&data, numElements); }
+		template <class T> bool SetConstant(const String& name, const T& data, uint32_t numElements = 0) { return SetConstant(name, (const void*)&data, numElements); }
 		/// Set a constant by name, template version.
-		template <class T> bool SetConstant(const char* name, const T& data, size_t numElements = 0) { return SetConstant(name, (const void*)&data, numElements); }
+		template <class T> bool SetConstant(const char* name, const T& data, uint32_t numElements = 0) { return SetConstant(name, (const void*)&data, numElements); }
 
 		/// Return number of constants.
-		size_t NumConstants() const { return constants.Size(); }
+		uint32_t NumConstants() const { return  static_cast<uint32_t>(_constants.size()); }
 		/// Return the constant descriptions.
-		const Vector<Constant>& Constants() const { return constants; }
+		const std::vector<Constant>& Constants() const { return _constants; }
 		/// Return the index of a constant, or NPOS if not found.
 		size_t FindConstantIndex(const String& name) const;
 		/// Return the index of a constant, or NPOS if not found.
 		size_t FindConstantIndex(const char* name) const;
 		/// Return pointer to the constant value, or null if not found.
-		const void* ConstantValue(size_t index, size_t elementIndex = 0) const;
+		const void* GetConstantValue(size_t index, uint32_t elementIndex = 0) const;
 		/// Return pointer to the constant value, or null if not found.
-		const void* ConstantValue(const String& name, size_t elementIndex = 0) const;
+		const void* GetConstantValue(const String& name, uint32_t elementIndex = 0) const;
 		/// Return pointer to the constant value, or null if not found.
-		const void* ConstantValue(const char* name, size_t elementIndex = 0) const;
+		const void* GetConstantValue(const char* name, uint32_t elementIndex = 0) const;
 
 		/// Return constant value, template version.
-		template <class T> T ConstantValue(size_t index, size_t elementIndex = 0) const
+		template <class T> T GetConstantValue(uint32_t index, uint32_t elementIndex = 0) const
 		{
-			const void* value = ConstantValue(index, elementIndex);
+			const void* value = GetConstantValue(index, elementIndex);
 			return value ? *(reinterpret_cast<const T*>(value)) : T();
 		}
 
@@ -85,7 +85,7 @@ namespace Alimer
 		}
 
 		/// Return total byte size of the buffer.
-		size_t ByteSize() const { return byteSize; }
+		uint32_t ByteSize() const { return _byteSize; }
 		/// Return whether buffer has unapplied changes.
 		bool IsDirty() const { return dirty; }
 		/// Return resource usage type.
@@ -111,11 +111,11 @@ namespace Alimer
 		/// D3D11 buffer.
 		void* buffer;
 		/// Constant definitions.
-		Vector<Constant> constants;
+		std::vector<Constant> _constants;
 		/// CPU-side data where updates are collected before applying.
 		std::unique_ptr<uint8_t[]> _shadowData;
 		/// Total byte size.
-		size_t byteSize;
+		uint32_t _byteSize{};
 		/// Resource usage type.
 		ResourceUsage usage;
 		/// Dirty flag.

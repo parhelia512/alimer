@@ -10,7 +10,7 @@ namespace Alimer
 	class Resource;
 	class Stream;
 
-	typedef HashMap<Pair<StringHash, StringHash>, SharedPtr<Resource> > ResourceMap;
+	typedef std::map<std::pair<StringHash, StringHash>, SharedPtr<Resource> > ResourceMap;
 
 	/// %Resource cache subsystem. Loads resources on demand and stores them for later access.
 	class ALIMER_API ResourceCache : public Object
@@ -53,7 +53,7 @@ namespace Alimer
 		/// Return resources by type.
 		void ResourcesByType(Vector<Resource*>& result, StringHash type) const;
 		/// Return resource directories.
-		const Vector<String>& ResourceDirs() const { return resourceDirs; }
+		const std::vector<String>& ResourceDirs() const { return resourceDirs; }
 		/// Return whether a file exists in the resource directories.
 		bool Exists(const String& name) const;
 		/// Return an absolute filename from a resource name.
@@ -81,7 +81,7 @@ namespace Alimer
 
 	private:
 		ResourceMap resources;
-		Vector<String> resourceDirs;
+		std::vector<String> resourceDirs;
 	};
 
 	/// Register Resource related object factories and attributes.

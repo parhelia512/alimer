@@ -13,9 +13,8 @@
 
 namespace Alimer
 {
-
 	SharedPtr<Material> Material::defaultMaterial;
-	HashMap<String, unsigned char> Material::passIndices;
+	std::unordered_map<String, uint8_t> Material::passIndices;
 	Vector<String> Material::passNames;
 	unsigned char Material::nextPassIndex = 0;
 
@@ -167,7 +166,7 @@ namespace Alimer
 		for (size_t i = 0; i < MAX_SHADER_STAGES; ++i)
 		{
 			shaders[i].Reset();
-			shaderVariations[i].Clear();
+			shaderVariations[i].clear();
 		}
 
 		shadersLoaded = false;
@@ -229,7 +228,7 @@ namespace Alimer
 		if (root.Contains("passes"))
 		{
 			const JSONObject& jsonPasses = root["passes"].GetObject();
-			for (auto it = jsonPasses.Begin(); it != jsonPasses.End(); ++it)
+			for (auto it = jsonPasses.begin(); it != jsonPasses.end(); ++it)
 			{
 				Pass* newPass = CreatePass(it->first);
 				newPass->LoadJSON(it->second);
@@ -256,7 +255,7 @@ namespace Alimer
 		{
 			ResourceCache* cache = Subsystem<ResourceCache>();
 			const JSONObject& jsonTextures = root["textures"].GetObject();
-			for (auto it = jsonTextures.Begin(); it != jsonTextures.End(); ++it)
+			for (auto it = jsonTextures.begin(); it != jsonTextures.end(); ++it)
 				SetTexture(it->first.ToInt(), cache->LoadResource<Texture>(it->second.GetString()));
 		}
 
@@ -381,20 +380,18 @@ namespace Alimer
 	unsigned char Material::PassIndex(const String& name, bool createNew)
 	{
 		String nameLower = name.ToLower();
-		auto it = passIndices.Find(nameLower);
-		if (it != passIndices.End())
+		auto it = passIndices.find(nameLower);
+		if (it != passIndices.end())
 			return it->second;
-		else
+
+		if (createNew)
 		{
-			if (createNew)
-			{
-				passIndices[nameLower] = nextPassIndex;
-				passNames.Push(nameLower);
-				return nextPassIndex++;
-			}
-			else
-				return 0xff;
+			passIndices[nameLower] = nextPassIndex;
+			passNames.Push(nameLower);
+			return nextPassIndex++;
 		}
+		else
+			return 0xff;
 	}
 
 	const String& Material::PassName(unsigned char index)

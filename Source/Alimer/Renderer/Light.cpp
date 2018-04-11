@@ -87,7 +87,7 @@ namespace Alimer
 		}
 	}
 
-	void Light::OnRaycast(Vector<RaycastResult>& dest, const Ray& ray, float maxDistance)
+	void Light::OnRaycast(std::vector<RaycastResult>& dest, const Ray& ray, float maxDistance)
 	{
 		if (lightType == LIGHT_SPOT)
 		{
@@ -100,7 +100,7 @@ namespace Alimer
 				res.distance = distance;
 				res.node = this;
 				res.subObject = 0;
-				dest.Push(res);
+				dest.push_back(res);
 			}
 		}
 		else if (lightType == LIGHT_POINT)
@@ -114,7 +114,7 @@ namespace Alimer
 				res.distance = distance;
 				res.node = this;
 				res.subObject = 0;
-				dest.Push(res);
+				dest.push_back(res);
 			}
 		}
 	}
@@ -420,7 +420,7 @@ namespace Alimer
 		// Setup shadow matrices now as camera positions have been finalized
 		if (lightType != LIGHT_POINT)
 		{
-			shadowMatrices.Resize(numViews);
+			shadowMatrices.resize(numViews);
 
 			for (size_t i = 0; i < numViews; ++i)
 			{
@@ -452,7 +452,7 @@ namespace Alimer
 		else
 		{
 			// Point lights use an extra constant instead
-			shadowMatrices.Clear();
+			shadowMatrices.clear();
 
 			Vector2 textureSize((float)shadowMap->GetWidth(), (float)shadowMap->GetHeight());
 			pointShadowParameters = Vector4(actualShadowMapSize / textureSize.x, actualShadowMapSize / textureSize.y,

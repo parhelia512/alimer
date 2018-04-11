@@ -24,7 +24,7 @@ namespace Alimer
 		void Release() override;
 
 		/// Define buffer. Immutable buffers must specify initial data here. Return true on success.
-		bool Define(ResourceUsage usage, size_t numVertices, const Vector<VertexElement>& elements, bool useShadowData, const void* data = nullptr);
+		bool Define(ResourceUsage usage, size_t numVertices, const std::vector<VertexElement>& elements, bool useShadowData, const void* data = nullptr);
 		/// Define buffer. Immutable buffers must specify initial data here. Return true on success.
 		bool Define(ResourceUsage usage, size_t numVertices, size_t numElements, const VertexElement* elements, bool useShadowData, const void* data = nullptr);
 		/// Redefine buffer data either completely or partially. Not supported for immutable buffers. Return true on success.
@@ -35,9 +35,9 @@ namespace Alimer
 		/// Return number of vertices.
 		size_t NumVertices() const { return numVertices; }
 		/// Return number of vertex elements.
-		size_t NumElements() const { return elements.Size(); }
+		size_t NumElements() const { return elements.size(); }
 		/// Return vertex elements.
-		const Vector<VertexElement>& Elements() const { return elements; }
+		const std::vector<VertexElement>& Elements() const { return elements; }
 		/// Return size of vertex in bytes.
 		size_t VertexSize() const { return vertexSize; }
 		/// Return vertex declaration hash code.
@@ -68,7 +68,7 @@ namespace Alimer
 		/// Size of vertex in bytes.
 		size_t vertexSize;
 		/// Vertex elements.
-		Vector<VertexElement> elements;
+		std::vector<VertexElement> elements;
 		/// Vertex element hash code.
 		unsigned elementHash;
 		/// Resource usage type.

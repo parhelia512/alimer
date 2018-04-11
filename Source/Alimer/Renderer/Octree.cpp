@@ -5,8 +5,7 @@
 #include "Octree.h"
 
 #include <cassert>
-
-#include "../Debug/DebugNew.h"
+#include <algorithm>
 
 namespace Alimer
 {
@@ -20,7 +19,7 @@ namespace Alimer
 		return lhs.distance < rhs.distance;
 	}
 
-	bool CompareNodeDistances(const Pair<OctreeNode*, float>& lhs, const Pair<OctreeNode*, float>& rhs)
+	bool CompareNodeDistances(const std::pair<OctreeNode*, float>& lhs, const std::pair<OctreeNode*, float>& rhs)
 	{
 		return lhs.second < rhs.second;
 	}
@@ -83,7 +82,7 @@ namespace Alimer
 	{
 		ALIMER_PROFILE(UpdateOctree);
 
-		for (auto it = updateQueue.Begin(); it != updateQueue.End(); ++it)
+		for (auto it = updateQueue.begin(); it != updateQueue.end(); ++it)
 		{
 			OctreeNode* node = *it;
 			// If node was removed before update could happen, a null pointer will be in its place
@@ -128,7 +127,7 @@ namespace Alimer
 			}
 		}
 
-		updateQueue.Clear();
+		updateQueue.clear();
 	}
 
 	void Octree::Resize(const BoundingBox& boundingBox, int numLevels)
@@ -136,7 +135,7 @@ namespace Alimer
 		ALIMER_PROFILE(ResizeOctree);
 
 		// Collect nodes to the root and delete all child octants
-		updateQueue.Clear();
+		updateQueue.clear();
 		CollectNodes(updateQueue, &root);
 		DeleteChildOctants(&root, false);
 		allocator.Reset();
@@ -158,26 +157,26 @@ namespace Alimer
 	void Octree::QueueUpdate(OctreeNode* node)
 	{
 		assert(node);
-		updateQueue.Push(node);
+		updateQueue.push_back(node);
 		node->SetFlag(NF_OCTREE_UPDATE_QUEUED, true);
 	}
 
 	void Octree::CancelUpdate(OctreeNode* node)
 	{
 		assert(node);
-		auto it = updateQueue.Find(node);
-		if (it != updateQueue.End())
+		auto it = std::find(updateQueue.begin(), updateQueue.end(), node);
+		if (it != updateQueue.end())
 			*it = nullptr;
 		node->SetFlag(NF_OCTREE_UPDATE_QUEUED, false);
 	}
 
-	void Octree::Raycast(Vector<RaycastResult>& result, const Ray& ray, unsigned short nodeFlags, float maxDistance, unsigned layerMask)
+	void Octree::Raycast(std::vector<RaycastResult>& result, const Ray& ray, unsigned short nodeFlags, float maxDistance, unsigned layerMask)
 	{
 		ALIMER_PROFILE(OctreeRaycast);
 
-		result.Clear();
+		result.clear();
 		CollectNodes(result, &root, ray, nodeFlags, maxDistance, layerMask);
-		Sort(result.Begin(), result.End(), CompareRaycastResults);
+		std::sort(result.begin(), result.end(), CompareRaycastResults);
 	}
 
 	RaycastResult Octree::RaycastSingle(const Ray& ray, unsigned short nodeFlags, float maxDistance, unsigned layerMask)
@@ -185,40 +184,38 @@ namespace Alimer
 		ALIMER_PROFILE(OctreeRaycastSingle);
 
 		// Get first the potential hits
-		initialRes.Clear();
+		initialRes.clear();
 		CollectNodes(initialRes, &root, ray, nodeFlags, maxDistance, layerMask);
-		Sort(initialRes.Begin(), initialRes.End(), CompareNodeDistances);
+		std::sort(initialRes.begin(), initialRes.end(), CompareNodeDistances);
 
 		// Then perform actual per-node ray tests and early-out when possible
-		finalRes.Clear();
+		finalRes.clear();
 		float closestHit = M_INFINITY;
-		for (auto it = initialRes.Begin(); it != initialRes.End(); ++it)
+		for (auto it = initialRes.begin(); it != initialRes.end(); ++it)
 		{
 			if (it->second < Min(closestHit, maxDistance))
 			{
-				size_t oldSize = finalRes.Size();
+				size_t oldSize = finalRes.size();
 				it->first->OnRaycast(finalRes, ray, maxDistance);
-				if (finalRes.Size() > oldSize)
-					closestHit = Min(closestHit, finalRes.Back().distance);
+				if (finalRes.size() > oldSize)
+					closestHit = Min(closestHit, finalRes.back().distance);
 			}
 			else
 				break;
 		}
 
-		if (finalRes.Size())
+		if (finalRes.size())
 		{
-			Sort(finalRes.Begin(), finalRes.End(), CompareRaycastResults);
-			return finalRes.Front();
+			std::sort(finalRes.begin(), finalRes.end(), CompareRaycastResults);
+			return finalRes.front();
 		}
-		else
-		{
-			RaycastResult emptyRes;
-			emptyRes.position = emptyRes.normal = Vector3::ZERO;
-			emptyRes.distance = M_INFINITY;
-			emptyRes.node = nullptr;
-			emptyRes.subObject = 0;
-			return emptyRes;
-		}
+
+		RaycastResult emptyRes;
+		emptyRes.position = emptyRes.normal = Vector3::ZERO;
+		emptyRes.distance = M_INFINITY;
+		emptyRes.node = nullptr;
+		emptyRes.subObject = 0;
+		return emptyRes;
 	}
 
 	void Octree::SetBoundingBoxAttr(const BoundingBox& boundingBox)
@@ -244,7 +241,7 @@ namespace Alimer
 
 	void Octree::AddNode(OctreeNode* node, Octant* octant)
 	{
-		octant->nodes.Push(node);
+		octant->nodes.push_back(node);
 		node->octant = octant;
 
 		// Increment the node count in the whole parent branch
@@ -257,8 +254,10 @@ namespace Alimer
 
 	void Octree::RemoveNode(OctreeNode* node, Octant* octant)
 	{
-		// Do not set the node's octant pointer to zero, as the node may already be added into another octant
-		octant->nodes.Remove(node);
+		// Do not set the node's octant pointer to zero, as the node may already be added into another octant.
+		auto it = std::find(octant->nodes.begin(), octant->nodes.end(), node);
+		if (it != end(octant->nodes))
+			octant->nodes.erase(it);
 
 		// Decrement the node count in the whole parent branch and erase empty octants as necessary
 		while (octant)
@@ -310,15 +309,14 @@ namespace Alimer
 
 	void Octree::DeleteChildOctants(Octant* octant, bool deletingOctree)
 	{
-		for (auto it = octant->nodes.Begin(); it != octant->nodes.End(); ++it)
+		for (OctreeNode* node : octant->nodes)
 		{
-			OctreeNode* node = *it;
 			node->octant = nullptr;
 			node->SetFlag(NF_OCTREE_UPDATE_QUEUED, false);
 			if (deletingOctree)
 				node->octree = nullptr;
 		}
-		octant->nodes.Clear();
+		octant->nodes.clear();
 		octant->numNodes = 0;
 
 		for (size_t i = 0; i < NUM_OCTANTS; ++i)
@@ -334,9 +332,9 @@ namespace Alimer
 			allocator.Free(octant);
 	}
 
-	void Octree::CollectNodes(Vector<OctreeNode*>& result, const Octant* octant) const
+	void Octree::CollectNodes(std::vector<OctreeNode*>& result, const Octant* octant) const
 	{
-		result.Push(octant->nodes);
+		result.insert(result.end(), octant->nodes.begin(), octant->nodes.end());
 
 		for (size_t i = 0; i < NUM_OCTANTS; ++i)
 		{
@@ -345,14 +343,13 @@ namespace Alimer
 		}
 	}
 
-	void Octree::CollectNodes(Vector<OctreeNode*>& result, const Octant* octant, unsigned short nodeFlags, unsigned layerMask) const
+	void Octree::CollectNodes(std::vector<OctreeNode*>& result, const Octant* octant, unsigned short nodeFlags, unsigned layerMask) const
 	{
-		const Vector<OctreeNode*>& octantNodes = octant->nodes;
-		for (auto it = octantNodes.Begin(); it != octantNodes.End(); ++it)
+		const std::vector<OctreeNode*>& octantNodes = octant->nodes;
+		for (auto* node : octantNodes)
 		{
-			OctreeNode* node = *it;
 			if ((node->Flags() & nodeFlags) == nodeFlags && (node->LayerMask() & layerMask))
-				result.Push(node);
+				result.push_back(node);
 		}
 
 		for (size_t i = 0; i < NUM_OCTANTS; ++i)
@@ -362,17 +359,16 @@ namespace Alimer
 		}
 	}
 
-	void Octree::CollectNodes(Vector<RaycastResult>& result, const Octant* octant, const Ray& ray, unsigned short nodeFlags,
+	void Octree::CollectNodes(std::vector<RaycastResult>& result, const Octant* octant, const Ray& ray, unsigned short nodeFlags,
 		float maxDistance, unsigned layerMask) const
 	{
 		float octantDist = ray.HitDistance(octant->cullingBox);
 		if (octantDist >= maxDistance)
 			return;
 
-		const Vector<OctreeNode*>& octantNodes = octant->nodes;
-		for (auto it = octantNodes.Begin(); it != octantNodes.End(); ++it)
+		const std::vector<OctreeNode*>& octantNodes = octant->nodes;
+		for (auto* node : octantNodes)
 		{
-			OctreeNode* node = *it;
 			if ((node->Flags() & nodeFlags) == nodeFlags && (node->LayerMask() & layerMask))
 				node->OnRaycast(result, ray, maxDistance);
 		}
@@ -384,22 +380,21 @@ namespace Alimer
 		}
 	}
 
-	void Octree::CollectNodes(Vector<Pair<OctreeNode*, float> >& result, const Octant* octant, const Ray& ray, unsigned short nodeFlags,
+	void Octree::CollectNodes(std::vector<std::pair<OctreeNode*, float> >& result, const Octant* octant, const Ray& ray, unsigned short nodeFlags,
 		float maxDistance, unsigned layerMask) const
 	{
 		float octantDist = ray.HitDistance(octant->cullingBox);
 		if (octantDist >= maxDistance)
 			return;
 
-		const Vector<OctreeNode*>& octantNodes = octant->nodes;
-		for (auto it = octantNodes.Begin(); it != octantNodes.End(); ++it)
+		const std::vector<OctreeNode*>& octantNodes = octant->nodes;
+		for (OctreeNode* node : octantNodes)
 		{
-			OctreeNode* node = *it;
 			if ((node->Flags() & nodeFlags) == nodeFlags && (node->LayerMask() & layerMask))
 			{
 				float distance = ray.HitDistance(node->WorldBoundingBox());
 				if (distance < maxDistance)
-					result.Push(MakePair(node, distance));
+					result.push_back(std::make_pair(node, distance));
 			}
 		}
 

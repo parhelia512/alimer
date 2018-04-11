@@ -23,7 +23,7 @@
 
 #include "../../Debug/Log.h"
 #include "../../Debug/Profiler.h"
-#include "D3D11Graphics.h"
+#include "../Graphics.h"
 #include "../Texture.h"
 
 #include <d3d11.h>
@@ -263,11 +263,10 @@ namespace Alimer
 				_format = format_;
 				_mipLevels = numLevels_;
 
-				LOGDEBUGF("Created texture width %d height %d format %d numLevels %d", size.x, size.y, (int)format, numLevels);
+				LOGDEBUGF("Created texture width %d height %d format %d numLevels %d", _width, _height, (int)_format, _mipLevels);
 			}
 
-			D3D11_SHADER_RESOURCE_VIEW_DESC resourceViewDesc;
-			memset(&resourceViewDesc, 0, sizeof resourceViewDesc);
+			D3D11_SHADER_RESOURCE_VIEW_DESC resourceViewDesc = {};
 			resourceViewDesc.ViewDimension = srvDimension[static_cast<uint8_t>(_type)];
 			switch (_type)
 			{

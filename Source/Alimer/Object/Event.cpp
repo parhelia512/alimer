@@ -39,7 +39,7 @@ void Event::Send(RefCounted* sender)
     WeakPtr<RefCounted> safeCurrentSender = sender;
     currentSender = sender;
     
-    for (auto it = handlers.Begin(); it != handlers.End();)
+    for (auto it = handlers.begin(); it != handlers.end();)
     {
         EventHandler* handler = *it;
         bool remove = true;
@@ -58,7 +58,7 @@ void Event::Send(RefCounted* sender)
         }
         
         if (remove)
-            it = handlers.Erase(it);
+            it = handlers.erase(it);
         else
             ++it;
     }
@@ -72,7 +72,7 @@ void Event::Subscribe(EventHandler* handler)
         return;
     
     // Check if the same receiver already exists; in that case replace the handler data
-    for (auto it = handlers.Begin(); it != handlers.End(); ++it)
+    for (auto it = handlers.begin(); it != handlers.end(); ++it)
     {
         EventHandler* existing = *it;
         if (existing && existing->Receiver() == handler->Receiver())
@@ -82,12 +82,12 @@ void Event::Subscribe(EventHandler* handler)
         }
     }
     
-    handlers.Push(handler);
+    handlers.push_back(handler);
 }
 
 void Event::Unsubscribe(RefCounted* receiver)
 {
-    for (auto it = handlers.Begin(); it != handlers.End(); ++it)
+    for (auto it = handlers.begin(); it != handlers.end(); ++it)
     {
         EventHandler* handler = *it;
         if (handler && handler->Receiver() == receiver)
@@ -97,7 +97,7 @@ void Event::Unsubscribe(RefCounted* receiver)
             if (currentSender)
                 *it = nullptr;
             else
-                handlers.Erase(it);
+                handlers.erase(it);
             return;
         }
     }
@@ -105,7 +105,7 @@ void Event::Unsubscribe(RefCounted* receiver)
 
 bool Event::HasReceivers() const
 {
-    for (auto it = handlers.Begin(); it != handlers.End(); ++it)
+    for (auto it = handlers.begin(); it != handlers.end(); ++it)
     {
         EventHandler* handler = *it;
         if (handler && handler->Receiver())
@@ -117,7 +117,7 @@ bool Event::HasReceivers() const
 
 bool Event::HasReceiver(const RefCounted* receiver) const
 {
-    for (auto it = handlers.Begin(); it != handlers.End(); ++it)
+    for (auto it = handlers.begin(); it != handlers.end(); ++it)
     {
         EventHandler* handler = *it;
         if (handler && handler->Receiver() == receiver)

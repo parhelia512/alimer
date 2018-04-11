@@ -3,7 +3,7 @@
 #include "../Debug/Profiler.h"
 #include "../Graphics/Texture.h"
 #include "Batch.h"
-
+#include "../Base/Sort.h"
 #include "../Debug/DebugNew.h"
 
 namespace Alimer

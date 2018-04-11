@@ -24,6 +24,7 @@
 #pragma once
 
 #include "../Base/String.h"
+#include <string>
 #include <functional>
 
 namespace Alimer
@@ -33,110 +34,84 @@ namespace Alimer
 	{
 	public:
 		/// Construct with zero value.
-		StringHash() :
-			value(0)
-		{
-		}
+		StringHash() noexcept : _value(0) {}
 
 		/// Copy-construct.
-		StringHash(const StringHash& hash) :
-			value(hash.value)
-		{
-		}
+		StringHash(const StringHash& rhs) noexcept : _value(rhs._value) { }
 
 		/// Construct with an initial value.
-		explicit StringHash(unsigned value_) :
-			value(value_)
-		{
-		}
+		explicit StringHash(uint32_t value) noexcept : _value(value) { }
+
+		/// Construct from a C string case-insensitively.
+		StringHash(const char* str) noexcept;        // NOLINT(google-explicit-constructor)
 
 		/// Construct from a string case-insensitively.
-		explicit StringHash(const String& str) :
-			value(String::CaseInsensitiveHash(str.CString()))
-		{
-		}
+		StringHash(const std::string& str) noexcept;      // NOLINT(google-explicit-constructor)
 
-		/// Construct from a C string case-insensitively.
-		explicit StringHash(const char* str) :
-			value(String::CaseInsensitiveHash(str))
-		{
-		}
-
-		/// Construct from a C string case-insensitively.
-		explicit StringHash(char* str) :
-			value(String::CaseInsensitiveHash(str))
-		{
-		}
+		/// Construct from a string case-insensitively./// Construct from a string case-insensitively.										  /// Construct from a string case-insensitively.
+		StringHash(const String& str) noexcept;      // NOLINT(google-explicit-constructor)
 
 		/// Assign from another hash.
-		StringHash& operator = (const StringHash& rhs)
+		StringHash& operator = (const StringHash& rhs) noexcept
 		{
-			value = rhs.value;
+			_value = rhs._value;
 			return *this;
 		}
 
 		/// Assign from a string.
-		StringHash& operator = (const String& rhs)
+		StringHash& operator = (const std::string& rhs)
 		{
-			value = String::CaseInsensitiveHash(rhs.CString());
+			_value = StringHash::Calculate(rhs.c_str());
 			return *this;
 		}
 
 		/// Assign from a C string.
 		StringHash& operator = (const char* rhs)
 		{
-			value = String::CaseInsensitiveHash(rhs);
-			return *this;
-		}
-
-		/// Assign from a C string.
-		StringHash& operator = (char* rhs)
-		{
-			value = String::CaseInsensitiveHash(rhs);
+			_value = StringHash::Calculate(rhs);
 			return *this;
 		}
 
 		/// Add a hash.
 		StringHash operator + (const StringHash& rhs) const
 		{
-			StringHash ret;
-			ret.value = value + rhs.value;
+			StringHash ret(_value + rhs._value);
 			return ret;
 		}
 
 		/// Add-assign a hash.
 		StringHash& operator += (const StringHash& rhs)
 		{
-			value += rhs.value;
+			_value += rhs._value;
 			return *this;
 		}
 
 		// Test for equality with another hash.
-		bool operator == (const StringHash& rhs) const { return value == rhs.value; }
+		bool operator == (const StringHash& rhs) const { return _value == rhs._value; }
 		/// Test for inequality with another hash.
-		bool operator != (const StringHash& rhs) const { return value != rhs.value; }
+		bool operator != (const StringHash& rhs) const { return _value != rhs._value; }
 		/// Test if less than another hash.
-		bool operator < (const StringHash& rhs) const { return value < rhs.value; }
+		bool operator < (const StringHash& rhs) const { return _value < rhs._value; }
 		/// Test if greater than another hash.
-		bool operator > (const StringHash& rhs) const { return value > rhs.value; }
+		bool operator > (const StringHash& rhs) const { return _value > rhs._value; }
 		/// Return true if nonzero hash value.
-		operator bool() const { return value != 0; }
+		operator bool() const { return _value != 0; }
 		/// Return hash value.
-		unsigned Value() const { return value; }
+		uint32_t Value() const { return _value; }
 		/// Return as string.
-		String ToString() const;
+		std::string ToString() const;
 		/// Return hash value for HashSet & HashMap.
-		unsigned ToHash() const { return value; }
+		uint32_t ToHash() const { return _value; }
 
 		/// Calculate hash value case-insensitively from a C string.
-		static unsigned Calculate(const char* str);
+		static uint32_t Calculate(const char* str, uint32_t hash = 0);
 
 		/// Zero hash.
 		static const StringHash ZERO;
 
 	private:
 		/// Hash value.
-		unsigned value;
+		uint32_t _value;
 	};
 
 }

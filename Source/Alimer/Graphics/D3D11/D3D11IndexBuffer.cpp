@@ -23,14 +23,14 @@
 
 #include "../../Debug/Log.h"
 #include "../../Debug/Profiler.h"
-#include "D3D11Graphics.h"
+#include "../Graphics.h"
 #include "../IndexBuffer.h"
 
 #include <d3d11.h>
 
 namespace Alimer
 {
-	void IndexBuffer::Release()
+	/*void IndexBuffer::Release()
 	{
 		if (graphics && graphics->GetIndexBuffer() == this)
 			graphics->SetIndexBuffer(nullptr);
@@ -40,10 +40,11 @@ namespace Alimer
 			_buffer->Release();
 			_buffer = nullptr;
 		}
-	}
+	}*/
 
 	bool IndexBuffer::SetData(uint32_t firstIndex, uint32_t indexCount, const void* data)
 	{
+#if TODO
 		ALIMER_PROFILE(UpdateIndexBuffer);
 
 		if (!data)
@@ -56,7 +57,7 @@ namespace Alimer
 			LOGERROR("Out of bounds range for updating index buffer");
 			return false;
 		}
-		if (_buffer && _usage == USAGE_IMMUTABLE)
+		if (_buffer && _resourceUsage == USAGE_IMMUTABLE)
 		{
 			LOGERROR("Can not update immutable index buffer");
 			return false;
@@ -65,8 +66,8 @@ namespace Alimer
 		if (_shadowData)
 		{
 			memcpy(
-				_shadowData.get() + firstIndex * _indexSize, 
-				data, 
+				_shadowData.get() + firstIndex * _indexSize,
+				data,
 				indexCount * _indexSize);
 		}
 
@@ -74,7 +75,7 @@ namespace Alimer
 		{
 			ID3D11DeviceContext* d3dDeviceContext = (ID3D11DeviceContext*)graphics->D3DDeviceContext();
 
-			if (_usage == USAGE_DYNAMIC)
+			if (_resourceUsage == USAGE_DYNAMIC)
 			{
 				D3D11_MAPPED_SUBRESOURCE mappedData;
 				mappedData.pData = nullptr;
@@ -104,35 +105,9 @@ namespace Alimer
 				d3dDeviceContext->UpdateSubresource(_buffer, 0, &destBox, data, 0, 0);
 			}
 		}
+#endif // TODO
+
 
 		return true;
 	}
-
-	bool IndexBuffer::Create(const void* data)
-	{
-		if (graphics && graphics->IsInitialized())
-		{
-			D3D11_SUBRESOURCE_DATA initialData = { data, 0, 0};
-
-			D3D11_BUFFER_DESC bufferDesc = {};
-			bufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-			bufferDesc.CPUAccessFlags = (_usage == USAGE_DYNAMIC) ? D3D11_CPU_ACCESS_WRITE : 0;
-			bufferDesc.Usage = (D3D11_USAGE)_usage;
-			bufferDesc.ByteWidth = _indexCount * _indexSize;
-
-			ID3D11Device* d3dDevice = (ID3D11Device*)graphics->D3DDevice();
-			d3dDevice->CreateBuffer(&bufferDesc, data ? &initialData : nullptr, &_buffer);
-
-			if (!_buffer)
-			{
-				LOGERROR("Failed to create index buffer");
-				return false;
-			}
-			
-			LOGDEBUGF("Created index buffer numIndices %u indexSize %u", (unsigned)numIndices, (unsigned)indexSize);
-		}
-
-		return true;
-	}
-
 }

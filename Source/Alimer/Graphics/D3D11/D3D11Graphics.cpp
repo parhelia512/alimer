@@ -26,15 +26,14 @@
 #include "../../Window/Window.h"
 #include "../GPUObject.h"
 #include "../Shader.h"
-#include "D3D11Graphics.h"
+#include "../Graphics.h"
 #include "D3D11ConstantBuffer.h"
 #include "../IndexBuffer.h"
 #include "D3D11ShaderVariation.h"
 #include "../Texture.h"
 #include "D3D11VertexBuffer.h"
+#include "D3D11Convert.h"
 
-#include <d3d11.h>
-#include <dxgi.h>
 #include <cstdlib>
 
 #include "../../Debug/DebugNew.h"
@@ -191,39 +190,38 @@ namespace Alimer
 	void Graphics::Close()
 	{
 		// Release all GPU objects
-		for (auto it = gpuObjects.Begin(); it != gpuObjects.End(); ++it)
+		for (GPUObject* object : gpuObjects)
 		{
-			GPUObject* object = *it;
 			object->Release();
 		}
 
-		for (auto it = inputLayouts.Begin(); it != inputLayouts.End(); ++it)
+		for (auto it = _inputLayouts.begin(); it != _inputLayouts.end(); ++it)
 		{
-			ID3D11InputLayout* d3dLayout = (ID3D11InputLayout*)it->second;
+			ID3D11InputLayout* d3dLayout = it->second;
 			d3dLayout->Release();
 		}
-		inputLayouts.Clear();
+		_inputLayouts.clear();
 
-		for (auto it = blendStates.Begin(); it != blendStates.End(); ++it)
+		for (auto it = blendStates.begin(); it != blendStates.end(); ++it)
 		{
 			ID3D11BlendState* d3dState = (ID3D11BlendState*)it->second;
 			d3dState->Release();
 		}
-		blendStates.Clear();
+		blendStates.clear();
 
-		for (auto it = depthStates.Begin(); it != depthStates.End(); ++it)
+		for (auto it = depthStates.begin(); it != depthStates.end(); ++it)
 		{
 			ID3D11DepthStencilState* d3dState = (ID3D11DepthStencilState*)it->second;
 			d3dState->Release();
 		}
-		depthStates.Clear();
+		depthStates.clear();
 
-		for (auto it = rasterizerStates.Begin(); it != rasterizerStates.End(); ++it)
+		for (auto it = rasterizerStates.begin(); it != rasterizerStates.end(); ++it)
 		{
 			ID3D11RasterizerState* d3dState = (ID3D11RasterizerState*)it->second;
 			d3dState->Release();
 		}
-		rasterizerStates.Clear();
+		rasterizerStates.clear();
 
 		if (impl->deviceContext)
 		{
@@ -401,20 +399,20 @@ namespace Alimer
 
 	void Graphics::SetIndexBuffer(IndexBuffer* buffer)
 	{
-		if (buffer != indexBuffer)
+		if (buffer == _indexBuffer)
+			return;
+
+		_indexBuffer = buffer;
+		if (buffer)
 		{
-			indexBuffer = buffer;
-			if (buffer)
-			{
-				impl->deviceContext->IASetIndexBuffer(
-					buffer->GetD3DBuffer(), 
-					buffer->IndexSize() == sizeof(uint16_t) ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT, 
-					0);
-			}
-			else
-			{
-				impl->deviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
-			}
+			impl->deviceContext->IASetIndexBuffer(
+				buffer->GetHandle(),
+				buffer->GetIndexSize() == sizeof(uint16_t) ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT,
+				0);
+		}
+		else
+		{
+			impl->deviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
 		}
 	}
 
@@ -649,13 +647,14 @@ namespace Alimer
 	void Graphics::AddGPUObject(GPUObject* object)
 	{
 		if (object)
-			gpuObjects.Push(object);
+			gpuObjects.push_back(object);
 	}
 
 	void Graphics::RemoveGPUObject(GPUObject* object)
 	{
-		/// \todo Requires a linear search, needs to be profiled whether becomes a problem with a large number of objects
-		gpuObjects.Remove(object);
+		auto it = std::find(gpuObjects.begin(), gpuObjects.end(), object);
+		if (it != gpuObjects.end())
+			gpuObjects.erase(it);
 	}
 
 	void* Graphics::D3DDevice() const
@@ -830,6 +829,35 @@ namespace Alimer
 		}
 	}
 
+	ID3D11Buffer* Graphics::CreateBuffer(BufferUsage usage, uint64_t size, uint32_t stride, ResourceUsage resourceUsage, const void* initialData)
+	{
+		D3D11_SUBRESOURCE_DATA resourceData = { initialData, 0, 0 };
+
+		D3D11_BUFFER_DESC bufferDesc = {};
+		bufferDesc.BindFlags = d3d11::Convert(usage);
+		bufferDesc.CPUAccessFlags = (resourceUsage == USAGE_DYNAMIC) ? D3D11_CPU_ACCESS_WRITE : 0;
+		bufferDesc.Usage = d3d11::Convert(resourceUsage);
+		bufferDesc.ByteWidth = static_cast<UINT>(size);
+
+		if (any(usage & BufferUsage::Indirect))
+		{
+			bufferDesc.StructureByteStride = stride;
+			bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS;
+		}
+
+		ID3D11Buffer* buffer;
+		HRESULT hr = impl->device->CreateBuffer(
+			&bufferDesc,
+			initialData ? &resourceData : nullptr,
+			&buffer);
+		return buffer;
+	}
+
+	void Graphics::DestroyBuffer(ID3D11Buffer* buffer)
+	{
+		SafeRelease(buffer);
+	}
+
 	bool Graphics::PrepareDraw(PrimitiveType type)
 	{
 		PrepareTextures();
@@ -859,26 +887,25 @@ namespace Alimer
 			if (newInputLayout != inputLayout)
 			{
 				// Check if layout already exists
-				auto it = inputLayouts.Find(newInputLayout);
-				if (it != inputLayouts.End())
+				auto it = _inputLayouts.find(newInputLayout);
+				if (it != _inputLayouts.end())
 				{
-					impl->deviceContext->IASetInputLayout((ID3D11InputLayout*)it->second);
+					impl->deviceContext->IASetInputLayout(it->second);
 					inputLayout = newInputLayout;
 				}
 				else
 				{
 					// Not found, create new
-					Vector<D3D11_INPUT_ELEMENT_DESC> elementDescs;
+					std::vector<D3D11_INPUT_ELEMENT_DESC> elementDescs;
 
-					for (size_t i = 0; i < MAX_VERTEX_STREAMS; ++i)
+					for (uint32_t i = 0; i < MAX_VERTEX_STREAMS; ++i)
 					{
 						if (vertexBuffers[i])
 						{
-							const Vector<VertexElement>& elements = vertexBuffers[i]->Elements();
+							const std::vector<VertexElement>& elements = vertexBuffers[i]->Elements();
 
-							for (auto it = elements.Begin(); it != elements.End(); ++it)
+							for (const VertexElement& element : elements)
 							{
-								const VertexElement& element = *it;
 								D3D11_INPUT_ELEMENT_DESC newDesc;
 								newDesc.SemanticName = elementSemanticNames[element.semantic];
 								newDesc.SemanticIndex = element.index;
@@ -889,18 +916,21 @@ namespace Alimer
 								newDesc.InputSlotClass = element.perInstance ? D3D11_INPUT_PER_INSTANCE_DATA :
 									D3D11_INPUT_PER_VERTEX_DATA;
 								newDesc.InstanceDataStepRate = element.perInstance ? 1 : 0;
-								elementDescs.Push(newDesc);
+								elementDescs.push_back(newDesc);
 							}
 						}
 					}
 
 					ID3D11InputLayout* d3dInputLayout = nullptr;
 					ID3DBlob* d3dBlob = (ID3DBlob*)vertexShader->BlobObject();
-					impl->device->CreateInputLayout(&elementDescs[0], (unsigned)elementDescs.Size(), d3dBlob->GetBufferPointer(),
+					impl->device->CreateInputLayout(
+						elementDescs.data(),
+						(UINT)elementDescs.size(),
+						d3dBlob->GetBufferPointer(),
 						d3dBlob->GetBufferSize(), &d3dInputLayout);
 					if (d3dInputLayout)
 					{
-						inputLayouts[newInputLayout] = d3dInputLayout;
+						_inputLayouts[newInputLayout] = d3dInputLayout;
 						impl->deviceContext->IASetInputLayout(d3dInputLayout);
 						inputLayout = newInputLayout;
 					}
@@ -925,8 +955,8 @@ namespace Alimer
 
 			if (blendStateHash != impl->blendStateHash)
 			{
-				auto it = blendStates.Find(blendStateHash);
-				if (it != blendStates.End())
+				auto it = blendStates.find(blendStateHash);
+				if (it != blendStates.end())
 				{
 					ID3D11BlendState* newBlendState = (ID3D11BlendState*)it->second;
 					impl->deviceContext->OMSetBlendState(newBlendState, nullptr, 0xffffffff);
@@ -986,8 +1016,8 @@ namespace Alimer
 
 			if (depthStateHash != impl->depthStateHash || renderState.stencilRef != impl->stencilRef)
 			{
-				auto it = depthStates.Find(depthStateHash);
-				if (it != depthStates.End())
+				auto it = depthStates.find(depthStateHash);
+				if (it != depthStates.end())
 				{
 					ID3D11DepthStencilState* newDepthState = (ID3D11DepthStencilState*)it->second;
 					impl->deviceContext->OMSetDepthStencilState(newDepthState, renderState.stencilRef);
@@ -1046,8 +1076,8 @@ namespace Alimer
 
 			if (rasterizerStateHash != impl->rasterizerStateHash)
 			{
-				auto it = rasterizerStates.Find(rasterizerStateHash);
-				if (it != rasterizerStates.End())
+				auto it = rasterizerStates.find(rasterizerStateHash);
+				if (it != rasterizerStates.end())
 				{
 					ID3D11RasterizerState* newRasterizerState = (ID3D11RasterizerState*)it->second;
 					impl->deviceContext->RSSetState(newRasterizerState);
@@ -1115,7 +1145,7 @@ namespace Alimer
 
 		renderState.Reset();
 
-		indexBuffer = nullptr;
+		_indexBuffer = nullptr;
 		vertexShader = nullptr;
 		pixelShader = nullptr;
 		impl->blendState = nullptr;
