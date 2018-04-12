@@ -94,7 +94,7 @@ namespace Alimer
 			USAGE_IMMUTABLE,
 			image->Size(),
 			image->Format(),
-			initialData.size(),
+			static_cast<uint32_t>(initialData.size()),
 			initialData.data());
 
 		/// \todo Read a parameter file for the sampling parameters

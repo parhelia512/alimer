@@ -39,22 +39,22 @@ namespace Alimer
 		/// Load JSON data as text from a binary stream, then instantiate node(s) from it and return the root node.
 		Node* InstantiateJSON(Stream& source);
 		/// Define a layer name. There can be 32 different layers (indices 0-31.)
-		void DefineLayer(unsigned char index, const String& name);
+		void DefineLayer(uint8_t index, const std::string& name);
 		/// Define a tag name.
-		void DefineTag(unsigned char index, const String& name);
+		void DefineTag(uint8_t index, const std::string& name);
 		/// Destroy child nodes recursively, leaving the scene empty.
 		void Clear();
 
 		/// Find node by id.
 		Node* FindNode(unsigned id) const;
 		/// Return the layer names.
-		const std::vector<String>& LayerNames() const { return layerNames; }
+		const std::vector<std::string>& LayerNames() const { return _layerNames; }
 		/// Return the layer name-to-index map.
-		const std::unordered_map<String, unsigned char>& Layers() const { return layers; }
+		const std::unordered_map<std::string, uint8_t>& Layers() const { return _layers; }
 		/// Return the tag names.
-		const std::vector<String>& TagNames() const { return tagNames; }
+		const std::vector<std::string>& TagNames() const { return _tagNames; }
 		/// Return the tag name-to-index map.
-		const std::unordered_map<String, unsigned char>& Tags() const { return tags; }
+		const std::unordered_map<std::string, uint8_t>& Tags() const { return _tags; }
 
 		/// Add node to the scene. This assigns a scene-unique id to it. Called internally.
 		void AddNode(Node* node);
@@ -78,15 +78,15 @@ namespace Alimer
 		/// Map from id's to nodes.
 		std::map<unsigned, Node*> nodes;
 		/// Next free node id.
-		unsigned nextNodeId;
+		uint32_t nextNodeId;
 		/// List of layer names by index.
-		std::vector<String> layerNames;
+		std::vector<std::string> _layerNames;
 		/// Map from layer names to indices.
-		std::unordered_map<String, uint8_t> layers;
+		std::unordered_map<std::string, uint8_t> _layers;
 		/// List of tag names by index.
-		std::vector<String> tagNames;
+		std::vector<std::string> _tagNames;
 		/// Map from tag names to indices.
-		std::unordered_map<String, unsigned char> tags;
+		std::unordered_map<std::string, uint8_t> _tags;
 	};
 
 	/// Register Scene related object factories and attributes.

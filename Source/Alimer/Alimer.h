@@ -36,7 +36,6 @@
 #include "Graphics/ShaderVariation.h"
 #include "Graphics/Texture.h"
 #include "Graphics/VertexBuffer.h"
-#include "IO/Arguments.h"
 #include "IO/Console.h"
 #include "IO/File.h"
 #include "IO/FileSystem.h"

@@ -15,167 +15,169 @@
 namespace Alimer
 {
 
-Geometry::Geometry() : 
-    primitiveType(TRIANGLE_LIST),
-    drawStart(0),
-    drawCount(0),
-    lodDistance(0.0f)
-{
-}
+	Geometry::Geometry() :
+		primitiveType(TRIANGLE_LIST),
+		drawStart(0),
+		drawCount(0),
+		lodDistance(0.0f)
+	{
+	}
 
-Geometry::~Geometry()
-{
-}
+	Geometry::~Geometry()
+	{
+	}
 
-void Geometry::Draw(Graphics* graphics)
-{
-    graphics->SetVertexBuffer(0, vertexBuffer.Get());
-    if (indexBuffer.Get())
-    {
-        graphics->SetIndexBuffer(indexBuffer.Get());
-        graphics->DrawIndexed(primitiveType, drawStart,drawCount, 0);
-    }
-    else
-        graphics->Draw(primitiveType, drawStart, drawCount);
-}
+	void Geometry::Draw(Graphics* graphics)
+	{
+		graphics->SetVertexBuffer(0, vertexBuffer.Get());
+		if (indexBuffer.Get())
+		{
+			graphics->SetIndexBuffer(indexBuffer.Get());
+			graphics->DrawIndexed(primitiveType, drawStart, drawCount, 0);
+		}
+		else
+			graphics->Draw(primitiveType, drawStart, drawCount);
+	}
 
-void Geometry::DrawInstanced(Graphics* graphics, size_t start, size_t count)
-{
-    graphics->SetVertexBuffer(0, vertexBuffer.Get());
-    if (indexBuffer.Get())
-    {
-        graphics->SetIndexBuffer(indexBuffer.Get());
-        graphics->DrawIndexedInstanced(primitiveType, drawStart, drawCount, 0, start, count);
-    }
-    else
-        graphics->DrawInstanced(primitiveType, drawStart, drawCount, start, count);
-}
+	void Geometry::DrawInstanced(Graphics* graphics, size_t start, size_t count)
+	{
+		graphics->SetVertexBuffer(0, vertexBuffer.Get());
+		if (indexBuffer.Get())
+		{
+			graphics->SetIndexBuffer(indexBuffer.Get());
+			graphics->DrawIndexedInstanced(primitiveType, drawStart, drawCount, 0, start, count);
+		}
+		else
+			graphics->DrawInstanced(primitiveType, drawStart, drawCount, start, count);
+	}
 
-SourceBatch::SourceBatch()
-{
-}
+	SourceBatch::SourceBatch()
+	{
+	}
 
-SourceBatch::~SourceBatch()
-{
-}
+	SourceBatch::~SourceBatch()
+	{
+	}
 
-GeometryNode::GeometryNode() :
-    lightList(nullptr),
-    geometryType(GEOM_STATIC)
-{
-    SetFlag(NF_GEOMETRY, true);
-}
+	GeometryNode::GeometryNode() :
+		lightList(nullptr),
+		geometryType(GEOM_STATIC)
+	{
+		SetFlag(NF_GEOMETRY, true);
+	}
 
-GeometryNode::~GeometryNode()
-{
-}
+	GeometryNode::~GeometryNode()
+	{
+	}
 
-void GeometryNode::RegisterObject()
-{
-    RegisterFactory<GeometryNode>();
-    CopyBaseAttributes<GeometryNode, OctreeNode>();
-    RegisterMixedRefAttribute("materials", &GeometryNode::MaterialsAttr, &GeometryNode::SetMaterialsAttr,
-        ResourceRefList(Material::TypeStatic()));
-}
+	void GeometryNode::RegisterObject()
+	{
+		RegisterFactory<GeometryNode>();
+		CopyBaseAttributes<GeometryNode, OctreeNode>();
+		RegisterMixedRefAttribute("materials", &GeometryNode::MaterialsAttr, &GeometryNode::SetMaterialsAttr,
+			ResourceRefList(Material::TypeStatic()));
+	}
 
-void GeometryNode::OnPrepareRender(unsigned frameNumber, Camera* camera)
-{
-    lastFrameNumber = frameNumber;
-    lightList = nullptr;
-    distance = camera->Distance(WorldPosition());
-}
+	void GeometryNode::OnPrepareRender(unsigned frameNumber, Camera* camera)
+	{
+		lastFrameNumber = frameNumber;
+		lightList = nullptr;
+		distance = camera->Distance(WorldPosition());
+	}
 
-void GeometryNode::SetGeometryType(GeometryType type)
-{
-    geometryType = type;
-}
+	void GeometryNode::SetGeometryType(GeometryType type)
+	{
+		geometryType = type;
+	}
 
-void GeometryNode::SetNumGeometries(size_t num)
-{
-    batches.Resize(num);
-    
-    // Ensure non-null materials
-    for (auto it = batches.Begin(); it != batches.End(); ++it)
-    {
-        if (!it->material.Get())
-            it->material = Material::DefaultMaterial();
-    }
-}
+	void GeometryNode::SetNumGeometries(size_t num)
+	{
+		_batches.resize(num);
 
-void GeometryNode::SetGeometry(size_t index, Geometry* geometry)
-{
-    if (!geometry)
-    {
-        LOGERROR("Can not assign null geometry");
-        return;
-    }
+		// Ensure non-null materials
+		for (auto it = _batches.begin(); it != _batches.end(); ++it)
+		{
+			if (!it->material.Get())
+				it->material = Material::DefaultMaterial();
+		}
+	}
 
-    if (index < batches.Size())
-        batches[index].geometry = geometry;
-    else
-        LOGERRORF("Out of bounds batch index %d for setting geometry", (int)index);
-}
+	void GeometryNode::SetGeometry(size_t index, Geometry* geometry)
+	{
+		if (!geometry)
+		{
+			LOGERROR("Can not assign null geometry");
+			return;
+		}
 
-void GeometryNode::SetMaterial(Material* material)
-{
-    if (!material)
-        material = Material::DefaultMaterial();
+		if (index < _batches.size())
+			_batches[index].geometry = geometry;
+		else
+			LOGERRORF("Out of bounds batch index %d for setting geometry", (int)index);
+	}
 
-    for (size_t i = 0; i < batches.Size(); ++i)
-        batches[i].material = material;
-}
+	void GeometryNode::SetMaterial(Material* material)
+	{
+		if (!material)
+			material = Material::DefaultMaterial();
 
-void GeometryNode::SetMaterial(size_t index, Material* material)
-{
-    if (index < batches.Size())
-    {
-        if (!material)
-            material = Material::DefaultMaterial();
-        batches[index].material = material;
-    }
-    else
-        LOGERRORF("Out of bounds batch index %d for setting material", (int)index);
-}
+		for (size_t i = 0; i < _batches.size(); ++i)
+			_batches[i].material = material;
+	}
 
-void GeometryNode::SetLocalBoundingBox(const BoundingBox& box)
-{
-    boundingBox = box;
-    // Changing the bounding box may require octree reinsertion
-    OctreeNode::OnTransformChanged();
-}
+	void GeometryNode::SetMaterial(size_t index, Material* material)
+	{
+		if (index < _batches.size())
+		{
+			if (!material)
+				material = Material::DefaultMaterial();
+			_batches[index].material = material;
+		}
+		else
+			LOGERRORF("Out of bounds batch index %d for setting material", (int)index);
+	}
 
-Geometry* GeometryNode::GetGeometry(size_t index) const
-{
-    return index < batches.Size() ? batches[index].geometry.Get() : nullptr;
-}
+	void GeometryNode::SetLocalBoundingBox(const BoundingBox& box)
+	{
+		boundingBox = box;
+		// Changing the bounding box may require octree reinsertion
+		OctreeNode::OnTransformChanged();
+	}
 
-Material* GeometryNode::GetMaterial(size_t index) const
-{
-    return index < batches.Size() ? batches[index].material.Get() : nullptr;
-}
+	Geometry* GeometryNode::GetGeometry(size_t index) const
+	{
+		return index < _batches.size() ? _batches[index].geometry.Get() : nullptr;
+	}
 
-void GeometryNode::OnWorldBoundingBoxUpdate() const
-{
-    worldBoundingBox = boundingBox.Transformed(WorldTransform());
-    SetFlag(NF_BOUNDING_BOX_DIRTY, false);
-}
+	Material* GeometryNode::GetMaterial(size_t index) const
+	{
+		return index < _batches.size() ? _batches[index].material.Get() : nullptr;
+	}
 
-void GeometryNode::SetMaterialsAttr(const ResourceRefList& materials)
-{
-    ResourceCache* cache = Subsystem<ResourceCache>();
-    for (size_t i = 0; i < materials.names.Size(); ++i)
-        SetMaterial(i, cache->LoadResource<Material>(materials.names[i]));
-}
+	void GeometryNode::OnWorldBoundingBoxUpdate() const
+	{
+		worldBoundingBox = boundingBox.Transformed(WorldTransform());
+		SetFlag(NF_BOUNDING_BOX_DIRTY, false);
+	}
 
-ResourceRefList GeometryNode::MaterialsAttr() const
-{
-    ResourceRefList ret(Material::TypeStatic());
-    
-    ret.names.Resize(batches.Size());
-    for (size_t i = 0; i < batches.Size(); ++i)
-        ret.names[i] = ResourceName(batches[i].material.Get());
+	void GeometryNode::SetMaterialsAttr(const ResourceRefList& materials)
+	{
+		ResourceCache* cache = Subsystem<ResourceCache>();
+		for (size_t i = 0; i < materials.names.size(); ++i)
+			SetMaterial(i, cache->LoadResource<Material>(materials.names[i]));
+	}
 
-    return ret;
-}
+	ResourceRefList GeometryNode::MaterialsAttr() const
+	{
+		ResourceRefList ret(Material::TypeStatic());
+
+		ret.names.resize(_batches.size());
+		for (size_t i = 0; i < _batches.size(); ++i)
+		{
+			ret.names[i] = ResourceName(_batches[i].material.Get());
+		}
+
+		return ret;
+	}
 
 }

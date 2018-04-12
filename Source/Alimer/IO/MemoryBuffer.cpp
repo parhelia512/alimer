@@ -24,8 +24,6 @@
 #include "../Base/Vector.h"
 #include "MemoryBuffer.h"
 
-#include <cstring>
-
 namespace Alimer
 {
 	MemoryBuffer::MemoryBuffer(void* data, size_t numBytes)
@@ -44,30 +42,30 @@ namespace Alimer
 		SetName("Memory");
 	}
 
-	MemoryBuffer::MemoryBuffer(Vector<uint8_t>& data)
-		: Stream(data.Size())
-		, _buffer(data.Begin().ptr)
+	MemoryBuffer::MemoryBuffer(std::vector<uint8_t>& data)
+		: Stream(data.size())
+		, _buffer(data.data())
 		, _readOnly(false)
 	{
 	}
 
-	MemoryBuffer::MemoryBuffer(const Vector<unsigned char>& data)
-		: Stream(data.Size())
-		, _buffer(data.Begin().ptr)
+	MemoryBuffer::MemoryBuffer(const std::vector<uint8_t>& data)
+		: Stream(data.size())
+		, _buffer(const_cast<uint8_t*>(data.data()))
 		, _readOnly(true)
 	{
 	}
 
 	size_t MemoryBuffer::Read(void* dest, size_t numBytes)
 	{
-		if (numBytes + position > size)
-			numBytes = size - position;
+		if (numBytes + _position > _size)
+			numBytes = _size - _position;
 		if (!numBytes)
 			return 0;
 
-		uint8_t* srcPtr = &_buffer[position];
+		uint8_t* srcPtr = &_buffer[_position];
 		uint8_t* destPtr = (uint8_t*)dest;
-		position += numBytes;
+		_position += numBytes;
 
 		size_t copySize = numBytes;
 		while (copySize >= sizeof(unsigned))
@@ -91,23 +89,23 @@ namespace Alimer
 
 	size_t MemoryBuffer::Seek(size_t newPosition)
 	{
-		if (newPosition > size)
-			newPosition = size;
+		if (newPosition > _size)
+			newPosition = _size;
 
-		position = newPosition;
-		return position;
+		_position = newPosition;
+		return _position;
 	}
 
 	size_t MemoryBuffer::Write(const void* data, size_t numBytes)
 	{
-		if (numBytes + position > size)
-			numBytes = size - position;
+		if (numBytes + _position > _size)
+			numBytes = _size - _position;
 		if (!numBytes || _readOnly)
 			return 0;
 
 		uint8_t* srcPtr = (uint8_t*)data;
-		uint8_t* destPtr = &_buffer[position];
-		position += numBytes;
+		uint8_t* destPtr = &_buffer[_position];
+		_position += numBytes;
 
 		size_t copySize = numBytes;
 		while (copySize >= sizeof(unsigned))

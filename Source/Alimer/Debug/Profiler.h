@@ -23,7 +23,6 @@
 
 #pragma once
 
-#include "../Base/String.h"
 #include "../Math/Math.h"
 #include "../Object/Object.h"
 #include "../Thread/Timer.h"
@@ -108,7 +107,7 @@ namespace Alimer
 		void BeginInterval();
 
 		/// Output results into a string.
-		String OutputResults(bool showUnused = false, bool showTotal = false, size_t maxDepth = M_MAX_UNSIGNED) const;
+		std::string OutputResults(bool showUnused = false, bool showTotal = false, size_t maxDepth = M_MAX_UNSIGNED) const;
 		/// Return the current profiling block.
 		const ProfilerBlock* CurrentBlock() const { return current; }
 		/// Return the root profiling block.
@@ -116,7 +115,7 @@ namespace Alimer
 
 	private:
 		/// Output results recursively.
-		void OutputResults(ProfilerBlock* block, String& output, size_t depth, size_t maxDepth, bool showUnused, bool showTotal) const;
+		void OutputResults(ProfilerBlock* block, std::string& output, size_t depth, size_t maxDepth, bool showUnused, bool showTotal) const;
 
 		/// Current profiling block.
 		ProfilerBlock* current;

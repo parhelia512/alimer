@@ -4,7 +4,6 @@
 
 #ifdef ALIMER_OPENGL
 
-#include "../../Base/WString.h"
 #include "../../Debug/Log.h"
 #include "Win32GLContext.h"
 #include "Win32Window.h"

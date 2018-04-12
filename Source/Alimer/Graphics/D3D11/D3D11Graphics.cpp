@@ -272,38 +272,40 @@ namespace Alimer
 		}
 	}
 
-	void Graphics::SetRenderTarget(Texture* renderTarget_, Texture* depthStencil_)
+	void Graphics::SetRenderTarget(Texture* renderTarget, Texture* depthStencil)
 	{
-		static Vector<Texture*> renderTargetVector(1);
-		renderTargetVector[0] = renderTarget_;
-		SetRenderTargets(renderTargetVector, depthStencil_);
+		static std::vector<Texture*> renderTargetVector(1);
+		renderTargetVector[0] = renderTarget;
+		SetRenderTargets(renderTargetVector, depthStencil);
 	}
 
-	void Graphics::SetRenderTargets(const Vector<Texture*>& renderTargets_, Texture* depthStencil_)
+	void Graphics::SetRenderTargets(
+		const std::vector<Texture*>& renderTargets,
+		Texture* depthStencil)
 	{
 		PrepareTextures();
 
 		// If depth stencil is specified but no rendertarget, use null instead of backbuffer, unless the depth stencil has same
 		// size as the backbuffer
-		bool depthOnlyRendering = depthStencil_ && depthStencil_->GetSize() != backbufferSize;
-		for (size_t i = 0; i < MAX_RENDERTARGETS && i < renderTargets_.Size(); ++i)
+		bool depthOnlyRendering = depthStencil && depthStencil->GetSize() != backbufferSize;
+		for (size_t i = 0; i < MAX_RENDERTARGETS && i < renderTargets.size(); ++i)
 		{
-			renderTargets[i] = (renderTargets_[i] && renderTargets_[i]->IsRenderTarget()) ? renderTargets_[i] : nullptr;
-			impl->renderTargetViews[i] = renderTargets[i] ? (ID3D11RenderTargetView*)renderTargets_[i]->D3DRenderTargetView() :
+			_renderTargets[i] = (renderTargets[i] && renderTargets[i]->IsRenderTarget()) ? renderTargets[i] : nullptr;
+			impl->renderTargetViews[i] = renderTargets[i] ? (ID3D11RenderTargetView*)renderTargets[i]->D3DRenderTargetView() :
 				(i > 0 || depthOnlyRendering) ? nullptr : impl->defaultRenderTargetView;
 		}
 
-		for (size_t i = renderTargets_.Size(); i < MAX_RENDERTARGETS; ++i)
+		for (size_t i = renderTargets.size(); i < MAX_RENDERTARGETS; ++i)
 		{
-			renderTargets[i] = nullptr;
+			_renderTargets[i] = nullptr;
 			impl->renderTargetViews[i] = nullptr;
 		}
 
-		depthStencil = (depthStencil_ && depthStencil_->IsDepthStencil()) ? depthStencil_ : nullptr;
-		impl->depthStencilView = depthStencil ? (ID3D11DepthStencilView*)depthStencil->D3DRenderTargetView() :
+		_depthStencil = (depthStencil && depthStencil->IsDepthStencil()) ? depthStencil : nullptr;
+		impl->depthStencilView = _depthStencil ? (ID3D11DepthStencilView*)_depthStencil->D3DRenderTargetView() :
 			impl->defaultDepthStencilView;
 
-		if (renderTargets[0])
+		if (_renderTargets[0])
 		{
 			renderTargetSize = IntVector2(renderTargets[0]->GetWidth(), renderTargets[0]->GetHeight());
 		}
@@ -420,7 +422,7 @@ namespace Alimer
 	{
 		if (vs != vertexShader)
 		{
-			if (vs && vs->Stage() == SHADER_VS)
+			if (vs && vs->GetStage() == SHADER_VS)
 			{
 				if (!vs->IsCompiled())
 					vs->Compile();
@@ -435,7 +437,7 @@ namespace Alimer
 
 		if (ps != pixelShader)
 		{
-			if (ps && ps->Stage() == SHADER_PS)
+			if (ps && ps->GetStage() == SHADER_PS)
 			{
 				if (!ps->IsCompiled())
 					ps->Compile();
@@ -623,9 +625,9 @@ namespace Alimer
 		return window->IsResizable();
 	}
 
-	Texture* Graphics::RenderTarget(size_t index) const
+	Texture* Graphics::GetRenderTarget(size_t index) const
 	{
-		return index < MAX_RENDERTARGETS ? renderTargets[index] : nullptr;
+		return index < MAX_RENDERTARGETS ? _renderTargets[index] : nullptr;
 	}
 
 	VertexBuffer* Graphics::GetVertexBuffer(size_t index) const
@@ -705,7 +707,7 @@ namespace Alimer
 		swapChainDesc.BufferDesc.Height = window->Height();
 		swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		swapChainDesc.OutputWindow = (HWND)window->Handle();
+		swapChainDesc.OutputWindow = (HWND)window->GetHandle();
 		swapChainDesc.SampleDesc.Count = multisample_;
 		swapChainDesc.SampleDesc.Quality = multisample_ > 1 ? 0xffffffff : 0;
 		swapChainDesc.Windowed = TRUE;
@@ -720,7 +722,7 @@ namespace Alimer
 		dxgiFactory->CreateSwapChain(impl->device, &swapChainDesc, &impl->swapChain);
 		// After creating the swap chain, disable automatic Alt-Enter fullscreen/windowed switching
 		// (the application will switch manually if it wants to)
-		dxgiFactory->MakeWindowAssociation((HWND)window->Handle(), DXGI_MWA_NO_ALT_ENTER);
+		dxgiFactory->MakeWindowAssociation((HWND)window->GetHandle(), DXGI_MWA_NO_ALT_ENTER);
 
 		dxgiFactory->Release();
 		dxgiAdapter->Release();
@@ -849,6 +851,11 @@ namespace Alimer
 			&bufferDesc,
 			initialData ? &resourceData : nullptr,
 			&buffer);
+		if (FAILED(hr))
+		{
+
+		}
+
 		return buffer;
 	}
 

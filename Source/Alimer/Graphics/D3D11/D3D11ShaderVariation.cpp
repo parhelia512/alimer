@@ -66,14 +66,10 @@ namespace Alimer
 		return elementHash;
 	}
 
-	ShaderVariation::ShaderVariation(Shader* parent_, const String& defines_) :
-		parent(parent_),
-		stage(parent->Stage()),
-		defines(defines_),
-		blob(nullptr),
-		shader(nullptr),
-		elementHash(0),
-		compiled(false)
+	ShaderVariation::ShaderVariation(Shader* parent_, const std::string& defines)
+		: parent(parent_)
+		, stage(parent->Stage())
+		, _defines(defines)
 	{
 	}
 
@@ -135,42 +131,47 @@ namespace Alimer
 		}
 
 		// Collect defines into macros
-		Vector<String> defineNames = defines.Split(' ');
-		Vector<String> defineValues;
-		Vector<D3D_SHADER_MACRO> macros;
+		auto defineNames = str::Split(_defines, " ");
+		std::vector<std::string> defineValues;
+		std::vector<D3D_SHADER_MACRO> macros;
 
-		for (size_t i = 0; i < defineNames.Size(); ++i)
+		for (size_t i = 0; i < defineNames.size(); ++i)
 		{
-			size_t equalsPos = defineNames[i].Find('=');
-			if (equalsPos != String::NPOS)
+			size_t equalsPos = defineNames[i].find('=');
+			if (equalsPos != std::string::npos)
 			{
-				defineValues.Push(defineNames[i].Substring(equalsPos + 1));
-				defineNames[i].Resize(equalsPos);
+				defineValues.push_back(defineNames[i].substr(equalsPos + 1));
+				defineNames[i].resize(equalsPos);
 			}
 			else
-				defineValues.Push("1");
+				defineValues.push_back("1");
 		}
-		for (size_t i = 0; i < defineNames.Size(); ++i)
+		for (size_t i = 0; i < defineNames.size(); ++i)
 		{
 			D3D_SHADER_MACRO macro;
-			macro.Name = defineNames[i].CString();
-			macro.Definition = defineValues[i].CString();
-			macros.Push(macro);
+			macro.Name = defineNames[i].c_str();
+			macro.Definition = defineValues[i].c_str();
+			macros.push_back(macro);
 		}
-		D3D_SHADER_MACRO endMacro;
-		endMacro.Name = nullptr;
-		endMacro.Definition = nullptr;
-		macros.Push(endMacro);
+
+		D3D_SHADER_MACRO endMacro = { nullptr, nullptr };
+		macros.push_back(endMacro);
 
 		/// \todo Level 3 could be used, but can lead to longer shader compile times, considering there is no binary caching yet
 		DWORD flags = D3DCOMPILE_OPTIMIZATION_LEVEL2 | D3DCOMPILE_PREFER_FLOW_CONTROL;
 		ID3DBlob* errorBlob = nullptr;
-		if (FAILED(D3DCompile(parent->SourceCode().CString(), parent->SourceCode().Length(), "", &macros[0], 0, "main",
+		if (FAILED(D3DCompile(
+			parent->GetSourceCode().c_str(),
+			(SIZE_T)parent->GetSourceCode().length(),
+			"",
+			macros.data(),
+			0,
+			"main",
 			stage == SHADER_VS ? "vs_4_0" : "ps_4_0", flags, 0, (ID3DBlob**)&blob, &errorBlob)))
 		{
 			if (errorBlob)
 			{
-				LOGERRORF("Could not compile shader %s: %s", FullName().CString(), errorBlob->GetBufferPointer());
+				LOGERRORF("Could not compile shader %s: %s", GetFullName().c_str(), errorBlob->GetBufferPointer());
 				errorBlob->Release();
 			}
 			return false;
@@ -206,26 +207,26 @@ namespace Alimer
 
 		if (!shader)
 		{
-			LOGERROR("Failed to create shader " + FullName());
+			LOGERROR("Failed to create shader " + GetFullName());
 			return false;
 		}
 		else
-			LOGDEBUGF("Compiled shader %s bytecode size %u", FullName().CString(), (unsigned)d3dBlob->GetBufferSize());
+			LOGDEBUGF("Compiled shader %s bytecode size %u", GetFullName().c_str(), (unsigned)d3dBlob->GetBufferSize());
 
 		return true;
 	}
 
-	Shader* ShaderVariation::Parent() const
+	Shader* ShaderVariation::GetParent() const
 	{
 		return parent;
 	}
 
-	String ShaderVariation::FullName() const
+	std::string ShaderVariation::GetFullName() const
 	{
 		if (parent)
-			return defines.IsEmpty() ? parent->Name() : parent->Name() + " (" + defines + ")";
-		else
-			return String::EMPTY;
+			return _defines.empty() ? parent->Name() : parent->Name() + " (" + _defines + ")";
+
+		return "";
 	}
 
 }

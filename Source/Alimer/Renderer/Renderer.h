@@ -70,12 +70,10 @@ namespace Alimer
 	struct ALIMER_API PassDesc
 	{
 		/// Construct undefined.
-		PassDesc()
-		{
-		}
+		PassDesc() = default;
 
 		/// Construct with parameters.
-		PassDesc(const String& name_, BatchSortMode sort_ = SORT_STATE, bool lit_ = true) :
+		PassDesc(const std::string& name_, BatchSortMode sort_ = SORT_STATE, bool lit_ = true) :
 			name(name_),
 			sort(sort_),
 			lit(lit_)
@@ -83,11 +81,11 @@ namespace Alimer
 		}
 
 		/// %Pass name.
-		String name;
+		std::string name{};
 		/// Sorting mode.
-		BatchSortMode sort;
+		BatchSortMode sort{ SORT_NONE };
 		/// Lighting flag.
-		bool lit;
+		bool lit{};
 	};
 
 	/// High-level rendering subsystem. Performs rendering of 3D scenes.
@@ -118,7 +116,7 @@ namespace Alimer
 		/// Render several passes to the currently set rendertarget and viewport. Avoids setting the per-frame constants multiple times.
 		void RenderBatches(const std::vector<PassDesc>& passes);
 		/// Render a pass to the currently set rendertarget and viewport. Convenience function for one pass only.
-		void RenderBatches(const String& pass);
+		void RenderBatches(const std::string& pass);
 
 		/// Per-frame vertex shader constant buffer.
 		SharedPtr<ConstantBuffer> vsFrameConstantBuffer;
@@ -143,7 +141,7 @@ namespace Alimer
 		/// Collect shadow caster batches.
 		void CollectShadowBatches(const std::vector<GeometryNode*>& nodes, BatchQueue& batchQueue, const Frustum& frustum, bool checkShadowCaster, bool checkFrustum);
 		/// Render batches from a specific queue and camera.
-		void RenderBatches(const Vector<Batch>& batches, Camera* camera, bool setPerFrameContants = true, bool overrideDepthBias = false, int depthBias = 0, float slopeScaledDepthBias = 0.0f);
+		void RenderBatches(const std::vector<Batch>& batches, Camera* camera, bool setPerFrameContants = true, bool overrideDepthBias = false, int depthBias = 0, float slopeScaledDepthBias = 0.0f);
 		/// Load shaders for a pass.
 		void LoadPassShaders(Pass* pass);
 		/// Return or create a shader variation for a pass. Vertex shader variations handle different geometry types and pixel shader variations handle different light combinations.
@@ -160,15 +158,15 @@ namespace Alimer
 		/// Camera's view frustum.
 		Frustum frustum;
 		/// Camera's view mask.
-		unsigned viewMask;
+		uint32_t viewMask;
 		/// Geometries in frustum.
-		Vector<GeometryNode*> geometries;
+		std::vector<GeometryNode*> geometries;
 		/// Lights in frustum.
-		Vector<Light*> lights;
+		std::vector<Light*> lights;
 		/// Batch queues per pass.
 		std::map<uint8_t, BatchQueue> batchQueues;
 		/// Instance transforms for uploading to the instance vertex buffer.
-		Vector<Matrix3x4> instanceTransforms;
+		std::vector<Matrix3x4> instanceTransforms;
 		/// Lit geometries query result.
 		std::vector<GeometryNode*> litGeometries;
 		/// %Light lists.
@@ -178,11 +176,11 @@ namespace Alimer
 		/// Ambient only light pass.
 		LightPass ambientLightPass;
 		/// Current frame number.
-		unsigned frameNumber;
+		uint32_t _frameNumber{ 0 };
 		/// Instance vertex buffer dirty flag.
-		bool instanceTransformsDirty;
+		bool _instanceTransformsDirty{ false };
 		/// Shadow maps.
-		Vector<ShadowMap> shadowMaps;
+		std::vector<ShadowMap> shadowMaps;
 		/// Shadow views.
 		std::vector<std::unique_ptr<ShadowView>> shadowViews;
 		/// Used shadow views so far.

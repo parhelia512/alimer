@@ -21,10 +21,7 @@
 // THE SOFTWARE.
 //
 
-#include "../Base/AutoPtr.h"
-#include "../Base/String.h"
 #include "../Base/Vector.h"
-#include "../Base/WString.h"
 #include "File.h"
 #include "FileSystem.h"
 
@@ -51,34 +48,33 @@
 #	include <mach-o/dyld.h>
 #endif
 
+using namespace std;
+
 namespace Alimer
 {
-	bool SetCurrentDir(const String& pathName)
+#ifndef _WIN32
+	bool SetCurrentDir(const string& pathName)
 	{
-#ifdef _WIN32
-		if (SetCurrentDirectoryW(WideNativePath(pathName).CString()) == FALSE)
+		if (chdir(NativePath(pathName).c_str()) != 0)
 			return false;
-#else
-		if (chdir(NativePath(pathName).CString()) != 0)
-			return false;
-#endif
 
 		return true;
 	}
+#endif
 
-	bool CreateDir(const String& pathName)
+	bool CreateDir(const string& pathName)
 	{
 #ifdef _WIN32
-		bool success = (CreateDirectoryW(WideNativePath(RemoveTrailingSlash(pathName)).CString(), 0) == TRUE) ||
+		bool success = (CreateDirectoryW(WideNativePath(RemoveTrailingSlash(pathName)).c_str(), 0) == TRUE) ||
 			(GetLastError() == ERROR_ALREADY_EXISTS);
 #else
-		bool success = mkdir(NativePath(RemoveTrailingSlash(pathName)).CString(), S_IRWXU) == 0 || errno == EEXIST;
+		bool success = mkdir(NativePath(RemoveTrailingSlash(pathName)).c_str(), S_IRWXU) == 0 || errno == EEXIST;
 #endif
 
 		return success;
 	}
 
-	bool CopyFile(const String& srcFileName, const String& destFileName)
+	bool CopyFile(const string& srcFileName, const string& destFileName)
 	{
 		File srcFile(srcFileName, FILE_READ);
 		if (!srcFile.IsOpen())
@@ -96,161 +92,153 @@ namespace Alimer
 		return bytesRead == fileSize && bytesWritten == fileSize;
 	}
 
-	bool RenameFile(const String& srcFileName, const String& destFileName)
+	bool RenameFile(const string& srcFileName, const string& destFileName)
 	{
 #ifdef _WIN32
-		return MoveFileW(WideNativePath(srcFileName).CString(), WideNativePath(destFileName).CString()) != 0;
+		return MoveFileW(WideNativePath(srcFileName).c_str(), WideNativePath(destFileName).c_str()) != 0;
 #else
-		return rename(NativePath(srcFileName).CString(), NativePath(destFileName).CString()) == 0;
+		return rename(NativePath(srcFileName).c_str(), NativePath(destFileName).c_str()) == 0;
 #endif
 	}
 
-	bool DeleteFile(const String& fileName)
+	bool DeleteFile(const string& fileName)
 	{
 #ifdef _WIN32
-		return DeleteFileW(WideNativePath(fileName).CString()) != 0;
+		return DeleteFileW(WideNativePath(fileName).c_str()) != 0;
 #else
-		return remove(NativePath(fileName).CString()) == 0;
+		return remove(NativePath(fileName).c_str()) == 0;
 #endif
 	}
 
-	String CurrentDir()
+	string CurrentDir()
 	{
 #ifdef _WIN32
 		wchar_t path[MAX_PATH];
 		path[0] = 0;
 		GetCurrentDirectoryW(MAX_PATH, path);
-		return AddTrailingSlash(String(path));
+		wstring wPath(path);
+		return AddTrailingSlash(string(wPath.begin(), wPath.end()));
 #else
 		char path[MAX_PATH];
 		path[0] = 0;
 		getcwd(path, MAX_PATH);
-		return AddTrailingSlash(String(path));
+		return AddTrailingSlash(string(path));
 #endif
 	}
 
-	unsigned LastModifiedTime(const String& fileName)
+	unsigned LastModifiedTime(const string& fileName)
 	{
-		if (fileName.IsEmpty())
+		if (fileName.empty())
 			return 0;
 
 #ifdef _WIN32
 		struct _stat st;
-		if (!_stat(fileName.CString(), &st))
+		if (!_stat(fileName.c_str(), &st))
 			return (unsigned)st.st_mtime;
-		else
-			return 0;
+
+		return 0;
 #else
 		struct stat st;
-		if (!stat(fileName.CString(), &st))
+		if (!stat(fileName.c_str(), &st))
 			return (unsigned)st.st_mtime;
 		else
 			return 0;
 #endif
 	}
 
-	bool SetLastModifiedTime(const String& fileName, unsigned newTime)
+	bool SetLastModifiedTime(const string& fileName, unsigned newTime)
 	{
-		if (fileName.IsEmpty())
+		if (fileName.empty())
 			return false;
 
 #ifdef WIN32
 		struct _stat oldTime;
 		struct _utimbuf newTimes;
-		if (_stat(fileName.CString(), &oldTime) != 0)
+		if (_stat(fileName.c_str(), &oldTime) != 0)
 			return false;
 		newTimes.actime = oldTime.st_atime;
 		newTimes.modtime = newTime;
-		return _utime(fileName.CString(), &newTimes) == 0;
+		return _utime(fileName.c_str(), &newTimes) == 0;
 #else
 		struct stat oldTime;
 		struct utimbuf newTimes;
-		if (stat(fileName.CString(), &oldTime) != 0)
+		if (stat(fileName.c_str(), &oldTime) != 0)
 			return false;
 		newTimes.actime = oldTime.st_atime;
 		newTimes.modtime = newTime;
-		return utime(fileName.CString(), &newTimes) == 0;
+		return utime(fileName.c_str(), &newTimes) == 0;
 #endif
 	}
 
-	bool FileExists(const String& fileName)
+#ifndef WIN32
+	bool FileExists(const string& fileName)
 	{
-		String fixedName = NativePath(RemoveTrailingSlash(fileName));
+		string fixedName = NativePath(RemoveTrailingSlash(fileName));
 
-#ifdef _WIN32
-		DWORD attributes = GetFileAttributesW(WString(fixedName).CString());
-		if (attributes == INVALID_FILE_ATTRIBUTES || attributes & FILE_ATTRIBUTE_DIRECTORY)
-			return false;
-#else
 		struct stat st;
 		if (stat(fixedName.CString(), &st) || st.st_mode & S_IFDIR)
 			return false;
-#endif
 
 		return true;
 	}
 
-	bool DirExists(const String& pathName)
+	bool DirectoryExists(const string& pathName)
 	{
-#ifndef WIN32
 		// Always return true for the root directory
 		if (pathName == "/")
 			return true;
-#endif
 
-		String fixedName = NativePath(RemoveTrailingSlash(pathName));
+		string fixedName = NativePath(RemoveTrailingSlash(pathName));
 
-#ifdef _WIN32
-		DWORD attributes = GetFileAttributesW(WString(fixedName).CString());
-		if (attributes == INVALID_FILE_ATTRIBUTES || !(attributes & FILE_ATTRIBUTE_DIRECTORY))
-			return false;
-#else
 		struct stat st;
 		if (stat(fixedName.CString(), &st) || !(st.st_mode & S_IFDIR))
 			return false;
-#endif
 
 		return true;
 	}
+#endif
 
-	static void ScanDirInternal(Vector<String>& result, String path, const String& startPath,
-		const String& filter, unsigned flags, bool recursive)
+	static void ScanDirInternal(
+		vector<string>& result,
+		string path,
+		const string& startPath,
+		const string& filter, unsigned flags, bool recursive)
 	{
 		path = AddTrailingSlash(path);
-		String deltaPath;
-		if (path.Length() > startPath.Length())
-			deltaPath = path.Substring(startPath.Length());
+		string deltaPath;
+		if (path.length() > startPath.length())
+			deltaPath = path.substr(startPath.length());
 
-		String filterExtension = filter.Substring(filter.Find('.'));
-		if (filterExtension.Contains('*'))
-			filterExtension.Clear();
+		string filterExtension = filter.substr(filter.find('.'));
+		if (filterExtension.find('*') != string::npos)
+			filterExtension.clear();
 
 #ifdef _WIN32
-		WIN32_FIND_DATAW info;
-		HANDLE handle = FindFirstFileW(WString(path + "*").CString(), &info);
+		WIN32_FIND_DATAA info;
+		HANDLE handle = FindFirstFileA(string(path + "*").c_str(), &info);
 		if (handle != INVALID_HANDLE_VALUE)
 		{
 			do
 			{
-				String fileName(info.cFileName);
-				if (!fileName.IsEmpty())
+				string fileName(info.cFileName);
+				if (!fileName.empty())
 				{
 					if (info.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN && !(flags & SCAN_HIDDEN))
 						continue;
 					if (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 					{
 						if (flags & SCAN_DIRS)
-							result.Push(deltaPath + fileName);
+							result.push_back(deltaPath + fileName);
 						if (recursive && fileName != "." && fileName != "..")
 							ScanDirInternal(result, path + fileName, startPath, filter, flags, recursive);
 					}
 					else if (flags & SCAN_FILES)
 					{
-						if (filterExtension.IsEmpty() || fileName.EndsWith(filterExtension))
-							result.Push(deltaPath + fileName);
+						if (filterExtension.empty() || str::EndsWith(fileName, filterExtension))
+							result.push_back(deltaPath + fileName);
 					}
 				}
-			} while (FindNextFileW(handle, &info));
+			} while (FindNextFileA(handle, &info));
 
 			FindClose(handle);
 		}
@@ -264,11 +252,11 @@ namespace Alimer
 			while ((de = readdir(dir)))
 			{
 				/// \todo Filename may be unnormalized Unicode on Mac OS X. Re-normalize as necessary
-				String fileName(de->d_name);
+				string fileName(de->d_name);
 				bool normalEntry = fileName != "." && fileName != "..";
 				if (normalEntry && !(flags & SCAN_HIDDEN) && fileName.StartsWith("."))
 					continue;
-				String pathAndName = path + fileName;
+				string pathAndName = path + fileName;
 				if (!stat(pathAndName.CString(), &st))
 				{
 					if (st.st_mode & S_IFDIR)
@@ -290,22 +278,19 @@ namespace Alimer
 #endif
 	}
 
-	void ScanDir(Vector<String>& result, const String& pathName, const String& filter, unsigned flags, bool recursive)
+	void ScanDir(
+		vector<string>& result,
+		const string& pathName,
+		const string& filter, unsigned flags, bool recursive)
 	{
-		String initialPath = AddTrailingSlash(pathName);
+		string initialPath = AddTrailingSlash(pathName);
 		ScanDirInternal(result, initialPath, initialPath, filter, flags, recursive);
 	}
 
-	String ExecutableDir()
+#if !ALIMER_PLATFORM_WINDOWS && !ALIMER_PLATFORM_UWP
+	string ExecutableDir()
 	{
-		String ret;
-
-#if defined(_WIN32)
-		wchar_t exeName[MAX_PATH];
-		exeName[0] = 0;
-		GetModuleFileNameW(0, exeName, MAX_PATH);
-		ret = Path(String(exeName));
-#elif defined(__APPLE__)
+#if defined(__APPLE__)
 		char exeName[MAX_PATH];
 		memset(exeName, 0, MAX_PATH);
 		unsigned size = MAX_PATH;
@@ -321,137 +306,145 @@ namespace Alimer
 #endif
 
 		// Sanitate /./ construct away
-		ret.Replace("/./", "/");
+		str::Replace(ret, "/./", "/");
 		return ret;
 	}
+#endif
 
-	void SplitPath(const String& fullPath, String& pathName, String& fileName, String& extension, bool lowercaseExtension)
+	void SplitPath(const string& fullPath, string& pathName, string& fileName, string& extension, bool lowercaseExtension)
 	{
-		String fullPathCopy = NormalizePath(fullPath);
+		string fullPathCopy = NormalizePath(fullPath);
 
-		size_t extPos = fullPathCopy.FindLast('.');
-		size_t pathPos = fullPathCopy.FindLast('/');
+		size_t extPos = fullPathCopy.find_last_of('.');
+		size_t pathPos = fullPathCopy.find_last_of('/');
 
-		if (extPos != String::NPOS && (pathPos == String::NPOS || extPos > pathPos))
+		if (extPos != string::npos
+			&& (pathPos == string::npos || extPos > pathPos))
 		{
-			extension = fullPathCopy.Substring(extPos);
+			extension = fullPathCopy.substr(extPos);
 			if (lowercaseExtension)
-				extension = extension.ToLower();
-			fullPathCopy = fullPathCopy.Substring(0, extPos);
+				extension = str::ToLower(extension);
+			fullPathCopy = fullPathCopy.substr(0, extPos);
 		}
 		else
-			extension.Clear();
+			extension.clear();
 
-		pathPos = fullPathCopy.FindLast('/');
-		if (pathPos != String::NPOS)
+		pathPos = fullPathCopy.find_last_of('/');
+		if (pathPos != string::npos)
 		{
-			fileName = fullPathCopy.Substring(pathPos + 1);
-			pathName = fullPathCopy.Substring(0, pathPos + 1);
+			fileName = fullPathCopy.substr(pathPos + 1);
+			pathName = fullPathCopy.substr(0, pathPos + 1);
 		}
 		else
 		{
 			fileName = fullPathCopy;
-			pathName.Clear();
+			pathName.clear();
 		}
 	}
 
-	String Path(const String& fullPath)
+	string GetPath(const string& fullPath)
 	{
-		String path, file, extension;
+		string path, file, extension;
 		SplitPath(fullPath, path, file, extension);
 		return path;
 	}
 
-	String FileName(const String& fullPath)
+	string GetFileName(const string& fullPath)
 	{
-		String path, file, extension;
+		string path, file, extension;
 		SplitPath(fullPath, path, file, extension);
 		return file;
 	}
 
-	String Extension(const String& fullPath, bool lowercaseExtension)
+	string GetExtension(const string& fullPath, bool lowercaseExtension)
 	{
-		String path, file, extension;
+		string path, file, extension;
 		SplitPath(fullPath, path, file, extension, lowercaseExtension);
 		return extension;
 	}
 
-	String FileNameAndExtension(const String& fileName, bool lowercaseExtension)
+	string GetFileNameAndExtension(const string& fileName, bool lowercaseExtension)
 	{
-		String path, file, extension;
+		string path, file, extension;
 		SplitPath(fileName, path, file, extension, lowercaseExtension);
 		return file + extension;
 	}
 
-	String ReplaceExtension(const String& fullPath, const String& newExtension)
+	string ReplaceExtension(const string& fullPath, const string& newExtension)
 	{
-		String path, file, extension;
+		string path, file, extension;
 		SplitPath(fullPath, path, file, extension);
 		return path + file + newExtension;
 	}
 
-	String AddTrailingSlash(const String& pathName)
+	string AddTrailingSlash(const string& pathName)
 	{
-		String ret = pathName.Trimmed();
-		ret.Replace('\\', '/');
-		if (!ret.IsEmpty() && ret.Back() != '/')
+		string ret = str::Trim(pathName);
+		str::Replace(ret, "\\", "/");
+		if (!ret.empty() && ret.back() != '/')
 			ret += '/';
 		return ret;
 	}
 
-	String RemoveTrailingSlash(const String& pathName)
+	string RemoveTrailingSlash(const string& pathName)
 	{
-		String ret = pathName.Trimmed();
-		ret.Replace('\\', '/');
-		if (!ret.IsEmpty() && ret.Back() == '/')
-			ret.Resize(ret.Length() - 1);
+		string ret = str::Trim(pathName);
+		str::Replace(ret, "\\", "/");
+		if (!ret.empty() && ret.back() == '/')
+			ret.resize(ret.length() - 1);
 		return ret;
 	}
 
-	String ParentPath(const String& path)
+	string ParentPath(const string& path)
 	{
-		size_t pos = RemoveTrailingSlash(path).FindLast('/');
-		if (pos != String::NPOS)
-			return path.Substring(0, pos + 1);
-		else
-			return String();
+		size_t pos = RemoveTrailingSlash(path).find_last_of('/');
+		if (pos != string::npos)
+			return path.substr(0, pos + 1);
+
+		return string();
 	}
 
-	String NormalizePath(const String& pathName)
+	string NormalizePath(const string& pathName)
 	{
-		return pathName.Replaced('\\', '/');
+		string result = pathName;
+		str::Replace(result, "\\", "/");
+		return result;
 	}
 
-	String NativePath(const String& pathName)
+	std::string NativePath(const std::string& pathName)
 	{
 #ifdef _WIN32
-		return pathName.Replaced('/', '\\');
+		string result = pathName;
+		str::Replace(result, "/", "\\");
+		return result;
 #else
 		return pathName;
 #endif
 	}
 
-	WString WideNativePath(const String& pathName)
+	wstring WideNativePath(const string& pathName)
 	{
 #ifdef _WIN32
-		return WString(pathName.Replaced('/', '\\'));
+		string result = pathName;
+		str::Replace(result, "/", "\\");
+		return wstring(result.begin(), result.end());
 #else
-		return WString(pathName);
+		return wstring(pathName.begin(), pathName.end());
 #endif
 	}
 
-	bool IsAbsolutePath(const String& pathName)
+	bool IsAbsolutePath(const string& pathName)
 	{
-		if (pathName.IsEmpty())
+		if (pathName.empty())
 			return false;
 
-		String path = NormalizePath(pathName);
+		string path = NormalizePath(pathName);
 
 		if (path[0] == '/')
 			return true;
 
 #ifdef _WIN32
-		if (path.Length() > 1 && IsAlpha(path[0]) && path[1] == ':')
+		if (path.length() > 1 && IsAlpha(path[0]) && path[1] == ':')
 			return true;
 #endif
 

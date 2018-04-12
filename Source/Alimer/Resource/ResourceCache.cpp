@@ -1,4 +1,25 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #include "../Debug/Log.h"
 #include "../Debug/Profiler.h"
@@ -8,11 +29,10 @@
 #include "JSONFile.h"
 #include "ResourceCache.h"
 
-#include "../Debug/DebugNew.h"
+using namespace std;
 
 namespace Alimer
 {
-
 	ResourceCache::ResourceCache()
 	{
 		RegisterSubsystem(this);
@@ -24,22 +44,22 @@ namespace Alimer
 		RemoveSubsystem(this);
 	}
 
-	bool ResourceCache::AddResourceDir(const String& pathName, bool addFirst)
+	bool ResourceCache::AddResourceDir(const string& pathName, bool addFirst)
 	{
 		ALIMER_PROFILE(AddResourceDir);
 
-		if (!DirExists(pathName))
+		if (!DirectoryExists(pathName))
 		{
 			LOGERROR("Could not open directory " + pathName);
 			return false;
 		}
 
-		String fixedPath = SanitateResourceDirName(pathName);
+		string fixedPath = SanitateResourceDirName(pathName);
 
 		// Check that the same path does not already exist
 		for (size_t i = 0; i < resourceDirs.size(); ++i)
 		{
-			if (!resourceDirs[i].Compare(fixedPath, false))
+			if (!str::Compare(resourceDirs[i], fixedPath, false))
 				return true;
 		}
 
@@ -60,7 +80,7 @@ namespace Alimer
 			return false;
 		}
 
-		if (resource->Name().IsEmpty())
+		if (resource->Name().empty())
 		{
 			LOGERROR("Manual resource with empty name, can not add");
 			return false;
@@ -70,14 +90,14 @@ namespace Alimer
 		return true;
 	}
 
-	void ResourceCache::RemoveResourceDir(const String& pathName)
+	void ResourceCache::RemoveResourceDir(const string& pathName)
 	{
 		// Convert path to absolute
-		String fixedPath = SanitateResourceDirName(pathName);
+		string fixedPath = SanitateResourceDirName(pathName);
 
 		for (size_t i = 0; i < resourceDirs.size(); ++i)
 		{
-			if (!resourceDirs[i].Compare(fixedPath, false))
+			if (!str::Compare(resourceDirs[i], fixedPath, false))
 			{
 				resourceDirs.erase(resourceDirs.begin() + i);
 				LOGINFO("Removed resource path " + fixedPath);
@@ -86,7 +106,7 @@ namespace Alimer
 		}
 	}
 
-	void ResourceCache::UnloadResource(StringHash type, const String& name, bool force)
+	void ResourceCache::UnloadResource(StringHash type, const string& name, bool force)
 	{
 		auto key = std::make_pair(type, StringHash(name));
 		auto it = resources.find(key);
@@ -124,7 +144,7 @@ namespace Alimer
 		}
 	}
 
-	void ResourceCache::UnloadResources(StringHash type, const String& partialName, bool force)
+	void ResourceCache::UnloadResources(StringHash type, const string& partialName, bool force)
 	{
 		// In case resources refer to other resources, repeat until there are no further unloads
 		for (;;)
@@ -137,7 +157,7 @@ namespace Alimer
 				if (current->first.first == type)
 				{
 					Resource* resource = current->second;
-					if (resource->Name().StartsWith(partialName) && (resource->Refs() == 1 || force))
+					if (str::StartsWith(resource->Name(), partialName) && (resource->Refs() == 1 || force))
 					{
 						resources.erase(current);
 						++unloaded;
@@ -150,7 +170,7 @@ namespace Alimer
 		}
 	}
 
-	void ResourceCache::UnloadResources(const String& partialName, bool force)
+	void ResourceCache::UnloadResources(const string& partialName, bool force)
 	{
 		// In case resources refer to other resources, repeat until there are no further unloads
 		for (;;)
@@ -161,7 +181,7 @@ namespace Alimer
 			{
 				auto current = it++;
 				Resource* resource = current->second;
-				if (resource->Name().StartsWith(partialName) && (!resource->Refs() == 1 || force))
+				if (str::StartsWith(resource->Name(), partialName) && (!resource->Refs() == 1 || force))
 				{
 					resources.erase(current);
 					++unloaded;
@@ -205,9 +225,9 @@ namespace Alimer
 		return stream ? resource->Load(*stream) : false;
 	}
 
-	std::unique_ptr<Stream> ResourceCache::OpenResource(const String& nameIn)
+	std::unique_ptr<Stream> ResourceCache::OpenResource(const string& nameIn)
 	{
-		String name = SanitateResourceName(nameIn);
+		string name = SanitateResourceName(nameIn);
 		std::unique_ptr<Stream> ret;
 
 		for (size_t i = 0; i < resourceDirs.size(); ++i)
@@ -234,12 +254,14 @@ namespace Alimer
 		return ret;
 	}
 
-	Resource* ResourceCache::LoadResource(StringHash type, const String& nameIn)
+	Resource* ResourceCache::LoadResource(
+		StringHash type,
+		const std::string& name_)
 	{
-		String name = SanitateResourceName(nameIn);
+		std::string name = SanitateResourceName(name_);
 
 		// If empty name, return null pointer immediately without logging an error
-		if (name.IsEmpty())
+		if (name.empty())
 			return nullptr;
 
 		// Check for existing resource
@@ -276,20 +298,22 @@ namespace Alimer
 		return newResource;
 	}
 
-	void ResourceCache::ResourcesByType(Vector<Resource*>& result, StringHash type) const
+	void ResourceCache::ResourcesByType(std::vector<Resource*>& result, StringHash type) const
 	{
-		result.Clear();
+		result.clear();
 
 		for (auto it = resources.begin(); it != resources.end(); ++it)
 		{
 			if (it->second->Type() == type)
-				result.Push(it->second);
+			{
+				result.push_back(it->second);
+			}
 		}
 	}
 
-	bool ResourceCache::Exists(const String& nameIn) const
+	bool ResourceCache::Exists(const string& nameIn) const
 	{
-		String name = SanitateResourceName(nameIn);
+		string name = SanitateResourceName(nameIn);
 
 		for (size_t i = 0; i < resourceDirs.size(); ++i)
 		{
@@ -301,7 +325,7 @@ namespace Alimer
 		return FileExists(name);
 	}
 
-	String ResourceCache::ResourceFileName(const String& name) const
+	string ResourceCache::ResourceFileName(const string& name) const
 	{
 		for (size_t i = 0; i < resourceDirs.size(); ++i)
 		{
@@ -309,50 +333,50 @@ namespace Alimer
 				return resourceDirs[i] + name;
 		}
 
-		return String();
+		return string();
 	}
 
-	String ResourceCache::SanitateResourceName(const String& nameIn) const
+	string ResourceCache::SanitateResourceName(const string& nameIn) const
 	{
 		// Sanitate unsupported constructs from the resource name
-		String name = NormalizePath(nameIn);
-		name.Replace("../", "");
-		name.Replace("./", "");
+		string name = NormalizePath(nameIn);
+		str::Replace(name, "../", "");
+		str::Replace(name, "./", "");
 
 		// If the path refers to one of the resource directories, normalize the resource name
 		if (resourceDirs.size())
 		{
-			String namePath = Path(name);
-			String exePath = ExecutableDir();
+			string namePath = GetPath(name);
+			string exePath = GetExecutableDir();
 			for (size_t i = 0; i < resourceDirs.size(); ++i)
 			{
-				String relativeResourcePath = resourceDirs[i];
-				if (relativeResourcePath.StartsWith(exePath))
-					relativeResourcePath = relativeResourcePath.Substring(exePath.Length());
+				string relativeResourcePath = resourceDirs[i];
+				if (str::StartsWith(relativeResourcePath, exePath))
+					relativeResourcePath = relativeResourcePath.substr(exePath.length());
 
-				if (namePath.StartsWith(resourceDirs[i], false))
-					namePath = namePath.Substring(resourceDirs[i].Length());
-				else if (namePath.StartsWith(relativeResourcePath, false))
-					namePath = namePath.Substring(relativeResourcePath.Length());
+				if (str::StartsWith(namePath, resourceDirs[i], false))
+					namePath = namePath.substr(resourceDirs[i].length());
+				else if (str::StartsWith(namePath, relativeResourcePath, false))
+					namePath = namePath.substr(relativeResourcePath.length());
 			}
 
-			name = namePath + FileNameAndExtension(name);
+			name = namePath + GetFileNameAndExtension(name);
 		}
 
-		return name.Trimmed();
+		return str::Trim(name);
 	}
 
-	String ResourceCache::SanitateResourceDirName(const String& nameIn) const
+	string ResourceCache::SanitateResourceDirName(const string& nameIn) const
 	{
 		// Convert path to absolute
-		String fixedPath = AddTrailingSlash(nameIn);
+		string fixedPath = AddTrailingSlash(nameIn);
 		if (!IsAbsolutePath(fixedPath))
 			fixedPath = CurrentDir() + fixedPath;
 
 		// Sanitate away /./ construct
-		fixedPath.Replace("/./", "/");
+		str::Replace(fixedPath, "/./", "/");
 
-		return fixedPath.Trimmed();
+		return str::Trim(fixedPath);
 	}
 
 	void RegisterResourceLibrary()

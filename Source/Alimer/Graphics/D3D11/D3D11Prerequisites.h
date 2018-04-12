@@ -25,30 +25,7 @@
 
 #include <d3d11.h>
 
-#pragma warning(push)
-#pragma warning(disable : 4005)
-
-#ifndef WIN32_LEAN_AND_MEAN
-#	define WIN32_LEAN_AND_MEAN
-#endif
-
-#ifndef NOMINMAX
-#	define NOMINMAX
-#endif 
-
-#define NODRAWTEXT
-#define NOGDI
-#define NOBITMAP
-#define NOMCX
-#define NOSERVICE
-#define NOHELP
-#pragma warning(pop)
-
-#include <windows.h>
-
-#ifndef _WIN32_WINNT_WIN10
-#	define _WIN32_WINNT_WIN10 0x0A00
-#endif
+#include "../../PlatformIncl.h"
 
 #if defined(_XBOX_ONE) && defined(_TITLE)
 #	include <d3d11_x.h>

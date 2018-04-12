@@ -24,16 +24,20 @@
 #include "String.h"
 #include "Swap.h"
 #include "Vector.h"
-#include "WString.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <algorithm>
+using namespace std;
 
 namespace Alimer
 {
-	std::string& str::Replace(std::string& dest, const std::string& find, const std::string& replace, uint32_t maxReplacements)
+	string& str::Replace(
+		string& dest,
+		const string& find,
+		const string& replace,
+		uint32_t maxReplacements)
 	{
 		int pos = 0;
 		while ((pos = dest.find(find, pos)) != std::string::npos)
@@ -44,12 +48,8 @@ namespace Alimer
 			if (maxReplacements == 0)
 				break;
 		}
-		return dest;
-	}
 
-	std::string& str::Replace(std::string&& dest, const std::string& find, const std::string& replace, uint32_t maxReplacements)
-	{
-		return str::Replace(dest, find, replace, maxReplacements);
+		return dest;
 	}
 
 	std::vector<std::string> str::Split(const std::string& value, const std::string& separator, bool keepEmpty)
@@ -84,6 +84,151 @@ namespace Alimer
 		return result;
 	}
 
+	std::string str::Trim(const std::string& source)
+	{
+		size_t trimStart = 0;
+		size_t trimEnd = source.length();
+
+		while (trimStart < trimEnd)
+		{
+			char c = source[trimStart];
+			if (c != ' ' && c != 9)
+				break;
+			++trimStart;
+		}
+		while (trimEnd > trimStart)
+		{
+			char c = source[trimEnd - 1];
+			if (c != ' ' && c != 9)
+				break;
+			--trimEnd;
+		}
+
+		return source.substr(trimStart, trimEnd - trimStart);
+	}
+
+	std::string str::ToUpper(const std::string& source)
+	{
+		std::string result(source);
+
+		for (auto it = result.begin(); it != result.end(); ++it)
+			*it = Alimer::ToUpper(*it);
+
+		return result;
+	}
+
+	string str::ToLower(const string& source)
+	{
+		string result(source);
+
+		for (auto it = result.begin(); it != result.end(); ++it)
+			*it = Alimer::ToLower(*it);
+
+		return result;
+	}
+
+	bool str::StartsWith(const string& str, const string& value, bool caseSensitive)
+	{
+		if (caseSensitive)
+			return str.find(value) != string::npos;
+
+		return str::ToLower(str).find(str::ToLower(value)) != string::npos;
+	}
+
+	bool str::EndsWith(const std::string& str, const std::string& value, bool caseSensitive)
+	{
+		size_t pos;
+		if (caseSensitive)
+		{
+			pos = str.find_last_of(value);
+		}
+		else
+		{
+			pos = str::ToLower(str).find_last_of(str::ToLower(value));
+		}
+
+		return pos != string::npos && pos == str.length() - str.length();
+	}
+
+	bool str::ToBool(const char* str)
+	{
+		const size_t length = strlen(str);
+
+		for (size_t i = 0; i < length; ++i)
+		{
+			char c = Alimer::ToLower(str[i]);
+			if (c == 't' || c == 'y' || c == '1')
+				return true;
+			else if (c != ' ' && c != '\t')
+				break;
+		}
+
+		return false;
+	}
+
+	int str::ToInt(const char* str)
+	{
+		if (!str)
+			return 0;
+
+		// Explicitly ask for base 10 to prevent source starts with '0' or '0x' from being converted to base 8 or base 16, respectively
+		return strtol(str, 0, 10);
+	}
+
+	unsigned str::ToUInt(const char* str)
+	{
+		if (!str)
+			return 0;
+
+		return strtoul(str, 0, 10);
+	}
+
+	float str::ToFloat(const char* str)
+	{
+		if (!str)
+			return 0;
+
+		return (float)strtod(str, 0);
+	}
+
+	int str::Compare(const std::string& str1, const std::string& str2, bool caseSensitive)
+	{
+		return str::Compare(str1.c_str(), str2.c_str(), caseSensitive);
+	}
+
+	int str::Compare(const char* str1, const char* str2, bool caseSensitive)
+	{
+		if (caseSensitive)
+			return strcmp(str1, str2);
+
+#ifdef _MSC_VER
+		return _strcmpi(str1, str2);
+#else
+		return strcasecmp(str1, str2);
+#endif
+	}
+
+	string str::Format(const char* format, ...)
+	{
+		va_list args;
+		va_start(args, format);
+		char buf[256];
+		size_t n = std::vsnprintf(buf, sizeof(buf), format, args);
+		va_end(args);
+
+		// Static buffer large enough?
+		if (n < sizeof(buf)) {
+			return { buf, n };
+		}
+
+		// Static buffer too small
+		std::string s(n + 1, 0);
+		va_start(args, format);
+		std::vsnprintf(const_cast<char*>(s.data()), s.size(), format, args);
+		va_end(args);
+		return s;
+	}
+
 	char String::endZero = 0;
 
 	const String String::EMPTY;
@@ -105,12 +250,6 @@ namespace Alimer
 		buffer(nullptr)
 	{
 		SetUTF8FromWChar(str);
-	}
-
-	String::String(const WString& str) :
-		buffer(nullptr)
-	{
-		SetUTF8FromWChar(str.CString());
 	}
 
 	String::String(int value) :
@@ -226,6 +365,14 @@ namespace Alimer
 	{
 		Resize(rhs.Length());
 		CopyChars(Buffer(), rhs.Buffer(), rhs.Length());
+
+		return *this;
+	}
+
+	String& String::operator = (const std::string& rhs)
+	{
+		Resize(rhs.length());
+		CopyChars(Buffer(), rhs.data(), rhs.length());
 
 		return *this;
 	}
@@ -1012,22 +1159,22 @@ namespace Alimer
 
 	bool String::ToBool() const
 	{
-		return ToBool(CString());
+		return str::ToBool(CString());
 	}
 
 	int String::ToInt() const
 	{
-		return ToInt(CString());
+		return str::ToInt(CString());
 	}
 
 	unsigned String::ToUInt() const
 	{
-		return ToUInt(CString());
+		return str::ToUInt(CString());
 	}
 
 	float String::ToFloat() const
 	{
-		return ToFloat(CString());
+		return str::ToFloat(CString());
 	}
 
 	void String::SetUTF8FromLatin1(const char* str)
@@ -1228,47 +1375,6 @@ namespace Alimer
 		}
 
 		return hash;
-	}
-
-	bool String::ToBool(const char* str)
-	{
-		size_t length = CStringLength(str);
-
-		for (size_t i = 0; i < length; ++i)
-		{
-			char c = Alimer::ToLower(str[i]);
-			if (c == 't' || c == 'y' || c == '1')
-				return true;
-			else if (c != ' ' && c != '\t')
-				break;
-		}
-
-		return false;
-	}
-
-	int String::ToInt(const char* str)
-	{
-		if (!str)
-			return 0;
-
-		// Explicitly ask for base 10 to prevent source starts with '0' or '0x' from being converted to base 8 or base 16, respectively
-		return strtol(str, 0, 10);
-	}
-
-	unsigned String::ToUInt(const char* str)
-	{
-		if (!str)
-			return 0;
-
-		return strtoul(str, 0, 10);
-	}
-
-	float String::ToFloat(const char* str)
-	{
-		if (!str)
-			return 0;
-
-		return (float)strtod(str, 0);
 	}
 
 	size_t String::CountElements(const char* buffer, char separator)

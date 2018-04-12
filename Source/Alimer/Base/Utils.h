@@ -88,6 +88,18 @@ namespace Alimer
 	}
 }
 
+// Put this in the declarations for a class to be uncopyable and unassignable.
+#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
+	TypeName(const TypeName&) = delete; \
+	TypeName& operator=(const TypeName&) = delete
+
+// Put this in the declarations for a class to be uncopyable and unassignable.
+#define DISALLOW_COPY_MOVE_AND_ASSIGN(TypeName) \
+	TypeName(const TypeName&) = delete; \
+	TypeName& operator=(const TypeName&) = delete; \
+	TypeName(const TypeName&&) = delete; \
+	TypeName& operator=(const TypeName&&) = delete;
+
 // Utility to enable bitmask operators on enum classes.
 // To use define an enum class with valid bitmask values and an underlying type
 // then use the macro to enable support:

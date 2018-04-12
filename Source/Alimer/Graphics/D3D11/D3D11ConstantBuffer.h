@@ -57,14 +57,14 @@ namespace Alimer
 		/// Return the index of a constant, or NPOS if not found.
 		size_t FindConstantIndex(const char* name) const;
 		/// Return pointer to the constant value, or null if not found.
-		const void* GetConstantValue(size_t index, uint32_t elementIndex = 0) const;
+		const void* GetConstantValue(size_t index, size_t elementIndex = 0) const;
 		/// Return pointer to the constant value, or null if not found.
-		const void* GetConstantValue(const String& name, uint32_t elementIndex = 0) const;
+		const void* GetConstantValue(const String& name, size_t elementIndex = 0) const;
 		/// Return pointer to the constant value, or null if not found.
-		const void* GetConstantValue(const char* name, uint32_t elementIndex = 0) const;
+		const void* GetConstantValue(const char* name, size_t elementIndex = 0) const;
 
 		/// Return constant value, template version.
-		template <class T> T GetConstantValue(uint32_t index, uint32_t elementIndex = 0) const
+		template <class T> T GetConstantValue(size_t index, size_t elementIndex = 0) const
 		{
 			const void* value = GetConstantValue(index, elementIndex);
 			return value ? *(reinterpret_cast<const T*>(value)) : T();

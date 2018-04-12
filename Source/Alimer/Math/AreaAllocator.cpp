@@ -1,8 +1,27 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #include "AreaAllocator.h"
-
-#include "../Debug/DebugNew.h"
 
 namespace Alimer
 {
@@ -29,9 +48,9 @@ namespace Alimer
 		maxSize = IntVector2(maxWidth, maxHeight);
 		fastMode = fastMode_;
 
-		freeAreas.Clear();
+		freeAreas.clear();
 		IntRect initialArea(0, 0, width, height);
-		freeAreas.Push(initialArea);
+		freeAreas.push_back(initialArea);
 	}
 
 	bool AreaAllocator::Allocate(int width, int height, int& x, int& y)
@@ -41,14 +60,14 @@ namespace Alimer
 		if (height < 0)
 			height = 0;
 
-		Vector<IntRect>::Iterator best;
+		std::vector<IntRect>::iterator best;
 		int bestFreeArea;
 
 		for (;;)
 		{
-			best = freeAreas.End();
+			best = freeAreas.end();
 			bestFreeArea = M_MAX_INT;
-			for (auto i = freeAreas.Begin(); i != freeAreas.End(); ++i)
+			for (auto i = freeAreas.begin(); i != freeAreas.end(); ++i)
 			{
 				int freeWidth = i->Width();
 				int freeHeight = i->Height();
@@ -66,33 +85,37 @@ namespace Alimer
 				}
 			}
 
-			if (best == freeAreas.End())
+			if (best == freeAreas.end())
 			{
 				if (doubleWidth && size.x < maxSize.x)
 				{
 					int oldWidth = size.x;
 					size.x <<= 1;
 					// If no allocations yet, simply expand the single free area
-					IntRect& first = freeAreas.Front();
-					if (freeAreas.Size() == 1 && first.left == 0 && first.top == 0 && first.right == oldWidth && first.bottom == size.y)
+					IntRect& first = freeAreas.front();
+					if (freeAreas.size() == 1 && first.left == 0 && first.top == 0 && first.right == oldWidth && first.bottom == size.y)
+					{
 						first.right = size.x;
+					}
 					else
 					{
 						IntRect newArea(oldWidth, 0, size.x, size.y);
-						freeAreas.Push(newArea);
+						freeAreas.push_back(newArea);
 					}
 				}
 				else if (!doubleWidth && size.y < maxSize.y)
 				{
 					int oldHeight = size.y;
 					size.y <<= 1;
-					IntRect& first = freeAreas.Front();
-					if (freeAreas.Size() == 1 && first.left == 0 && first.top == 0 && first.right == size.x && first.bottom == oldHeight)
+					IntRect& first = freeAreas.front();
+					if (freeAreas.size() == 1 && first.left == 0 && first.top == 0 && first.right == size.x && first.bottom == oldHeight)
+					{
 						first.bottom = size.y;
+					}
 					else
 					{
 						IntRect newArea(0, oldHeight, size.x, size.y);
-						freeAreas.Push(newArea);
+						freeAreas.push_back(newArea);
 					}
 				}
 				else
@@ -116,16 +139,16 @@ namespace Alimer
 			{
 				IntRect splitArea(reserved.left, reserved.bottom, best->right, best->bottom);
 				best->bottom = reserved.bottom;
-				freeAreas.Push(splitArea);
+				freeAreas.push_back(splitArea);
 			}
 		}
 		else
 		{
 			// Remove the reserved area from all free areas
-			for (size_t i = 0; i < freeAreas.Size();)
+			for (size_t i = 0; i < freeAreas.size();)
 			{
 				if (SplitRect(freeAreas[i], reserved))
-					freeAreas.Erase(i);
+					freeAreas.erase(freeAreas.begin() + i);
 				else
 					++i;
 			}
@@ -146,28 +169,28 @@ namespace Alimer
 			{
 				IntRect newRect = original;
 				newRect.left = reserve.right;
-				freeAreas.Push(newRect);
+				freeAreas.push_back(newRect);
 			}
 			// Check for splitting from the left
 			if (reserve.left > original.left)
 			{
 				IntRect newRect = original;
 				newRect.right = reserve.left;
-				freeAreas.Push(newRect);
+				freeAreas.push_back(newRect);
 			}
 			// Check for splitting from the bottom
 			if (reserve.bottom < original.bottom)
 			{
 				IntRect newRect = original;
 				newRect.top = reserve.bottom;
-				freeAreas.Push(newRect);
+				freeAreas.push_back(newRect);
 			}
 			// Check for splitting from the top
 			if (reserve.top > original.top)
 			{
 				IntRect newRect = original;
 				newRect.bottom = reserve.top;
-				freeAreas.Push(newRect);
+				freeAreas.push_back(newRect);
 			}
 
 			return true;
@@ -179,17 +202,17 @@ namespace Alimer
 	void AreaAllocator::Cleanup()
 	{
 		// Remove rects which are contained within another rect
-		for (size_t i = 0; i < freeAreas.Size();)
+		for (size_t i = 0; i < freeAreas.size();)
 		{
 			bool erased = false;
-			for (size_t j = i + 1; j < freeAreas.Size();)
+			for (size_t j = i + 1; j < freeAreas.size();)
 			{
 				if ((freeAreas[i].left >= freeAreas[j].left) &&
 					(freeAreas[i].top >= freeAreas[j].top) &&
 					(freeAreas[i].right <= freeAreas[j].right) &&
 					(freeAreas[i].bottom <= freeAreas[j].bottom))
 				{
-					freeAreas.Erase(i);
+					freeAreas.erase(freeAreas.begin() + i);
 					erased = true;
 					break;
 				}
@@ -197,7 +220,9 @@ namespace Alimer
 					(freeAreas[j].top >= freeAreas[i].top) &&
 					(freeAreas[j].right <= freeAreas[i].right) &&
 					(freeAreas[j].bottom <= freeAreas[i].bottom))
-					freeAreas.Erase(j);
+				{
+					freeAreas.erase(freeAreas.begin() + j);
+				}
 				else
 					++j;
 			}

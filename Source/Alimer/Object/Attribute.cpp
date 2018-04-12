@@ -208,11 +208,11 @@ namespace Alimer
 			break;
 
 		case ATTR_RESOURCEREF:
-			reinterpret_cast<ResourceRef*>(dest)->FromString(source.GetString());
+			reinterpret_cast<ResourceRef*>(dest)->FromString(source.GetStdString());
 			break;
 
 		case ATTR_RESOURCEREFLIST:
-			reinterpret_cast<ResourceRefList*>(dest)->FromString(source.GetString());
+			reinterpret_cast<ResourceRefList*>(dest)->FromString(source.GetStdString());
 			break;
 
 		case ATTR_OBJECTREF:

@@ -36,7 +36,7 @@ namespace Alimer
 	{
 	public:
 		/// Construct. Set parent shader and defines but do not compile yet.
-		ShaderVariation(Shader* parent, const String& defines);
+		ShaderVariation(Shader* parent, const std::string& defines);
 		/// Destruct.
 		~ShaderVariation();
 
@@ -47,11 +47,11 @@ namespace Alimer
 		bool Compile();
 
 		/// Return the parent shader resource.
-		Shader* Parent() const;
+		Shader* GetParent() const;
 		/// Return full name combined from parent resource name and compilation defines.
-		String FullName() const;
+		std::string GetFullName() const;
 		/// Return shader stage.
-		ShaderStage Stage() const { return stage; }
+		ShaderStage GetStage() const { return stage; }
 		/// Return vertex element hash code for vertex shaders.
 		unsigned ElementHash() const { return elementHash; }
 		/// Return whether compile attempted.
@@ -68,15 +68,15 @@ namespace Alimer
 		/// Shader stage.
 		ShaderStage stage;
 		/// Compilation defines.
-		String defines;
+		std::string _defines;
 		/// D3D11 shader byte blob.
-		void* blob;
+		void* blob = nullptr;
 		/// D3D11 shader.
-		void* shader;
+		void* shader = nullptr;
 		/// Vertex shader element hash code.
-		unsigned elementHash;
+		uint32_t elementHash{};
 		/// Compile attempted flag.
-		bool compiled;
+		bool compiled{};
 	};
 
 }

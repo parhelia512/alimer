@@ -21,49 +21,40 @@
 // THE SOFTWARE.
 //
 
-#include "Alimer.h"
-#include "Debug/DebugNew.h"
+#include "../Debug/Log.h"
+#include "../Debug/Profiler.h"
+#include "Graphics.h"
+#include "GraphicsImpl.h"
 
-#ifdef _MSC_VER
-#include <crtdbg.h>
-#endif
-
-#include <cstdio>
-#include <cstdlib>
-
-using namespace Alimer;
-
-int main()
+namespace Alimer
 {
-    #ifdef _MSC_VER
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-    #endif
-    
-    RegisterResourceLibrary();
-    
-    Log log;
-    Profiler profiler;
-    ResourceCache cache;
-    
-    printf("Testing resource loading\n");
-    
-    Image* image = nullptr;
+	bool Graphics::IsBackendSupported(GraphicsDeviceType deviceType)
+	{
+		switch (deviceType)
+		{
+		case GraphicsDeviceType::Empty:
+			return true;
 
-    {
-        profiler.BeginFrame();
-        cache.AddResourceDir(GetExecutableDir() + "Data");
-        image = cache.LoadResource<Image>("Test.png");
-        profiler.EndFrame();
-    }
+		case GraphicsDeviceType::D3D11:
+#ifdef ALIMER_D3D11
+			//if (GraphicsD3D11::IsSupported())
+			//{
+				return true;
+			//}
+#endif
+			return false;
 
-    if (image)
-    {
-        printf("Image loaded successfully, size %dx%d pixel byte size %d\n", image->Width(), image->Height(), (int)image->PixelByteSize());
-        File saveFile("Test_Save.png", FILE_WRITE);
-        image->Save(saveFile);
-    }
+		case GraphicsDeviceType::OpenGL:
+#ifdef ALIMER_OPENGL
+			if (GraphicsGL::IsSupported())
+			{
+				return true;
+			}
+#endif
+			return false;
 
-    LOGRAW(profiler.OutputResults(false, false, 16));
-
-    return 0;
+		default:
+			return false;
+		}
+	}
 }

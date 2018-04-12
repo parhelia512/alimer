@@ -45,7 +45,7 @@ namespace Alimer
 		/// Construct.
 		File();
 		/// Construct and open a file.
-		File(const String& fileName, FileMode fileMode = FILE_READ);
+		File(const std::string& fileName, FileMode fileMode = FILE_READ);
 		/// Destruct. Close the file if open.
 		~File();
 
@@ -61,7 +61,7 @@ namespace Alimer
 		bool IsWritable() const override;
 
 		/// Open a file. Return true on success.
-		bool Open(const String& fileName, FileMode fileMode = FILE_READ);
+		bool Open(const std::string& fileName, FileMode fileMode = FILE_READ);
 		/// Close the file.
 		void Close();
 		/// Flush any buffered output to the file.

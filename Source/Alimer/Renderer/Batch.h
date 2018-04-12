@@ -31,10 +31,10 @@ namespace Alimer
 		/// Calculate sort key for state sorting.
 		void CalculateSortKey()
 		{
-			sortKey = ((((unsigned long long)pass->ShaderHash() * type) & 0xffff) << 48) |
-				((((unsigned long long)lights) & 0xffff) << 32) |
-				((((unsigned long long)pass->Parent()) & 0xffff) << 16) |
-				(((unsigned long long)geometry) & 0xffff);
+			sortKey = ((((uint64_t)pass->GetShaderHash() * type) & 0xffff) << 48) |
+				((((uint64_t)lights) & 0xffff) << 32) |
+				((((uint64_t)pass->Parent()) & 0xffff) << 16) |
+				(((uint64_t)geometry) & 0xffff);
 		}
 
 		/// Geometry.
@@ -57,7 +57,7 @@ namespace Alimer
 		union
 		{
 			/// Sort key for state sorting.
-			unsigned long long sortKey;
+			uint64_t sortKey;
 			/// Distance for sorting.
 			float distance;
 			/// Instanced mode instance count.
@@ -71,34 +71,34 @@ namespace Alimer
 		/// Clear structures.
 		void Clear();
 		/// Sort batches and build instances.
-		void Sort(Vector<Matrix3x4>& instanceTransforms);
+		void Sort(std::vector<Matrix3x4>& instanceTransforms);
 
 		/// Build instances from adjacent batches with same state.
-		static void BuildInstances(Vector<Batch>& batches, Vector<Matrix3x4>& instanceTransforms);
+		static void BuildInstances(std::vector<Batch>& batches, std::vector<Matrix3x4>& instanceTransforms);
 
 		/// Batches, which may be instanced or non-instanced.
-		Vector<Batch> batches;
+		std::vector<Batch> batches;
 		/// Additive lighting batches.
-		Vector<Batch> additiveBatches;
+		std::vector<Batch> additiveBatches;
 		/// Sorting mode.
 		BatchSortMode sort;
 		/// Lighting flag.
 		bool lit;
 		/// Base pass index.
-		unsigned char baseIndex;
+		uint8_t baseIndex;
 		/// Additive pass index (if needed.)
-		unsigned char additiveIndex;
+		uint8_t additiveIndex;
 	};
 
 	/// %List of lights for a geometry node.
 	struct ALIMER_API LightList
 	{
 		/// %List key.
-		unsigned long long key;
+		uint64_t key;
 		/// Lights.
-		Vector<Light*> lights;
+		std::vector<Light*> lights;
 		/// Associated light passes.
-		Vector<LightPass*> lightPasses;
+		std::vector<LightPass*> lightPasses;
 		/// Use count
 		size_t useCount;
 	};
@@ -164,7 +164,7 @@ namespace Alimer
 		/// Shadow map texture.
 		SharedPtr<Texture> texture;
 		/// Shadow views that use this shadow map.
-		Vector<ShadowView*> shadowViews;
+		std::vector<ShadowView*> shadowViews;
 		/// Use flag. When false, clearing the shadow map and rendering the views can be skipped.
 		bool used;
 	};

@@ -58,7 +58,7 @@ namespace Alimer
 		if (fileID != "UMDL"
 			&& fileID != "UMD2")
 		{
-			LOGERROR(source.Name() + " is not a valid model file");
+			LOGERROR(source.GetName() + " is not a valid model file");
 			return false;
 		}
 
@@ -200,7 +200,7 @@ namespace Alimer
 
 			// Read quaternion in wxyz.
 
-			bone.initialRotation = source.ReadQuaternion();
+			bone.initialRotation = ReadQuaternionUrho(source);
 			bone.initialScale = source.Read<Vector3>();
 			bone.offsetMatrix = source.Read<Matrix3x4>();
 

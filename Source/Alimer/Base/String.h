@@ -38,17 +38,41 @@ namespace Alimer
 	{
 		std::string& Replace(std::string& dest, const std::string& find, const std::string& replace,
 			uint32_t maxReplacements = std::numeric_limits<uint32_t>::max());
-		std::string& Replace(std::string&& dest, const std::string& find, const std::string& replace,
-			uint32_t maxReplacements = std::numeric_limits<uint32_t>::max());
 
 		std::string Join(const std::vector<std::string>& collection, const std::string& glue);
 		std::vector<std::string> Split(const std::string& value, const std::string& separator, bool keepEmpty = false);
+		/// Trim string.
+		std::string Trim(const std::string& source);
+		/// Return string in uppercase.
+		std::string ToUpper(const std::string& source);
+		/// Return string in lowercase.
+		std::string ToLower(const std::string& source);
+
+		/// Return whether starts with a string.
+		bool StartsWith(const std::string& str, const std::string& value, bool caseSensitive = true);
+		/// Return whether ends with a string.
+		bool EndsWith(const std::string& str, const std::string& value, bool caseSensitive = true);
+
+		/// Parse a bool from the string. Is considered true if t/y/1 are found case-insensitively.
+		bool ToBool(const char* str);
+		/// Parse an integer from the string.
+		int ToInt(const char* str);
+		/// Parse an unsigned integer from the string.
+		unsigned ToUInt(const char* str);
+		/// parse a float from the string.
+		float ToFloat(const char* str);
+
+		/// Return comparision result with a string.
+		int Compare(const std::string& str1, const std::string& str2, bool caseSensitive = true);
+		int Compare(const char* str1, const char* str2, bool caseSensitive = true);
+
+		/// Return a formatted string.
+		std::string Format(const char* format, ...);
 	}
 
 	static const size_t CONVERSION_BUFFER_LENGTH = 256;
 
 	template <class T> class Vector;
-	class WString;
 
 	/// %String class.
 	class ALIMER_API String
@@ -90,8 +114,6 @@ namespace Alimer
 		String(const wchar_t* str);
 		/// Construct from a wide character C string.
 		String(wchar_t* str);
-		/// Construct from a wide character string.
-		String(const WString& str);
 		/// Construct from an integer.
 		explicit String(int value);
 		/// Construct from a short integer.
@@ -119,6 +141,14 @@ namespace Alimer
 		/// Construct from a character and fill length.
 		explicit String(char value, size_t numChars);
 
+		/// Construct from std::string.
+		String(const std::string& str)
+			: buffer(nullptr)
+		{
+			*this = str.c_str();
+		}
+
+
 		/// Construct from a convertible value.
 		template <class T> explicit String(const T& value) :
 			buffer(nullptr)
@@ -131,6 +161,8 @@ namespace Alimer
 
 		/// Assign a string.
 		String& operator = (const String& rhs);
+		/// Assign a string.
+		String& operator = (const std::string& rhs);
 		/// Assign a C string.
 		String& operator = (const char* rhs);
 		/// Assign a C string.
@@ -338,14 +370,7 @@ namespace Alimer
 		/// Return a UTF8 substring with length from position.
 		String SubstringUTF8(size_t pos, size_t numChars) const;
 
-		/// Parse a bool from the string. Is considered true if t/y/1 are found case-insensitively.
-		static bool ToBool(const char* str);
-		/// Parse an integer from the string.
-		static int ToInt(const char* str);
-		/// Parse an unsigned integer from the string.
-		static unsigned ToUInt(const char* str);
-		/// parse a float from the string.
-		static float ToFloat(const char* str);
+		
 		/// Return the amount of substrings split by a separator char.
 		static size_t CountElements(const char* str, char separator);
 		/// Return substrings split by a separator char.

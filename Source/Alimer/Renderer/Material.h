@@ -41,7 +41,7 @@ namespace Alimer
 	{
 	public:
 		/// Construct.
-		Pass(Material* parent, const String& name);
+		Pass(Material* parent, const std::string& name);
 		/// Destruct.
 		~Pass();
 
@@ -52,22 +52,27 @@ namespace Alimer
 		/// Set a predefined blend mode.
 		void SetBlendMode(BlendMode mode);
 		/// Set shader names and defines.
-		void SetShaders(const String& vsName, const String& psName, const String& vsDefines = String::EMPTY, const String& psDefines = String::EMPTY);
+		void SetShaders(
+			const std::string& vsName,
+			const std::string& psName,
+			const std::string& vsDefines = "",
+			const std::string& psDefines = "");
+
 		/// Reset render state to defaults.
 		void Reset();
 
 		/// Return parent material resource.
 		Material* Parent() const;
 		/// Return pass name.
-		const String& Name() const { return name; }
+		const std::string& GetName() const { return _name; }
 		/// Return shader name by stage.
-		const String& ShaderName(ShaderStage stage) const { return shaderNames[stage]; }
+		const std::string& ShaderName(ShaderStage stage) const { return shaderNames[stage]; }
 		/// Return shader defines by stage.
 		const String& ShaderDefines(ShaderStage stage) const { return shaderDefines[stage]; }
 		/// Return combined shader defines from the material and pass by stage.
-		const String& CombinedShaderDefines(ShaderStage stage) const { return combinedShaderDefines[stage]; }
+		const std::string& CombinedShaderDefines(ShaderStage stage) const { return _combinedShaderDefines[stage]; }
 		/// Return shader hash value for state sorting.
-		unsigned ShaderHash() const { return shaderHash; }
+		uint32_t GetShaderHash() const { return _shaderHash; }
 
 		/// Refresh the combined shader defines and shader hash and clear any cached shader variations. Called internally.
 		void OnShadersChanged();
@@ -99,15 +104,15 @@ namespace Alimer
 		/// Parent material resource.
 		WeakPtr<Material> parent;
 		/// Pass name.
-		String name;
+		std::string _name;
 		/// Shader names.
-		String shaderNames[MAX_SHADER_STAGES];
+		std::string shaderNames[MAX_SHADER_STAGES];
 		/// Shader defines.
-		String shaderDefines[MAX_SHADER_STAGES];
+		std::string shaderDefines[MAX_SHADER_STAGES];
 		/// Combined shader defines from both the pass and material. Filled by Renderer.
-		String combinedShaderDefines[MAX_SHADER_STAGES];
+		std::string _combinedShaderDefines[MAX_SHADER_STAGES];
 		/// Shader hash calculated from names and defines.
-		unsigned shaderHash;
+		uint32_t _shaderHash;
 	};
 
 	/// %Material resource, which describes how to render 3D geometry and refers to textures. A material can contain several passes (for example normal rendering, and depth only.)
@@ -132,9 +137,9 @@ namespace Alimer
 		bool Save(Stream& dest) override;
 
 		/// Create and return a new pass. If pass with same name exists, it will be returned.
-		Pass* CreatePass(const String& name);
+		Pass* CreatePass(const std::string& name);
 		/// Remove a pass.
-		void RemovePass(const String& name);
+		void RemovePass(const std::string& name);
 		/// Set a texture.
 		void SetTexture(size_t index, Texture* texture);
 		/// Reset all texture assignments.
@@ -142,21 +147,21 @@ namespace Alimer
 		/// Set a constant buffer.
 		void SetConstantBuffer(ShaderStage stage, ConstantBuffer* buffer);
 		/// Set global shader defines. Clears existing shader cached variations from all passes.
-		void SetShaderDefines(const String& vsDefines = String::EMPTY, const String& psDefines = String::EMPTY);
+		void SetShaderDefines(const std::string& vsDefines = "", const std::string& psDefines = "");
 
 		/// Return pass by name or null if not found. Should not be called in performance-sensitive rendering loops.
-		Pass* FindPass(const String& name) const;
+		Pass* FindPass(const std::string& name) const;
 		/// Return pass by index or null if not found.
-		Pass* GetPass(unsigned char index) const;
+		Pass* GetPass(uint8_t index) const;
 		/// Return texture by texture unit.
 		Texture* GetTexture(size_t index) const;
 		/// Return constant buffer by stage.
 		ConstantBuffer* GetConstantBuffer(ShaderStage stage) const;
 		/// Return shader defines by stage.
-		const String& ShaderDefines(ShaderStage stage) const;
+		const std::string& ShaderDefines(ShaderStage stage) const;
 
 		/// Return pass index from name. By default reserve a new index if the name was not known.
-		static uint8_t PassIndex(const String& name, bool createNew = true);
+		static uint8_t PassIndex(const std::string& name, bool createNew = true);
 		/// Return pass name by index.
 		static const String& PassName(uint8_t index);
 		/// Return a default opaque untextured material.
@@ -169,20 +174,20 @@ namespace Alimer
 
 	private:
 		/// Passes by index.
-		Vector<SharedPtr<Pass> > passes;
+		std::vector<SharedPtr<Pass> > passes;
 		/// Global shader defines.
-		String shaderDefines[MAX_SHADER_STAGES];
+		std::string shaderDefines[MAX_SHADER_STAGES];
 		/// JSON data used for loading.
 		std::unique_ptr<JSONFile> loadJSON;
 
 		/// Default material.
 		static SharedPtr<Material> defaultMaterial;
 		/// Pass name to index mapping.
-		static std::unordered_map<String, uint8_t> passIndices;
+		static std::unordered_map<std::string, uint8_t> _passIndices;
 		/// Pass names by index.
-		static Vector<String> passNames;
+		static std::vector<std::string> _passNames;
 		/// Next free pass index.
-		static unsigned char nextPassIndex;
+		static uint8_t _nextPassIndex;
 	};
 
 }

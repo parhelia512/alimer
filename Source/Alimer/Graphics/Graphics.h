@@ -75,6 +75,14 @@ namespace Alimer
 		friend class Buffer;
 
 	public:
+		/**
+		* Checks if given backend is supported.
+		*
+		* @param deviceType The graphics backend type to check
+		* @return True if supported, false otherwise.
+		*/
+		static bool IsBackendSupported(GraphicsDeviceType deviceType);
+
 		/// Construct and register subsystem. The graphics mode is not set & window is not opened yet.
 		Graphics();
 		/// Destruct. Clean up the window, rendering context and GPU objects.
@@ -95,7 +103,7 @@ namespace Alimer
 		/// Set the color rendertarget and depth stencil buffer.
 		void SetRenderTarget(Texture* renderTarget, Texture* stencilBuffer);
 		/// Set multiple color rendertargets and the depth stencil buffer.
-		void SetRenderTargets(const Vector<Texture*>& renderTargets, Texture* stencilBuffer);
+		void SetRenderTargets(const std::vector<Texture*>& renderTargets, Texture* stencilBuffer);
 		/// Set the viewport rectangle. On window resize the viewport will automatically revert to the entire backbuffer.
 		void SetViewport(const IntRect& viewport);
 		/// Bind a vertex buffer.
@@ -164,9 +172,9 @@ namespace Alimer
 		/// Return the rendering window.
 		Window* GetRenderWindow() const { return window.get(); }
 		/// Return the current color rendertarget by index, or null if rendering to the backbuffer.
-		Texture* RenderTarget(size_t index) const;
+		Texture* GetRenderTarget(size_t index) const;
 		/// Return the current depth-stencil buffer, or null if rendering to the backbuffer.
-		Texture* DepthStencil() const { return depthStencil; }
+		Texture* GetDepthStencil() const { return _depthStencil; }
 		/// Return the current viewport rectangle.
 		const IntRect& Viewport() const { return viewport; }
 		/// Return currently bound vertex buffer by index.
@@ -240,9 +248,9 @@ namespace Alimer
 		/// Bound textures by texture unit.
 		Texture* textures[MAX_TEXTURE_UNITS];
 		/// Bound rendertarget textures.
-		Texture* renderTargets[MAX_RENDERTARGETS];
+		Texture* _renderTargets[MAX_RENDERTARGETS] = {};
 		/// Bound depth-stencil texture.
-		Texture* depthStencil;
+		Texture* _depthStencil = nullptr;
 		/// Bound vertex shader.
 		ShaderVariation* vertexShader;
 		/// Bound pixel shader.

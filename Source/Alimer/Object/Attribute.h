@@ -100,7 +100,7 @@ namespace Alimer
 		void ToValue(Serializable* instance, void* dest);
 
 		/// Return variable name.
-		const String& GetName() const { return _name; }
+		const std::string& GetName() const { return _name; }
 		/// Return zero-based enum names, or null if none.
 		const char** GetEnumNames() const { return _enumNames; }
 		/// Return type name.
@@ -121,7 +121,7 @@ namespace Alimer
 
 	protected:
 		/// Variable name.
-		String _name;
+		std::string _name;
 		/// Attribute accessor.
 		std::unique_ptr<AttributeAccessor> _accessor;
 		/// Enum names.

@@ -29,6 +29,7 @@
 
 #include <cstdio>
 #include <ctime>
+using namespace std;
 
 namespace Alimer
 {
@@ -60,14 +61,14 @@ namespace Alimer
 		RemoveSubsystem(this);
 	}
 
-	void Log::Open(const String& fileName)
+	void Log::Open(const string& fileName)
 	{
-		if (fileName.IsEmpty())
+		if (fileName.empty())
 			return;
 
 		if (_logFile && _logFile->IsOpen())
 		{
-			if (_logFile->Name() == fileName)
+			if (_logFile->GetName() == fileName)
 				return;
 
 			Close();
@@ -129,7 +130,7 @@ namespace Alimer
 		}
 	}
 
-	void Log::Write(int msgLevel, const String& message)
+	void Log::Write(int msgLevel, const string& message)
 	{
 		assert(msgLevel >= LOG_DEBUG && msgLevel < LOG_NONE);
 
@@ -149,7 +150,7 @@ namespace Alimer
 		if (instance->level > msgLevel || instance->inWrite)
 			return;
 
-		String formattedMessage = logLevelPrefixes[msgLevel];
+		string formattedMessage = logLevelPrefixes[msgLevel];
 		formattedMessage += ": " + message;
 		instance->lastMessage = message;
 
@@ -181,7 +182,7 @@ namespace Alimer
 		instance->inWrite = false;
 	}
 
-	void Log::WriteRaw(const String& message, bool error)
+	void Log::WriteRaw(const string& message, bool error)
 	{
 		Log* instance = Subsystem<Log>();
 		if (!instance)
@@ -212,7 +213,7 @@ namespace Alimer
 
 		if (instance->_logFile)
 		{
-			instance->_logFile->Write(message.CString(), message.Length());
+			instance->_logFile->Write(message.c_str(), message.length());
 			instance->_logFile->Flush();
 		}
 

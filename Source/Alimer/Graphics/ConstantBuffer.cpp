@@ -247,20 +247,19 @@ namespace Alimer
 		return static_cast<uint32_t>(-1);
 	}
 
-	const void* ConstantBuffer::GetConstantValue(size_t index, uint32_t elementIndex) const
+	const void* ConstantBuffer::GetConstantValue(size_t index, size_t elementIndex) const
 	{
 		return (index < _constants.size() && elementIndex < _constants[index].numElements) ? _shadowData.get() +
 			_constants[index].offset + elementIndex * _constants[index].elementSize : nullptr;
 	}
 
-	const void* ConstantBuffer::GetConstantValue(const String& name, uint32_t elementIndex) const
+	const void* ConstantBuffer::GetConstantValue(const String& name, size_t elementIndex) const
 	{
 		return GetConstantValue(FindConstantIndex(name), elementIndex);
 	}
 
-	const void* ConstantBuffer::GetConstantValue(const char* name, uint32_t elementIndex) const
+	const void* ConstantBuffer::GetConstantValue(const char* name, size_t elementIndex) const
 	{
 		return GetConstantValue(FindConstantIndex(name), elementIndex);
 	}
-
 }

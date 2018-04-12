@@ -26,6 +26,7 @@
 
 #include <cstdio>
 #include <cstring>
+using namespace std;
 
 namespace Alimer
 {
@@ -110,7 +111,7 @@ namespace Alimer
 
 		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
-			if (!String::Compare((*it)->name, name_))
+			if (!str::Compare((*it)->name, name_))
 				return it->get();
 		}
 
@@ -182,16 +183,16 @@ namespace Alimer
 		intervalFrames = 0;
 	}
 
-	String Profiler::OutputResults(bool showUnused, bool showTotal, size_t maxDepth) const
+	string Profiler::OutputResults(bool showUnused, bool showTotal, size_t maxDepth) const
 	{
-		String output;
+		string output;
 
 		if (!showTotal)
-			output += String("Block                            Cnt     Avg      Max     Frame     Total\n\n");
+			output += string("Block                            Cnt     Avg      Max     Frame     Total\n\n");
 		else
 		{
-			output += String("Block                                       Last frame                       Whole execution time\n\n");
-			output += String("                                 Cnt     Avg      Max      Total      Cnt      Avg       Max        Total\n\n");
+			output += string("Block                                       Last frame                       Whole execution time\n\n");
+			output += string("                                 Cnt     Avg      Max      Total      Cnt      Avg       Max        Total\n\n");
 		}
 
 		if (!maxDepth)
@@ -202,7 +203,7 @@ namespace Alimer
 		return output;
 	}
 
-	void Profiler::OutputResults(ProfilerBlock* block, String& output, size_t depth, size_t maxDepth, bool showUnused, bool showTotal) const
+	void Profiler::OutputResults(ProfilerBlock* block, string& output, size_t depth, size_t maxDepth, bool showUnused, bool showTotal) const
 	{
 		char line[LINE_MAX_LENGTH];
 		char indentedName[LINE_MAX_LENGTH];
@@ -249,7 +250,7 @@ namespace Alimer
 						avg, max, all, Min(block->totalCount, 99999), totalAvg, totalMax, totalAll);
 				}
 
-				output += String(line);
+				output += string(line);
 			}
 
 			++depth;

@@ -186,19 +186,19 @@ namespace Alimer
 		}
 	}
 
-	void Serializable::CopyBaseAttribute(StringHash type, StringHash baseType, const String& name)
+	void Serializable::CopyBaseAttribute(StringHash type, StringHash baseType, const std::string& name)
 	{
 		// Make sure the types are different, which may not be true if the OBJECT macro has been omitted
-		if (type != baseType)
+		if (type == baseType)
+			return;
+
+		auto& attributes = _classAttributes[baseType];
+		for (size_t i = 0; i < attributes.size(); ++i)
 		{
-			auto& attributes = _classAttributes[baseType];
-			for (size_t i = 0; i < attributes.size(); ++i)
+			if (attributes[i]->GetName() == name)
 			{
-				if (attributes[i]->GetName() == name)
-				{
-					RegisterAttribute(type, attributes[i]);
-					break;
-				}
+				RegisterAttribute(type, attributes[i]);
+				break;
 			}
 		}
 	}

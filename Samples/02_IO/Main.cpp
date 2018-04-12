@@ -117,7 +117,7 @@ int main()
 		TestEventSender* sender = Object::Create<TestEventSender>();
 		TestEventReceiver* receiver1 = Object::Create<TestEventReceiver>();
 		TestEventReceiver* receiver2 = Object::Create<TestEventReceiver>();
-		printf("Type of sender is %s\n", sender->TypeName().CString());
+		printf("Type of sender is %s\n", sender->TypeName().c_str());
 		receiver1->SubscribeToTestEvent(sender);
 		receiver2->SubscribeToTestEvent(sender);
 		sender->SendTestEvent(1);
@@ -149,7 +149,7 @@ int main()
 		
 		profiler.EndFrame();
 		
-		printf("%s\n", profiler.OutputResults().CString());
+		printf("%s\n", profiler.OutputResults().c_str());
 	}
 	
 	{
@@ -168,9 +168,9 @@ int main()
 		org["allies"].SetEmptyArray();
 		org["sightings"].SetEmptyObject();
 		
-		String jsonString = org.ToString();
-		printf("%s\n", jsonString.CString());
-		printf("JSON text size: %d\n", jsonString.Length());
+		std::string jsonString = org.ToString();
+		printf("%s\n", jsonString.c_str());
+		printf("JSON text size: %d\n", jsonString.length());
 		
 		JSONValue parsed;
 		if (parsed.FromString(jsonString))
@@ -206,7 +206,7 @@ int main()
 
 		JSONValue saveData;
 		instance->SaveJSON(saveData);
-		printf("Object JSON data: %s\n", saveData.ToString().CString());
+		printf("Object JSON data: %s\n", saveData.ToString().c_str());
 
 		VectorBuffer binarySaveData;
 		instance->Save(binarySaveData);

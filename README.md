@@ -9,7 +9,7 @@
 ## Goals/Planned Features
 
 - Modern graphics/rendering API using Vulkan/Direct3D12.
-- Extendible Asset Pipeline. 
+- Extendible Asset Pipeline.
 - GLTF 2.0 support.
 - .NET Core/Standard and Xamarin scripting support.
 
@@ -17,7 +17,8 @@
 
 Alimer is fork from [Turso3D](https://github.com/cadaver/turso3d), which is licensed under the [MIT](https://github.com/cadaver/turso3d/blob/master/License.txt)
 
-Alimer uses the following third-party libraries:
+The engine uses the following third-party libraries:
 
 - stb_image 2.19 (https://nothings.org)
 - stb_image_write 1.09 (https://nothings.org)
+- JSON for Modern C++ 3.1.2 (https://github.com/nlohmann/json)

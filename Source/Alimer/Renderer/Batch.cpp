@@ -1,14 +1,33 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #include "../Debug/Profiler.h"
 #include "../Graphics/Texture.h"
 #include "Batch.h"
-#include "../Base/Sort.h"
-#include "../Debug/DebugNew.h"
+#include <algorithm>
 
 namespace Alimer
 {
-
 	inline bool CompareBatchState(Batch& lhs, Batch& rhs)
 	{
 		return lhs.sortKey < rhs.sortKey;
@@ -26,28 +45,28 @@ namespace Alimer
 
 	void BatchQueue::Clear()
 	{
-		batches.Clear();
-		additiveBatches.Clear();
+		batches.clear();
+		additiveBatches.clear();
 	}
 
-	void BatchQueue::Sort(Vector<Matrix3x4>& instanceTransforms)
+	void BatchQueue::Sort(std::vector<Matrix3x4>& instanceTransforms)
 	{
 		switch (sort)
 		{
 		case SORT_STATE:
-			Alimer::Sort(batches.Begin(), batches.End(), CompareBatchState);
-			Alimer::Sort(additiveBatches.Begin(), additiveBatches.End(), CompareBatchState);
+			std::sort(batches.begin(), batches.end(), CompareBatchState);
+			std::sort(additiveBatches.begin(), additiveBatches.end(), CompareBatchState);
 			break;
 
 		case SORT_FRONT_TO_BACK:
-			Alimer::Sort(batches.Begin(), batches.End(), CompareBatchDistanceFrontToBack);
+			std::sort(batches.begin(), batches.end(), CompareBatchDistanceFrontToBack);
 			// After drawing the base batches, the Z buffer has been prepared. Additive batches can be sorted per state now
-			Alimer::Sort(additiveBatches.Begin(), additiveBatches.End(), CompareBatchState);
+			std::sort(additiveBatches.begin(), additiveBatches.end(), CompareBatchState);
 			break;
 
 		case SORT_BACK_TO_FRONT:
-			Alimer::Sort(batches.Begin(), batches.End(), CompareBatchDistanceBackToFront);
-			Alimer::Sort(additiveBatches.Begin(), additiveBatches.End(), CompareBatchDistanceBackToFront);
+			std::sort(batches.begin(), batches.end(), CompareBatchDistanceBackToFront);
+			std::sort(additiveBatches.begin(), additiveBatches.end(), CompareBatchDistanceBackToFront);
 			break;
 
 		default:
@@ -59,10 +78,10 @@ namespace Alimer
 		BuildInstances(additiveBatches, instanceTransforms);
 	}
 
-	void BatchQueue::BuildInstances(Vector<Batch>& batches, Vector<Matrix3x4>& instanceTransforms)
+	void BatchQueue::BuildInstances(std::vector<Batch>& batches, std::vector<Matrix3x4>& instanceTransforms)
 	{
 		Batch* start = nullptr;
-		for (auto it = batches.Begin(), end = batches.End(); it != end; ++it)
+		for (auto it = batches.begin(), end = batches.end(); it != end; ++it)
 		{
 			Batch* current = &*it;
 			if (start && current->type == GEOM_STATIC && current->pass == start->pass && current->geometry == start->geometry &&
@@ -70,16 +89,16 @@ namespace Alimer
 			{
 				if (start->type == GEOM_INSTANCED)
 				{
-					instanceTransforms.Push(*current->worldMatrix);
+					instanceTransforms.push_back(*current->worldMatrix);
 					++start->instanceCount;
 				}
 				else
 				{
 					// Begin new instanced batch
 					start->type = GEOM_INSTANCED;
-					size_t instanceStart = instanceTransforms.Size();
-					instanceTransforms.Push(*start->worldMatrix);
-					instanceTransforms.Push(*current->worldMatrix);
+					size_t instanceStart = instanceTransforms.size();
+					instanceTransforms.push_back(*start->worldMatrix);
+					instanceTransforms.push_back(*current->worldMatrix);
 					start->instanceStart = instanceStart; // Overwrites non-instance world matrix
 					start->instanceCount = 2; // Overwrites sort key / distance
 				}
@@ -102,7 +121,7 @@ namespace Alimer
 	void ShadowMap::Clear()
 	{
 		allocator.Reset(texture->GetWidth(), texture->GetHeight(), 0, 0, false);
-		shadowViews.Clear();
+		shadowViews.clear();
 		used = false;
 	}
 

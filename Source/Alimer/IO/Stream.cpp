@@ -29,15 +29,9 @@
 
 namespace Alimer
 {
-	Stream::Stream() :
-		position(0),
-		size(0)
-	{
-	}
-
-	Stream::Stream(size_t numBytes) :
-		position(0),
-		size(numBytes)
+	Stream::Stream(size_t numBytes)
+		: _position(0)
+		, _size(numBytes)
 	{
 	}
 
@@ -45,14 +39,9 @@ namespace Alimer
 	{
 	}
 
-	void Stream::SetName(const String& newName)
+	void Stream::SetName(const std::string& newName)
 	{
-		name = newName;
-	}
-
-	void Stream::SetName(const char* newName)
-	{
-		name = newName;
+		_name = newName;
 	}
 
 	int8_t Stream::ReadByte()
@@ -155,9 +144,9 @@ namespace Alimer
 		return ret;
 	}
 
-	String Stream::ReadString()
+	std::string Stream::ReadString()
 	{
-		String ret;
+		std::string ret;
 
 		while (!IsEof())
 		{
@@ -171,9 +160,9 @@ namespace Alimer
 		return ret;
 	}
 
-	String Stream::ReadLine()
+	std::string Stream::ReadLine()
 	{
-		String ret;
+		std::string ret;
 
 		while (!IsEof())
 		{
@@ -187,7 +176,7 @@ namespace Alimer
 				{
 					char next = ReadByte();
 					if (next != 10)
-						Seek(position - 1);
+						Seek(_position - 1);
 				}
 				break;
 			}
@@ -231,7 +220,18 @@ namespace Alimer
 
 	template<> String Stream::Read<String>()
 	{
-		return ReadString();
+		String ret;
+
+		while (!IsEof())
+		{
+			char c = ReadByte();
+			if (!c)
+				break;
+			else
+				ret += c;
+		}
+
+		return ret;
 	}
 
 	template<> StringHash Stream::Read<StringHash>()
@@ -267,10 +267,10 @@ namespace Alimer
 		return ret;
 	}
 
-	void Stream::WriteFileID(const String& value)
+	void Stream::WriteFileID(const std::string& value)
 	{
-		Write(value.CString(), Min((int)value.Length(), 4));
-		for (size_t i = value.Length(); i < 4; ++i)
+		Write(value.c_str(), Min((int)value.length(), 4));
+		for (size_t i = value.length(); i < 4; ++i)
 			Write(' ');
 	}
 
@@ -314,9 +314,9 @@ namespace Alimer
 		}
 	}
 
-	void Stream::WriteLine(const String& value)
+	void Stream::WriteLine(const std::string& value)
 	{
-		Write(value.CString(), value.Length());
+		Write(value.c_str(), value.length());
 		Write('\r');
 		Write('\n');
 	}

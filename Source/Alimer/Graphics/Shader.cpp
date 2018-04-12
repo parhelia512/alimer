@@ -1,6 +1,26 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
-#include "../Base/Sort.h"
 #include "../Debug/Log.h"
 #include "../Debug/Profiler.h"
 #include "../Resource/ResourceCache.h"
@@ -8,15 +28,10 @@
 #include "../IO/FileSystem.h"
 #include "Shader.h"
 #include "ShaderVariation.h"
+#include <algorithm>
 
 namespace Alimer
 {
-
-	Shader::Shader() :
-		stage(SHADER_VS)
-	{
-	}
-
 	Shader::~Shader()
 	{
 	}
@@ -28,16 +43,16 @@ namespace Alimer
 
 	bool Shader::BeginLoad(Stream& source)
 	{
-		String extension = Extension(source.Name());
-		stage = (extension == ".vs" || extension == ".vert") ? SHADER_VS : SHADER_PS;
-		sourceCode.Clear();
-		return ProcessIncludes(sourceCode, source);
+		std::string extension = GetExtension(source.GetName());
+		_stage = (extension == ".vs" || extension == ".vert") ? SHADER_VS : SHADER_PS;
+		_sourceCode.clear();
+		return ProcessIncludes(_sourceCode, source);
 	}
 
 	bool Shader::EndLoad()
 	{
 		// Release existing variations (if any) to allow them to be recompiled with changed code
-		for (auto it = variations.begin(); it != variations.end(); ++it)
+		for (auto it = _variations.begin(); it != _variations.end(); ++it)
 		{
 			it->second->Release();
 		}
@@ -45,43 +60,43 @@ namespace Alimer
 		return true;
 	}
 
-	void Shader::Define(ShaderStage stage_, const String& code)
+	void Shader::Define(ShaderStage stage, const std::string& code)
 	{
-		stage = stage_;
-		sourceCode = code;
+		_stage = stage;
+		_sourceCode = code;
 		EndLoad();
 	}
 
-	ShaderVariation* Shader::CreateVariation(const String& definesIn)
+	ShaderVariation* Shader::CreateVariation(const std::string& definesIn)
 	{
 		StringHash definesHash(definesIn);
-		auto it = variations.find(definesHash);
-		if (it != variations.end())
+		auto it = _variations.find(definesHash);
+		if (it != _variations.end())
 			return it->second.Get();
 
 		// If initially not found, normalize the defines and try again
-		String defines = NormalizeDefines(definesIn);
-		definesHash = defines;
-		it = variations.find(definesHash);
-		if (it != variations.end())
+		std::string defines = NormalizeDefines(definesIn);
+		definesHash = StringHash(defines);
+		it = _variations.find(definesHash);
+		if (it != _variations.end())
 			return it->second.Get();
 
 		ShaderVariation* newVariation = new ShaderVariation(this, defines);
-		variations[definesHash] = newVariation;
+		_variations[definesHash] = newVariation;
 		return newVariation;
 	}
 
-	bool Shader::ProcessIncludes(String& code, Stream& source)
+	bool Shader::ProcessIncludes(std::string& code, Stream& source)
 	{
 		ResourceCache* cache = Subsystem<ResourceCache>();
 
 		while (!source.IsEof())
 		{
-			String line = source.ReadLine();
+			std::string line = source.ReadLine();
 
-			if (line.StartsWith("#include"))
+			if (str::StartsWith(line, "#include"))
 			{
-				String includeFileName = Path(source.Name()) + line.Substring(9).Replaced("\"", "").Trimmed();
+				std::string includeFileName = GetPath(source.GetName()) + str::Trim(str::Replace(line.substr(9), "\"", ""));
 				std::unique_ptr<Stream> includeStream = cache->OpenResource(includeFileName);
 				if (!includeStream)
 					return false;
@@ -103,15 +118,15 @@ namespace Alimer
 		return true;
 	}
 
-	String Shader::NormalizeDefines(const String& defines)
+	std::string Shader::NormalizeDefines(const std::string& defines)
 	{
-		String ret;
-		Vector<String> definesVec = defines.ToUpper().Split(' ');
-		Alimer::Sort(definesVec.Begin(), definesVec.End());
+		std::string ret;
+		std::vector<std::string> definesVec = str::Split(str::ToUpper(defines), " ");
+		std::sort(definesVec.begin(), definesVec.end());
 
-		for (auto it = definesVec.Begin(); it != definesVec.End(); ++it)
+		for (auto it = definesVec.begin(); it != definesVec.end(); ++it)
 		{
-			if (it != definesVec.Begin())
+			if (it != definesVec.begin())
 				ret += " ";
 			ret += *it;
 		}

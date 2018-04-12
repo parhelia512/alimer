@@ -47,7 +47,7 @@ public:
 		RegisterRendererLibrary();
 
 		cache = std::make_unique<ResourceCache>();
-		cache->AddResourceDir(ExecutableDir() + "Data");
+		cache->AddResourceDir(GetExecutableDir() + "Data");
 
 		log = std::make_unique<Log>();
 		input = std::make_unique<Input>();
@@ -111,7 +111,7 @@ public:
 		HiresTimer frameTimer;
 		Timer profilerTimer;
 		float dt = 0.0f;
-		String profilerOutput;
+		std::string profilerOutput;
 
 		for (;;)
 		{

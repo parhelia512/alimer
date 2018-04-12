@@ -454,7 +454,7 @@ namespace Alimer
 			unsigned char* pixelData = DecodePixelData(source, imageWidth, imageHeight, imageComponents);
 			if (!pixelData)
 			{
-				LOGERROR("Could not load image " + source.Name() + ": " + String(stbi_failure_reason()));
+				LOGERROR("Could not load image " + source.GetName() + ": " + std::string(stbi_failure_reason()));
 				return false;
 			}
 

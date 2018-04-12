@@ -25,10 +25,13 @@
 #include "FileSystem.h"
 
 #include <cstdio>
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+using namespace std;
 
 namespace Alimer
 {
-
 #ifdef _WIN32
 	static const wchar_t* openModes[] =
 	{
@@ -37,6 +40,8 @@ namespace Alimer
 		L"r+b",
 		L"w+b"
 	};
+
+	
 #else
 	static const char* openModes[] =
 	{
@@ -55,7 +60,7 @@ namespace Alimer
 	{
 	}
 
-	File::File(const String& fileName, FileMode mode) :
+	File::File(const string& fileName, FileMode mode) :
 		mode(FILE_READ),
 		handle(nullptr),
 		readSyncNeeded(false),
@@ -69,15 +74,15 @@ namespace Alimer
 		Close();
 	}
 
-	bool File::Open(const String& fileName, FileMode fileMode)
+	bool File::Open(const string& fileName, FileMode fileMode)
 	{
 		Close();
 
-		if (fileName.IsEmpty())
+		if (fileName.empty())
 			return false;
 
 #ifdef _WIN32
-		handle = _wfopen(WideNativePath(fileName).CString(), openModes[fileMode]);
+		handle = _wfopen(WideNativePath(fileName).c_str(), openModes[fileMode]);
 #else
 		handle = fopen(NativePath(fileName).CString(), openModes[fileMode]);
 #endif
@@ -86,23 +91,23 @@ namespace Alimer
 		if (mode == FILE_READWRITE && !handle)
 		{
 #ifdef _WIN32
-			handle = _wfopen(WideNativePath(fileName).CString(), openModes[fileMode + 1]);
+			handle = _wfopen(WideNativePath(fileName).c_str(), openModes[fileMode + 1]);
 #else
-			handle = fopen(NativePath(fileName).CString(), openModes[fileMode + 1]);
+			handle = fopen(NativePath(fileName).c_str(), openModes[fileMode + 1]);
 #endif
 		}
 
 		if (!handle)
 			return false;
 
-		name = fileName;
+		_name = fileName;
 		mode = fileMode;
-		position = 0;
+		_position = 0;
 		readSyncNeeded = false;
 		writeSyncNeeded = false;
 
 		fseek((FILE*)handle, 0, SEEK_END);
-		size = ftell((FILE*)handle);
+		_size = ftell((FILE*)handle);
 		fseek((FILE*)handle, 0, SEEK_SET);
 		return true;
 	}
@@ -112,15 +117,15 @@ namespace Alimer
 		if (!handle || mode == FILE_WRITE)
 			return 0;
 
-		if (numBytes + position > size)
-			numBytes = size - position;
+		if (numBytes + _position > _size)
+			numBytes = _size - _position;
 		if (!numBytes)
 			return 0;
 
 		// Need to reassign the position due to internal buffering when transitioning from writing to reading
 		if (readSyncNeeded)
 		{
-			fseek((FILE*)handle, (long)position, SEEK_SET);
+			fseek((FILE*)handle, (long)_position, SEEK_SET);
 			readSyncNeeded = false;
 		}
 
@@ -128,12 +133,12 @@ namespace Alimer
 		if (ret != 1)
 		{
 			// If error, return to the position where the read began
-			fseek((FILE*)handle, (long)position, SEEK_SET);
+			fseek((FILE*)handle, (long)_position, SEEK_SET);
 			return 0;
 		}
 
 		writeSyncNeeded = true;
-		position += numBytes;
+		_position += numBytes;
 		return numBytes;
 	}
 
@@ -143,14 +148,14 @@ namespace Alimer
 			return 0;
 
 		// Allow sparse seeks if writing
-		if (mode == FILE_READ && newPosition > size)
-			newPosition = size;
+		if (mode == FILE_READ && newPosition > _size)
+			newPosition = _size;
 
 		fseek((FILE*)handle, (long)newPosition, SEEK_SET);
-		position = newPosition;
+		_position = newPosition;
 		readSyncNeeded = false;
 		writeSyncNeeded = false;
-		return position;
+		return _position;
 	}
 
 	size_t File::Write(const void* data, size_t numBytes)
@@ -164,23 +169,23 @@ namespace Alimer
 		// Need to reassign the position due to internal buffering when transitioning from reading to writing
 		if (writeSyncNeeded)
 		{
-			fseek((FILE*)handle, (long)position, SEEK_SET);
+			fseek((FILE*)handle, (long)_position, SEEK_SET);
 			writeSyncNeeded = false;
 		}
 
 		if (fwrite(data, numBytes, 1, (FILE*)handle) != 1)
 		{
 			// If error, return to the position where the write began
-			fseek((FILE*)handle, (long)position, SEEK_SET);
+			fseek((FILE*)handle, (long)_position, SEEK_SET);
 			return 0;
 		}
 
 		readSyncNeeded = true;
-		position += numBytes;
-		if (position > size)
-			size = position;
+		_position += numBytes;
+		if (_position > _size)
+			_size = _position;
 
-		return size;
+		return _size;
 	}
 
 	bool File::IsReadable() const
@@ -199,8 +204,8 @@ namespace Alimer
 		{
 			fclose((FILE*)handle);
 			handle = 0;
-			position = 0;
-			size = 0;
+			_position = 0;
+			_size = 0;
 		}
 	}
 

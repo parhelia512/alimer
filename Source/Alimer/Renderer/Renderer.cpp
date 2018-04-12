@@ -37,7 +37,7 @@
 #include "Octree.h"
 #include "Renderer.h"
 #include "StaticModel.h"
-#include "../Base/Sort.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -62,13 +62,13 @@ namespace Alimer
 		CULL_FRONT
 	};
 
-	const String geometryDefines[] =
+	const std::string geometryDefines[] =
 	{
 		"",
 		"INSTANCED"
 	};
 
-	const String lightDefines[] =
+	const std::string lightDefines[] =
 	{
 		"AMBIENT",
 		"NUMSHADOWCOORDS",
@@ -83,9 +83,7 @@ namespace Alimer
 		return lhs->Distance() < rhs->Distance();
 	}
 
-	Renderer::Renderer() :
-		frameNumber(0),
-		instanceTransformsDirty(false)
+	Renderer::Renderer()
 	{
 	}
 
@@ -99,8 +97,8 @@ namespace Alimer
 			size = 1;
 		size = NextPowerOfTwo(size);
 
-		shadowMaps.Resize(num);
-		for (auto it = shadowMaps.Begin(); it != shadowMaps.End(); ++it)
+		shadowMaps.resize(num);
+		for (auto it = shadowMaps.begin(); it != shadowMaps.end(); ++it)
 		{
 			if (it->texture->Define(
 				TextureType::Type2D,
@@ -135,14 +133,14 @@ namespace Alimer
 		if (!graphics)
 			Initialize();
 
-		geometries.Clear();
-		lights.Clear();
-		instanceTransforms.Clear();
+		geometries.clear();
+		lights.clear();
+		instanceTransforms.clear();
 		lightLists.clear();
 		lightPasses.clear();
 		for (auto it = batchQueues.begin(); it != batchQueues.end(); ++it)
 			it->second.Clear();
-		for (auto it = shadowMaps.Begin(); it != shadowMaps.End(); ++it)
+		for (auto it = shadowMaps.begin(); it != shadowMaps.end(); ++it)
 			it->Clear();
 		usedShadowViews = 0;
 
@@ -153,9 +151,9 @@ namespace Alimer
 			return false;
 
 		// Increment frame number. Never use 0, as that is the default for objects that have never been rendered
-		++frameNumber;
-		if (!frameNumber)
-			++frameNumber;
+		++_frameNumber;
+		if (!_frameNumber)
+			++_frameNumber;
 
 		// Reinsert moved objects to the octree
 		octree->Update();
@@ -175,10 +173,10 @@ namespace Alimer
 			// Sort lights by increasing distance. Directional lights will have distance 0 which ensure they have the first
 			// opportunity to allocate shadow maps
 			ALIMER_PROFILE(SortLights);
-			Sort(lights.Begin(), lights.End(), CompareLights);
+			std::sort(lights.begin(), lights.end(), CompareLights);
 		}
 
-		for (auto it = lights.Begin(), end = lights.End(); it != end; ++it)
+		for (auto it = lights.begin(), end = lights.end(); it != end; ++it)
 		{
 			Light* light = *it;
 			unsigned lightMask = light->LightMask();
@@ -187,16 +185,16 @@ namespace Alimer
 			bool hasReceivers = false;
 
 			// Create a light list that contains only this light. It will be used for nodes that have no light interactions so far
-			unsigned long long key = (unsigned long long)light;
+			uint64_t key = (uint64_t)light;
 			LightList* lightList = &lightLists[key];
-			lightList->lights.Push(light);
+			lightList->lights.push_back(light);
 			lightList->key = key;
 			lightList->useCount = 0;
 
 			switch (light->GetLightType())
 			{
 			case LIGHT_DIRECTIONAL:
-				for (auto gIt = geometries.Begin(), gEnd = geometries.End(); gIt != gEnd; ++gIt)
+				for (auto gIt = geometries.begin(), gEnd = geometries.end(); gIt != gEnd; ++gIt)
 				{
 					GeometryNode* node = *gIt;
 					if (node->LayerMask() & lightMask)
@@ -214,7 +212,7 @@ namespace Alimer
 				{
 					GeometryNode* node = *gIt;
 					// Add light only to nodes which are actually inside the frustum this frame
-					if (node->LastFrameNumber() == frameNumber)
+					if (node->LastFrameNumber() == _frameNumber)
 					{
 						AddLightToNode(node, light, lightList);
 						hasReceivers = true;
@@ -228,7 +226,7 @@ namespace Alimer
 				for (auto gIt = litGeometries.begin(), gEnd = litGeometries.end(); gIt != gEnd; ++gIt)
 				{
 					GeometryNode* node = *gIt;
-					if (node->LastFrameNumber() == frameNumber)
+					if (node->LastFrameNumber() == _frameNumber)
 					{
 						AddLightToNode(node, light, lightList);
 						hasReceivers = true;
@@ -251,7 +249,7 @@ namespace Alimer
 
 			while (retries--)
 			{
-				for (index = 0; index < shadowMaps.Size(); ++index)
+				for (index = 0; index < shadowMaps.size(); ++index)
 				{
 					ShadowMap& shadowMap = shadowMaps[index];
 					int x, y;
@@ -262,7 +260,7 @@ namespace Alimer
 					}
 				}
 
-				if (index < shadowMaps.Size())
+				if (index < shadowMaps.size())
 					break;
 				else
 				{
@@ -272,7 +270,7 @@ namespace Alimer
 			}
 
 			// If no room in any shadow map, render unshadowed
-			if (index >= shadowMaps.Size())
+			if (index >= shadowMaps.size())
 			{
 				light->SetShadowMap(nullptr);
 				continue;
@@ -321,9 +319,9 @@ namespace Alimer
 				shadowQueue.Sort(instanceTransforms);
 
 				// Mark shadow map for rendering only if it has a view with some batches
-				if (shadowQueue.batches.Size())
+				if (shadowQueue.batches.size())
 				{
-					shadowMaps[index].shadowViews.Push(view);
+					shadowMaps[index].shadowViews.push_back(view);
 					shadowMaps[index].used = true;
 					hasShadowBatches = true;
 				}
@@ -348,12 +346,12 @@ namespace Alimer
 
 				// Sort lights according to the light pointer to prevent camera angle from changing the light list order and
 				// causing extra shader variations to be compiled
-				Sort(list.lights.Begin(), list.lights.End());
+				std::sort(list.lights.begin(), list.lights.end());
 
-				size_t lightsLeft = list.lights.Size();
-				static Vector<bool> lightDone;
-				static Vector<Light*> currentPass;
-				lightDone.Resize(lightsLeft);
+				size_t lightsLeft = list.lights.size();
+				static std::vector<bool> lightDone;
+				static std::vector<Light*> currentPass;
+				lightDone.resize(lightsLeft);
 				for (size_t i = 0; i < lightsLeft; ++i)
 					lightDone[i] = false;
 
@@ -362,10 +360,10 @@ namespace Alimer
 				{
 					// Find lights to the current pass, while obeying rules for shadow coord allocations (shadowed directional & spot
 					// lights can not share a pass)
-					currentPass.Clear();
+					currentPass.clear();
 					size_t startIndex = index;
 					size_t shadowCoordsLeft = MAX_LIGHTS_PER_PASS;
-					while (lightsLeft && currentPass.Size() < MAX_LIGHTS_PER_PASS)
+					while (lightsLeft && currentPass.size() < MAX_LIGHTS_PER_PASS)
 					{
 						if (!lightDone[index])
 						{
@@ -374,36 +372,36 @@ namespace Alimer
 							if (shadowCoords <= shadowCoordsLeft)
 							{
 								lightDone[index] = true;
-								currentPass.Push(light);
+								currentPass.push_back(light);
 								shadowCoordsLeft -= shadowCoords;
 								--lightsLeft;
 							}
 						}
 
-						index = (index + 1) % list.lights.Size();
+						index = (index + 1) % list.lights.size();
 						if (index == startIndex)
 							break;
 					}
 
-					unsigned long long passKey = 0;
-					for (size_t i = 0; i < currentPass.Size(); ++i)
-						passKey += (unsigned long long)currentPass[i] << (i * 16);
-					if (list.lightPasses.IsEmpty())
+					uint64_t passKey = 0;
+					for (size_t i = 0; i < currentPass.size(); ++i)
+						passKey += (uint64_t)currentPass[i] << (i * 16);
+					if (list.lightPasses.empty())
 						++passKey; // First pass includes ambient light
 
 					auto lpIt = lightPasses.find(passKey);
 					if (lpIt != lightPasses.end())
-						list.lightPasses.Push(&lpIt->second);
+						list.lightPasses.push_back(&lpIt->second);
 					else
 					{
 						LightPass* newLightPass = &lightPasses[passKey];
 						newLightPass->vsBits = 0;
-						newLightPass->psBits = list.lightPasses.IsEmpty() ? LPS_AMBIENT : 0;
+						newLightPass->psBits = list.lightPasses.empty() ? LPS_AMBIENT : 0;
 						for (size_t i = 0; i < MAX_LIGHTS_PER_PASS; ++i)
 							newLightPass->shadowMaps[i] = nullptr;
 
 						size_t numShadowCoords = 0;
-						for (size_t i = 0; i < currentPass.Size(); ++i)
+						for (size_t i = 0; i < currentPass.size(); ++i)
 						{
 							Light* light = currentPass[i];
 							newLightPass->psBits |= (light->GetLightType() + 1) << (i * 3 + 4);
@@ -444,7 +442,7 @@ namespace Alimer
 							newLightPass->psBits |= numShadowCoords << 1;
 						}
 
-						list.lightPasses.Push(newLightPass);
+						list.lightPasses.push_back(newLightPass);
 					}
 				}
 			}
@@ -471,7 +469,7 @@ namespace Alimer
 		}
 
 		// Loop through geometry nodes
-		for (auto gIt = geometries.Begin(), gEnd = geometries.End(); gIt != gEnd; ++gIt)
+		for (auto gIt = geometries.begin(), gEnd = geometries.end(); gIt != gEnd; ++gIt)
 		{
 			GeometryNode* node = *gIt;
 			LightList* lightList = node->GetLightList();
@@ -481,7 +479,7 @@ namespace Alimer
 			newBatch.worldMatrix = &node->WorldTransform();
 
 			// Loop through node's geometries
-			for (auto bIt = node->Batches().Begin(), bEnd = node->Batches().End(); bIt != bEnd; ++bIt)
+			for (auto bIt = node->GetBatches().begin(), bEnd = node->GetBatches().end(); bIt != bEnd; ++bIt)
 			{
 				newBatch.geometry = bIt->geometry.Get();
 				Material* material = bIt->material.Get();
@@ -502,29 +500,31 @@ namespace Alimer
 					else
 						newBatch.distance = node->Distance();
 
-					batchQueue.batches.Push(newBatch);
+					batchQueue.batches.push_back(newBatch);
 
 					// Create additive light batches if necessary
-					if (batchQueue.lit && lightList && lightList->lightPasses.Size() > 1)
+					if (batchQueue.lit
+						&& lightList
+						&& lightList->lightPasses.size() > 1)
 					{
 						newBatch.pass = material->GetPass(batchQueue.additiveIndex);
 						if (!newBatch.pass)
 							continue;
 
-						for (size_t i = 1; i < lightList->lightPasses.Size(); ++i)
+						for (size_t i = 1; i < lightList->lightPasses.size(); ++i)
 						{
 							newBatch.lights = lightList->lightPasses[i];
 							if (batchQueue.sort != SORT_BACK_TO_FRONT)
 							{
 								newBatch.CalculateSortKey();
-								batchQueue.additiveBatches.Push(newBatch);
+								batchQueue.additiveBatches.push_back(newBatch);
 							}
 							else
 							{
 								// In back-to-front mode base and additive batches must be mixed. Manipulate distance to make
 								// the additive batches render later
 								newBatch.distance = node->Distance() * 0.99999f;
-								batchQueue.batches.Push(newBatch);
+								batchQueue.batches.push_back(newBatch);
 							}
 						}
 					}
@@ -532,7 +532,7 @@ namespace Alimer
 			}
 		}
 
-		size_t oldSize = instanceTransforms.Size();
+		size_t oldSize = instanceTransforms.size();
 
 		for (auto qIt = currentQueues.begin(); qIt != currentQueues.end(); ++qIt)
 		{
@@ -541,8 +541,8 @@ namespace Alimer
 		}
 
 		// Check if more instances where added
-		if (instanceTransforms.Size() != oldSize)
-			instanceTransformsDirty = true;
+		if (instanceTransforms.size() != oldSize)
+			_instanceTransformsDirty = true;
 	}
 
 	void Renderer::CollectBatches(const PassDesc& pass)
@@ -559,7 +559,7 @@ namespace Alimer
 		// Make sure the shadow maps are not bound on any unit
 		graphics->ResetTextures();
 
-		for (auto it = shadowMaps.Begin(); it != shadowMaps.End(); ++it)
+		for (auto it = shadowMaps.begin(); it != shadowMaps.end(); ++it)
 		{
 			if (!it->used)
 				continue;
@@ -567,7 +567,7 @@ namespace Alimer
 			graphics->SetRenderTarget(nullptr, it->texture);
 			graphics->Clear(ClearFlags::Depth, Color::BLACK, 1.0f);
 
-			for (auto vIt = it->shadowViews.Begin(); vIt < it->shadowViews.End(); ++vIt)
+			for (auto vIt = it->shadowViews.begin(); vIt < it->shadowViews.end(); ++vIt)
 			{
 				ShadowView* view = *vIt;
 				Light* light = view->light;
@@ -590,11 +590,11 @@ namespace Alimer
 		}
 	}
 
-	void Renderer::RenderBatches(const String& pass)
+	void Renderer::RenderBatches(const std::string& pass)
 	{
 		ALIMER_PROFILE(RenderBatches);
 
-		unsigned char passIndex = Material::PassIndex(pass);
+		uint8_t passIndex = Material::PassIndex(pass);
 		BatchQueue& batchQueue = batchQueues[passIndex];
 		RenderBatches(batchQueue.batches, camera);
 		RenderBatches(batchQueue.additiveBatches, camera, false);
@@ -716,14 +716,14 @@ namespace Alimer
 					if (flags & NF_GEOMETRY)
 					{
 						GeometryNode* geometry = static_cast<GeometryNode*>(node);
-						geometry->OnPrepareRender(frameNumber, camera);
-						geometries.Push(geometry);
+						geometry->OnPrepareRender(_frameNumber, camera);
+						geometries.push_back(geometry);
 					}
 					else
 					{
 						Light* light = static_cast<Light*>(node);
-						light->OnPrepareRender(frameNumber, camera);
-						lights.Push(light);
+						light->OnPrepareRender(_frameNumber, camera);
+						lights.push_back(light);
 					}
 				}
 			}
@@ -740,14 +740,14 @@ namespace Alimer
 					if (flags & NF_GEOMETRY)
 					{
 						GeometryNode* geometry = static_cast<GeometryNode*>(node);
-						geometry->OnPrepareRender(frameNumber, camera);
-						geometries.Push(geometry);
+						geometry->OnPrepareRender(_frameNumber, camera);
+						geometries.push_back(geometry);
 					}
 					else
 					{
 						Light* light = static_cast<Light*>(node);
-						light->OnPrepareRender(frameNumber, camera);
-						lights.Push(light);
+						light->OnPrepareRender(_frameNumber, camera);
+						lights.push_back(light);
 					}
 				}
 			}
@@ -769,7 +769,7 @@ namespace Alimer
 			// Create new light list based on the node's existing one
 			--oldList->useCount;
 			uint64_t newListKey = oldList->key;
-			newListKey += (uint64_t)light << ((oldList->lights.Size() & 3) * 16);
+			newListKey += (uint64_t)light << ((oldList->lights.size() & 3) * 16);
 			auto it = lightLists.find(newListKey);
 			if (it != lightLists.end())
 			{
@@ -782,7 +782,7 @@ namespace Alimer
 				LightList* newList = &lightLists[newListKey];
 				newList->key = newListKey;
 				newList->lights = oldList->lights;
-				newList->lights.Push(light);
+				newList->lights.push_back(light);
 				newList->useCount = 1;
 				node->SetLightList(newList);
 			}
@@ -808,14 +808,14 @@ namespace Alimer
 				continue;
 
 			// Node was possibly not in the main view. Update geometry first in that case
-			if (node->LastFrameNumber() != frameNumber)
-				node->OnPrepareRender(frameNumber, camera);
+			if (node->LastFrameNumber() != _frameNumber)
+				node->OnPrepareRender(_frameNumber, camera);
 
 			newBatch.type = node->GetGeometryType();
 			newBatch.worldMatrix = &node->WorldTransform();
 
 			// Loop through node's geometries
-			for (auto bIt = node->Batches().Begin(), bEnd = node->Batches().End(); bIt != bEnd; ++bIt)
+			for (auto bIt = node->GetBatches().begin(), bEnd = node->GetBatches().end(); bIt != bEnd; ++bIt)
 			{
 				newBatch.geometry = bIt->geometry.Get();
 				Material* material = bIt->material.Get();
@@ -827,13 +827,18 @@ namespace Alimer
 					continue;
 
 				newBatch.CalculateSortKey();
-				batchQueue.batches.Push(newBatch);
+				batchQueue.batches.push_back(newBatch);
 			}
 		}
 	}
 
-	void Renderer::RenderBatches(const Vector<Batch>& batches, Camera* camera_, bool setPerFrameConstants, bool overrideDepthBias,
-		int depthBias, float slopeScaledDepthBias)
+	void Renderer::RenderBatches(
+		const std::vector<Batch>& batches, 
+		Camera* camera_, 
+		bool setPerFrameConstants,
+		bool overrideDepthBias,
+		int depthBias, 
+		float slopeScaledDepthBias)
 	{
 		if (faceSelectionTexture1->IsDataLost() || faceSelectionTexture2->IsDataLost())
 			DefineFaceSelectionTextures();
@@ -884,13 +889,14 @@ namespace Alimer
 			graphics->SetConstantBuffer(SHADER_PS, CB_FRAME, psFrameConstantBuffer);
 		}
 
-		if (instanceTransformsDirty && instanceTransforms.Size())
+		if (_instanceTransformsDirty 
+			&& instanceTransforms.size())
 		{
-			if (instanceVertexBuffer->NumVertices() < instanceTransforms.Size())
-				instanceVertexBuffer->Define(USAGE_DYNAMIC, NextPowerOfTwo(instanceTransforms.Size()), instanceVertexElements, false);
-			instanceVertexBuffer->SetData(0, instanceTransforms.Size(), &instanceTransforms[0]);
+			if (instanceVertexBuffer->NumVertices() < instanceTransforms.size())
+				instanceVertexBuffer->Define(USAGE_DYNAMIC, NextPowerOfTwo(instanceTransforms.size()), instanceVertexElements, false);
+			instanceVertexBuffer->SetData(0, instanceTransforms.size(), instanceTransforms.data());
 			graphics->SetVertexBuffer(1, instanceVertexBuffer.get());
-			instanceTransformsDirty = false;
+			_instanceTransformsDirty = false;
 		}
 
 		{
@@ -898,7 +904,7 @@ namespace Alimer
 			Material* lastMaterial = nullptr;
 			LightPass* lastLights = nullptr;
 
-			for (auto it = batches.Begin(); it != batches.End();)
+			for (auto it = batches.begin(); it != batches.end();)
 			{
 				const Batch& batch = *it;
 				bool instanced = batch.type == GEOM_INSTANCED;
@@ -1031,31 +1037,33 @@ namespace Alimer
 
 		if (stage == SHADER_VS)
 		{
-			String vsString = pass->CombinedShaderDefines(stage) + " " + geometryDefines[bits & LVS_GEOMETRY];
+			std::string vsString = pass->CombinedShaderDefines(stage) + " " + geometryDefines[bits & LVS_GEOMETRY];
 			if (bits & LVS_NUMSHADOWCOORDS)
-				vsString += " " + lightDefines[1] + "=" + String((bits & LVS_NUMSHADOWCOORDS) >> 2);
+				vsString += " " + lightDefines[1] + "=" + std::to_string((bits & LVS_NUMSHADOWCOORDS) >> 2);
 
-			variations.insert(std::make_pair(bits, WeakPtr<ShaderVariation>(pass->shaders[stage]->CreateVariation(vsString.Trimmed()))));
-			return variations[bits].Get();
+			auto vsVariation = pass->shaders[stage]->CreateVariation(str::Trim(vsString));
+			variations.insert(std::make_pair(bits, WeakPtr<ShaderVariation>(vsVariation)));
+			return vsVariation;
 		}
 		else
 		{
-			String psString = pass->CombinedShaderDefines(stage);
+			std::string psString = pass->CombinedShaderDefines(stage);
 			if (bits & LPS_AMBIENT)
 				psString += " " + lightDefines[0];
 			if (bits & LPS_NUMSHADOWCOORDS)
-				psString += " " + lightDefines[1] + "=" + String((bits & LPS_NUMSHADOWCOORDS) >> 1);
+				psString += " " + lightDefines[1] + "=" + std::to_string((bits & LPS_NUMSHADOWCOORDS) >> 1);
 			for (size_t i = 0; i < MAX_LIGHTS_PER_PASS; ++i)
 			{
-				unsigned short lightBits = (bits >> (i * 3 + 4)) & 7;
+				uint16_t lightBits = (bits >> (i * 3 + 4)) & 7;
 				if (lightBits)
-					psString += " " + lightDefines[(lightBits & 3) + 1] + String((int)i);
+					psString += " " + lightDefines[(lightBits & 3) + 1] + std::to_string((int)i);
 				if (lightBits & 4)
-					psString += " " + lightDefines[5] + String((int)i);
+					psString += " " + lightDefines[5] + std::to_string((int)i);
 			}
 
-			variations.insert(std::make_pair(bits, WeakPtr<ShaderVariation>(pass->shaders[stage]->CreateVariation(psString.Trimmed()))));
-			return variations[bits].Get();
+			auto fsVariation = pass->shaders[stage]->CreateVariation(str::Trim(psString));
+			variations.insert(std::make_pair(bits, WeakPtr<ShaderVariation>(fsVariation)));
+			return fsVariation;
 		}
 	}
 

@@ -107,9 +107,9 @@ namespace Alimer
 
 	private:
 		/// Prevent copy construction.
-		Allocator(const Allocator<T>& rhs);
+		Allocator(const Allocator<T>&) = delete;
 		/// Prevent assignment.
-		Allocator<T>& operator = (const Allocator<T>& rhs);
+		Allocator<T>& operator = (const Allocator<T>&) = delete;
 
 		/// Allocator block.
 		AllocatorBlock* allocator;

@@ -41,7 +41,7 @@ namespace Alimer
 		/// Return hash of the type name.
 		virtual StringHash Type() const = 0;
 		/// Return type name.
-		virtual const String& TypeName() const = 0;
+		virtual const std::string& TypeName() const = 0;
 
 		/// Subscribe to an event.
 		void SubscribeToEvent(Event& event, EventHandler* handler);
@@ -72,7 +72,7 @@ namespace Alimer
 		/// Create and return an object through a factory. The caller is assumed to take ownership of the object. Return null if no factory registered. 
 		static Object* Create(StringHash type);
 		/// Return a type name from hash, or empty if not known. Requires a registered object factory.
-		static const String& TypeNameFromType(StringHash type);
+		static const std::string& TypeNameFromType(StringHash type);
 		/// Return a subsystem, template version.
 		template <class T> static T* Subsystem() { return static_cast<T*>(Subsystem(T::TypeStatic())); }
 		/// Register an object factory, template version.
@@ -98,15 +98,15 @@ namespace Alimer
 		virtual Object* Create() = 0;
 
 		/// Return type name hash of the objects created by this factory.
-		StringHash Type() const { return type; }
+		StringHash Type() const { return _type; }
 		/// Return type name of the objects created by this factory.
-		const String& TypeName() const { return typeName; }
+		const std::string& TypeName() const { return _typeName; }
 
 	protected:
 		/// %Object type name hash.
-		StringHash type;
+		StringHash _type;
 		/// %Object type name.
-		String typeName;
+		std::string _typeName;
 	};
 
 	/// Template implementation of the object factory.
@@ -116,8 +116,8 @@ namespace Alimer
 		/// Construct.
 		ObjectFactoryImpl()
 		{
-			type = T::TypeStatic();
-			typeName = T::TypeNameStatic();
+			_type = T::TypeStatic();
+			_typeName = T::TypeNameStatic();
 		}
 
 		/// Create and return an object of the specific type.
@@ -129,10 +129,10 @@ namespace Alimer
 #define OBJECT(typeName) \
 	private: \
 		static const Alimer::StringHash typeStatic; \
-		static const Alimer::String typeNameStatic; \
+		static const std::string typeNameStatic; \
 	public: \
 		Alimer::StringHash Type() const override { return TypeStatic(); } \
-		const Alimer::String& TypeName() const override { return TypeNameStatic(); } \
+		const std::string& TypeName() const override { return TypeNameStatic(); } \
 		static Alimer::StringHash TypeStatic() { static const Alimer::StringHash type(#typeName); return type; } \
-		static const Alimer::String& TypeNameStatic() { static const Alimer::String type(#typeName); return type; } \
+		static const std::string& TypeNameStatic() { static const std::string type(#typeName); return type; } \
 

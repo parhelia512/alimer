@@ -121,15 +121,17 @@ namespace Alimer
 
 				for (size_t i = 0; i < MAX_RENDERTARGETS; ++i)
 				{
-					if (graphics->RenderTarget(i) == this)
+					if (graphics->GetRenderTarget(i) == this)
 					{
 						clear = true;
 						break;
 					}
 				}
 
-				if (!clear && graphics->DepthStencil() == this)
+				if (!clear && graphics->GetDepthStencil() == this)
+				{
 					clear = true;
+				}
 
 				if (clear)
 					graphics->ResetRenderTargets();

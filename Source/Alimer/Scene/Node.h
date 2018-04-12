@@ -58,11 +58,11 @@ namespace Alimer
 		/// Set node's layer. Usage is subclass specific, for example rendering nodes selectively. Default is 0.
 		void SetLayer(unsigned char newLayer);
 		/// Set node's layer by name. The layer name must have been registered to the scene root beforehand.
-		void SetLayerName(const String& newLayerName);
+		void SetLayerName(const std::string& newLayerName);
 		/// Set node's tag, which can be used to search for specific nodes.
 		void SetTag(unsigned char newTag);
 		/// Set node's tag by name. The tag name must have been registered to the scene root beforehand.
-		void SetTagName(const String& newTagName);
+		void SetTagName(const std::string& newTagName);
 		/// Set enabled status. Meaning is subclass specific.
 		void SetEnabled(bool enable);
 		/// Set enabled status recursively in the child hierarchy.

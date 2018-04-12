@@ -10,8 +10,7 @@
 
 namespace Alimer
 {
-
-	static Vector<SharedPtr<Node> > noChildren;
+	static std::vector<SharedPtr<Node> > noChildren;
 
 	Node::Node() :
 		flags(NF_ENABLED),
@@ -151,7 +150,7 @@ namespace Alimer
 			LOGERROR("Can not set layer 32 or higher");
 	}
 
-	void Node::SetLayerName(const String& newLayerName)
+	void Node::SetLayerName(const std::string& newLayerName)
 	{
 		if (!scene)
 			return;
@@ -169,7 +168,7 @@ namespace Alimer
 		tag = newTag;
 	}
 
-	void Node::SetTagName(const String& newTagName)
+	void Node::SetTagName(const std::string& newTagName)
 	{
 		if (!scene)
 			return;

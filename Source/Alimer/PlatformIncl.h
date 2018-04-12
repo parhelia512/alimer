@@ -21,49 +21,52 @@
 // THE SOFTWARE.
 //
 
-#include "Alimer.h"
-#include "Debug/DebugNew.h"
+#pragma once
 
-#ifdef _MSC_VER
-#include <crtdbg.h>
+#include "PlatformDef.h"
+
+#if ALIMER_PLATFORM_WINDOWS
+#	pragma warning(push)
+#	pragma warning(disable : 4005)
+
+#	ifndef WIN32_LEAN_AND_MEAN
+#		define WIN32_LEAN_AND_MEAN
+#	endif
+
+#	ifndef NOMINMAX
+#		define NOMINMAX
+#	endif 
+
+//	#	define NODRAWTEXT
+//	#	define NOGDI
+//	#	define NOBITMAP
+#	define NOMCX
+#	define NOSERVICE
+#	define NOHELP
+#	pragma warning(pop)
+
+#	include <windows.h>
+#   include <intrin.h>
+
+#	undef DrawState
+#	undef MessageBox
+#	undef ERROR
+#	undef DELETE
+#	undef LoadImage
+#	undef TRANSPARENT
+#	undef DeleteFile
+
+#	elif ALIMER_PLATFORM_ANDROID || ALIMER_PLATFORM_LINUX || ALIMER_PLATFORM_WEB
+#	include <unistd.h>
+#	include <signal.h>
+#	include <dlfcn.h>
+
+#	if ALIMER_PLATFORM_ANDROID
+#		include <android/log.h>
+#	elif ALIMER_PLATFORM_WEB
+#		include <emscripten/emscripten.h>
+#		include <emscripten/html5.h>
+#		include <emscripten/threading.h>
+#	endif
+
 #endif
-
-#include <cstdio>
-#include <cstdlib>
-
-using namespace Alimer;
-
-int main()
-{
-    #ifdef _MSC_VER
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-    #endif
-    
-    RegisterResourceLibrary();
-    
-    Log log;
-    Profiler profiler;
-    ResourceCache cache;
-    
-    printf("Testing resource loading\n");
-    
-    Image* image = nullptr;
-
-    {
-        profiler.BeginFrame();
-        cache.AddResourceDir(GetExecutableDir() + "Data");
-        image = cache.LoadResource<Image>("Test.png");
-        profiler.EndFrame();
-    }
-
-    if (image)
-    {
-        printf("Image loaded successfully, size %dx%d pixel byte size %d\n", image->Width(), image->Height(), (int)image->PixelByteSize());
-        File saveFile("Test_Save.png", FILE_WRITE);
-        image->Save(saveFile);
-    }
-
-    LOGRAW(profiler.OutputResults(false, false, 16));
-
-    return 0;
-}

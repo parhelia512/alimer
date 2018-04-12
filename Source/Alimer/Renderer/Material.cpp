@@ -30,20 +30,20 @@
 #include "../Resource/ResourceCache.h"
 #include "Material.h"
 
-#include "../Debug/DebugNew.h"
+using namespace std;
 
 namespace Alimer
 {
 	SharedPtr<Material> Material::defaultMaterial;
-	std::unordered_map<String, uint8_t> Material::passIndices;
-	Vector<String> Material::passNames;
-	unsigned char Material::nextPassIndex = 0;
+	unordered_map<string, uint8_t> Material::_passIndices;
+	vector<string> Material::_passNames;
+	uint8_t Material::_nextPassIndex = 0;
 
-	Pass::Pass(Material* parent_, const String& name_) :
-		parent(parent_),
-		name(name_),
-		shaderHash(0),
-		shadersLoaded(false)
+	Pass::Pass(Material* parent_, const std::string& name)
+		: parent(parent_)
+		, _name(name)
+		, _shaderHash(0)
+		, shadersLoaded(false)
 	{
 		Reset();
 	}
@@ -55,13 +55,13 @@ namespace Alimer
 	bool Pass::LoadJSON(const JSONValue& source)
 	{
 		if (source.Contains("vs"))
-			shaderNames[SHADER_VS] = source["vs"].GetString();
+			shaderNames[SHADER_VS] = source["vs"].GetStdString();
 		if (source.Contains("ps"))
-			shaderNames[SHADER_PS] = source["ps"].GetString();
+			shaderNames[SHADER_PS] = source["ps"].GetStdString();
 		if (source.Contains("vsDefines"))
-			shaderDefines[SHADER_VS] = source["vsDefines"].GetString();
+			shaderDefines[SHADER_VS] = source["vsDefines"].GetStdString();
 		if (source.Contains("psDefines"))
-			shaderDefines[SHADER_PS] = source["psDefines"].GetString();
+			shaderDefines[SHADER_PS] = source["psDefines"].GetStdString();
 
 		if (source.Contains("depthFunc"))
 			depthFunc = (CompareFunc)String::ListIndex(source["depthFunc"].GetString(), compareFuncNames, CMP_LESS_EQUAL);
@@ -106,13 +106,13 @@ namespace Alimer
 	{
 		dest.SetEmptyObject();
 
-		if (shaderNames[SHADER_VS].Length())
+		if (shaderNames[SHADER_VS].length())
 			dest["vs"] = shaderNames[SHADER_VS];
-		if (shaderNames[SHADER_PS].Length())
+		if (shaderNames[SHADER_PS].length())
 			dest["ps"] = shaderNames[SHADER_PS];
-		if (shaderDefines[SHADER_VS].Length())
+		if (shaderDefines[SHADER_VS].length())
 			dest["vsDefines"] = shaderDefines[SHADER_VS];
-		if (shaderDefines[SHADER_PS].Length())
+		if (shaderDefines[SHADER_PS].length())
 			dest["psDefines"] = shaderDefines[SHADER_PS];
 
 		dest["depthFunc"] = compareFuncNames[depthFunc];
@@ -155,7 +155,11 @@ namespace Alimer
 		blendMode = blendModes[mode];
 	}
 
-	void Pass::SetShaders(const String& vsName, const String& psName, const String& vsDefines, const String& psDefines)
+	void Pass::SetShaders(
+		const std::string& vsName,
+		const std::string& psName,
+		const std::string& vsDefines,
+		const std::string& psDefines)
 	{
 		shaderNames[SHADER_VS] = vsName;
 		shaderNames[SHADER_PS] = psName;
@@ -195,15 +199,15 @@ namespace Alimer
 		// Combine and trim the shader defines
 		for (size_t i = 0; i < MAX_SHADER_STAGES; ++i)
 		{
-			const String& materialDefines = parent->ShaderDefines((ShaderStage)i);
-			if (materialDefines.Length())
-				combinedShaderDefines[i] = (materialDefines.Trimmed() + " " + shaderDefines[i]).Trimmed();
+			const std::string& materialDefines = parent->ShaderDefines((ShaderStage)i);
+			if (materialDefines.length())
+				_combinedShaderDefines[i] = (str::Trim(materialDefines) + " " + str::Trim(shaderDefines[i]));
 			else
-				combinedShaderDefines[i] = shaderDefines[i].Trimmed();
+				_combinedShaderDefines[i] = str::Trim(shaderDefines[i]);
 		}
 
-		shaderHash = StringHash(shaderNames[SHADER_VS] + shaderNames[SHADER_PS] + combinedShaderDefines[SHADER_VS] +
-			combinedShaderDefines[SHADER_PS]).Value();
+		_shaderHash = StringHash(shaderNames[SHADER_VS] + shaderNames[SHADER_PS] + _combinedShaderDefines[SHADER_VS] +
+			_combinedShaderDefines[SHADER_PS]).Value();
 	}
 
 	Material::Material()
@@ -229,12 +233,12 @@ namespace Alimer
 
 		const JSONValue& root = loadJSON->Root();
 
-		shaderDefines[SHADER_VS].Clear();
-		shaderDefines[SHADER_PS].Clear();
+		shaderDefines[SHADER_VS].clear();
+		shaderDefines[SHADER_PS].clear();
 		if (root.Contains("vsDefines"))
-			shaderDefines[SHADER_VS] = root["vsDefines"].GetString();
+			shaderDefines[SHADER_VS] = root["vsDefines"].GetStdString();
 		if (root.Contains("psDefines"))
-			shaderDefines[SHADER_PS] = root["psDefines"].GetString();
+			shaderDefines[SHADER_PS] = root["psDefines"].GetStdString();
 
 		return true;
 	}
@@ -245,7 +249,7 @@ namespace Alimer
 
 		const JSONValue& root = loadJSON->Root();
 
-		passes.Clear();
+		passes.clear();
 		if (root.Contains("passes"))
 		{
 			const JSONObject& jsonPasses = root["passes"].GetObject();
@@ -277,7 +281,7 @@ namespace Alimer
 			ResourceCache* cache = Subsystem<ResourceCache>();
 			const JSONObject& jsonTextures = root["textures"].GetObject();
 			for (auto it = jsonTextures.begin(); it != jsonTextures.end(); ++it)
-				SetTexture(it->first.ToInt(), cache->LoadResource<Texture>(it->second.GetString()));
+				SetTexture(str::ToInt(it->first.c_str()), cache->LoadResource<Texture>(it->second.GetStdString()));
 		}
 
 		loadJSON.reset();
@@ -292,19 +296,19 @@ namespace Alimer
 		JSONValue& root = saveJSON.Root();
 		root.SetEmptyObject();
 
-		if (shaderDefines[SHADER_VS].Length())
+		if (shaderDefines[SHADER_VS].length())
 			root["vsDefines"] = shaderDefines[SHADER_VS];
-		if (shaderDefines[SHADER_PS].Length())
+		if (shaderDefines[SHADER_PS].length())
 			root["psDefines"] = shaderDefines[SHADER_PS];
 
-		if (passes.Size())
+		if (passes.size())
 		{
 			root["passes"].SetEmptyObject();
-			for (auto it = passes.Begin(); it != passes.End(); ++it)
+			for (auto it = passes.begin(); it != passes.end(); ++it)
 			{
 				Pass* pass = *it;
 				if (pass)
-					pass->SaveJSON(root["passes"][pass->Name()]);
+					pass->SaveJSON(root["passes"][pass->GetName()]);
 			}
 		}
 
@@ -317,17 +321,19 @@ namespace Alimer
 		for (size_t i = 0; i < MAX_MATERIAL_TEXTURE_UNITS; ++i)
 		{
 			if (textures[i])
-				root["textures"][String((int)i)] = textures[i]->Name();
+			{
+				root["textures"][std::to_string((int)i)] = textures[i]->Name();
+			}
 		}
 
 		return saveJSON.Save(dest);
 	}
 
-	Pass* Material::CreatePass(const String& name)
+	Pass* Material::CreatePass(const std::string& name)
 	{
 		size_t index = PassIndex(name);
-		if (passes.Size() <= index)
-			passes.Resize(index + 1);
+		if (passes.size() <= index)
+			passes.resize(index + 1);
 
 		if (!passes[index])
 			passes[index] = new Pass(this, name);
@@ -335,10 +341,10 @@ namespace Alimer
 		return passes[index];
 	}
 
-	void Material::RemovePass(const String& name)
+	void Material::RemovePass(const std::string& name)
 	{
 		size_t index = PassIndex(name, false);
-		if (index < passes.Size())
+		if (index < passes.size())
 			passes[index].Reset();
 	}
 
@@ -360,12 +366,14 @@ namespace Alimer
 			constantBuffers[stage] = buffer;
 	}
 
-	void Material::SetShaderDefines(const String& vsDefines, const String& psDefines)
+	void Material::SetShaderDefines(
+		const std::string& vsDefines,
+		const std::string& psDefines)
 	{
 		shaderDefines[SHADER_VS] = vsDefines;
 		shaderDefines[SHADER_PS] = psDefines;
 
-		for (auto it = passes.Begin(); it != passes.End(); ++it)
+		for (auto it = passes.begin(); it != passes.end(); ++it)
 		{
 			Pass* pass = *it;
 			if (pass)
@@ -373,14 +381,14 @@ namespace Alimer
 		}
 	}
 
-	Pass* Material::FindPass(const String& name) const
+	Pass* Material::FindPass(const std::string& name) const
 	{
 		return GetPass(PassIndex(name, false));
 	}
 
-	Pass* Material::GetPass(unsigned char index) const
+	Pass* Material::GetPass(uint8_t index) const
 	{
-		return index < passes.Size() ? passes[index].Get() : nullptr;
+		return index < passes.size() ? passes[index].Get() : nullptr;
 	}
 
 	Texture* Material::GetTexture(size_t index) const
@@ -393,23 +401,23 @@ namespace Alimer
 		return stage < MAX_SHADER_STAGES ? constantBuffers[stage].Get() : nullptr;
 	}
 
-	const String& Material::ShaderDefines(ShaderStage stage) const
+	const std::string& Material::ShaderDefines(ShaderStage stage) const
 	{
-		return stage < MAX_SHADER_STAGES ? shaderDefines[stage] : String::EMPTY;
+		return stage < MAX_SHADER_STAGES ? shaderDefines[stage] : "";
 	}
 
-	uint8_t Material::PassIndex(const String& name, bool createNew)
+	uint8_t Material::PassIndex(const std::string& name, bool createNew)
 	{
-		String nameLower = name.ToLower();
-		auto it = passIndices.find(nameLower);
-		if (it != passIndices.end())
+		std::string nameLower = str::ToLower(name);
+		auto it = _passIndices.find(nameLower);
+		if (it != end(_passIndices))
 			return it->second;
 
 		if (createNew)
 		{
-			passIndices[nameLower] = nextPassIndex;
-			passNames.Push(nameLower);
-			return nextPassIndex++;
+			_passIndices[nameLower] = _nextPassIndex;
+			_passNames.push_back(nameLower);
+			return _nextPassIndex++;
 		}
 		
 		return 0xff;
@@ -417,7 +425,7 @@ namespace Alimer
 
 	const String& Material::PassName(uint8_t index)
 	{
-		return index < passNames.Size() ? passNames[index] : String::EMPTY;
+		return index < _passNames.size() ? _passNames[index] : String::EMPTY;
 	}
 
 	Material* Material::DefaultMaterial()
@@ -441,6 +449,4 @@ namespace Alimer
 
 		return defaultMaterial.Get();
 	}
-
-
 }

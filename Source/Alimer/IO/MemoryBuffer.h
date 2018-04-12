@@ -24,10 +24,10 @@
 #pragma once
 
 #include "Stream.h"
+#include <vector>
 
 namespace Alimer
 {
-
 	/// Memory area that can be read and written to as a stream.
 	class ALIMER_API MemoryBuffer : public Stream
 	{
@@ -37,9 +37,9 @@ namespace Alimer
 		/// Construct as read-only with a pointer and size.
 		MemoryBuffer(const void* data, size_t numBytes);
 		/// Construct from a vector, which must not go out of scope before MemoryBuffer.
-		MemoryBuffer(Vector<unsigned char>& data);
+		MemoryBuffer(std::vector<uint8_t>& data);
 		/// Construct from a read-only vector, which must not go out of scope before MemoryBuffer.
-		MemoryBuffer(const Vector<unsigned char>& data);
+		MemoryBuffer(const std::vector<uint8_t>& data);
 
 		/// Read bytes from the memory area. Return number of bytes actually read.
 		size_t Read(void* dest, size_t numBytes) override;
@@ -60,7 +60,7 @@ namespace Alimer
 
 	private:
 		/// Pointer to the memory area.
-		uint8_t * _buffer;
+		uint8_t* _buffer;
 		/// Read-only flag.
 		bool _readOnly;
 	};

@@ -44,7 +44,7 @@ public:
 		RegisterResourceLibrary();
 
 		cache = std::make_unique<ResourceCache>();
-		cache->AddResourceDir(ExecutableDir() + "Data");
+		cache->AddResourceDir(GetExecutableDir() + "Data");
 
 		log = std::make_unique<Log>();
 		input = std::make_unique<Input>();
@@ -93,7 +93,7 @@ public:
 		pcb->SetConstant("Color", Color::WHITE);
 		pcb->Apply();
 
-		String vsCode =
+		std::string vsCode =
 #ifndef TURSO3D_OPENGL
 			"struct VOut\n"
 			"{\n"
@@ -129,7 +129,7 @@ public:
 		vs->Define(SHADER_VS, vsCode);
 		ShaderVariation* vsv = vs->CreateVariation();
 
-		String psCode =
+		std::string psCode =
 #ifndef TURSO3D_OPENGL
 			"cbuffer ConstantBuffer : register(b0)\n"
 			"{\n"

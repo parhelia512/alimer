@@ -96,7 +96,7 @@ namespace Alimer
 		/// Copy all base class attributes.
 		static void CopyBaseAttributes(StringHash type, StringHash baseType);
 		/// Copy one base class attribute.
-		static void CopyBaseAttribute(StringHash type, StringHash baseType, const String& name);
+		static void CopyBaseAttribute(StringHash type, StringHash baseType, const std::string& name);
 		/// Skip binary data of an object's all attributes.
 		static void Skip(Stream& source);
 
@@ -125,7 +125,7 @@ namespace Alimer
 		}
 
 		/// Copy one base class attribute, template version.
-		template <class T, class U> static void CopyBaseAttribute(const String& name)
+		template <class T, class U> static void CopyBaseAttribute(const std::string& name)
 		{
 			CopyBaseAttribute(T::TypeStatic(), U::TypeStatic(), name);
 		}

@@ -21,7 +21,6 @@
 // THE SOFTWARE.
 //
 
-#include "../Base/AutoPtr.h"
 #include "../Debug/Log.h"
 #include "../Debug/Profiler.h"
 #include "../IO/File.h"
@@ -54,7 +53,7 @@ namespace Alimer
 		bool success = root.Parse(pos, end);
 		if (!success)
 		{
-			LOGERROR("Parsing JSON from " + source.Name() + " failed; data may be partial");
+			LOGERROR("Parsing JSON from " + source.GetName() + " failed; data may be partial");
 		}
 
 		return success;
@@ -64,9 +63,9 @@ namespace Alimer
 	{
 		ALIMER_PROFILE(SaveJSONFile);
 
-		String buffer;
+		std::string buffer;
 		root.ToString(buffer);
-		return dest.Write(buffer.Begin().ptr, buffer.Length()) == buffer.Length();
+		return dest.Write(buffer.data(), buffer.length()) == buffer.length();
 	}
 
 }

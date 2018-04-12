@@ -96,10 +96,10 @@ namespace Alimer
 		return it != factories.end() ? it->second->Create() : nullptr;
 	}
 
-	const String& Object::TypeNameFromType(StringHash type)
+	const string& Object::TypeNameFromType(StringHash type)
 	{
 		auto it = factories.find(type);
-		return it != factories.end() ? it->second->TypeName() : String::EMPTY;
+		return it != factories.end() ? it->second->TypeName() : "";
 	}
 
 }

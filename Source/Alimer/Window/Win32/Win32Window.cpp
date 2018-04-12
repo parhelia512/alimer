@@ -1,45 +1,34 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
-#include "../../Base/WString.h"
 #include "../../Debug/Log.h"
 #include "../../Math/Math.h"
 #include "../Input.h"
 #include "Win32Window.h"
-
-#include <Windows.h>
-
-#include "../../Debug/DebugNew.h"
+#include "../../PlatformIncl.h"
 
 namespace Alimer
 {
-
-	// Handle missing touch input definitions (MinGW)
-#if WINVER < 0x0601
-#define TWF_FINETOUCH 1
-#define TWF_WANTPALM 2
-#define TOUCHEVENTF_MOVE 0x1
-#define TOUCHEVENTF_DOWN 0x2
-#define TOUCHEVENTF_UP 0x4
-#define WM_TOUCH 0x240
-
-	DECLARE_HANDLE(HTOUCHINPUT);
-
-	/// \cond PRIVATE
-	typedef struct {
-		LONG x;
-		LONG y;
-		HANDLE hSource;
-		DWORD dwID;
-		DWORD dwFlags;
-		DWORD dwMask;
-		DWORD dwTime;
-		ULONG_PTR dwExtraInfo;
-		DWORD cxContact;
-		DWORD cyContact;
-	} TOUCHINPUT, *PTOUCHINPUT;
-	/// \endcond
-#endif
-
 	static BOOL(WINAPI* setProcessDpiAware)() = nullptr;
 	static BOOL(WINAPI* registerTouchWindow)(HWND, ULONG) = nullptr;
 	static BOOL(WINAPI* getTouchInputInfo)(HTOUCHINPUT, UINT, PTOUCHINPUT, int) = nullptr;
@@ -48,11 +37,10 @@ namespace Alimer
 
 	static LRESULT CALLBACK WndProc(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-	String Window::className("AlimerWindow");
+	const WCHAR AppWndClass[] = L"AlimerWindow";
 
-	Window::Window() :
-		handle(nullptr),
-		title("Alimer Window"),
+	Window::Window()
+		: _title("Alimer Window"),
 		size(IntVector2::ZERO),
 		savedPosition(IntVector2(M_MIN_INT, M_MIN_INT)),
 		mousePosition(IntVector2::ZERO),
@@ -69,7 +57,7 @@ namespace Alimer
 
 		if (!functionsInitialized)
 		{
-			HMODULE userDll = GetModuleHandle("user32.dll");
+			HMODULE userDll = GetModuleHandleW(L"user32.dll");
 			setProcessDpiAware = (BOOL(WINAPI*)())(void*)GetProcAddress(userDll, "SetProcessDPIAware");
 			registerTouchWindow = (BOOL(WINAPI*)(HWND, ULONG))(void*)GetProcAddress(userDll, "RegisterTouchWindow");
 			getTouchInputInfo = (BOOL(WINAPI*)(HTOUCHINPUT, UINT, PTOUCHINPUT, int))(void*)GetProcAddress(userDll, "GetTouchInputInfo");
@@ -89,11 +77,21 @@ namespace Alimer
 		RemoveSubsystem(this);
 	}
 
-	void Window::SetTitle(const String& newTitle)
+	void Window::SetTitle(const std::string& newTitle)
 	{
-		title = newTitle;
-		if (handle)
-			SetWindowTextW((HWND)handle, WString(title).CString());
+		_title = newTitle;
+		if (_handle)
+		{
+			wchar_t titleBuffer[256] = L"";
+
+			if (!newTitle.empty() && MultiByteToWideChar(CP_UTF8, 0, newTitle.c_str(), -1, titleBuffer, 256) == 0)
+			{
+				LOGERROR("Failed to convert UTF-8 to wide char");
+				return;
+			}
+
+			SetWindowTextW((HWND)_handle, titleBuffer);
+		}
 	}
 
 	bool Window::SetSize(const IntVector2& size_, bool fullscreen_, bool resizable_)
@@ -123,28 +121,58 @@ namespace Alimer
 			SetDisplayMode(size_.x, size_.y);
 		}
 
-		RECT rect = { 0, 0, size_.x, size_.y };
-		AdjustWindowRect(&rect, windowStyle, false);
+		DWORD dwExStyle = WS_EX_APPWINDOW;
 
-		if (!handle)
+		RECT rect = { 0, 0, size_.x, size_.y };
+		AdjustWindowRectEx(&rect, windowStyle, FALSE, dwExStyle);
+
+		if (!_handle)
 		{
-			WNDCLASS wc;
+			HINSTANCE instance = GetModuleHandleW(nullptr);
+
+			WNDCLASSEXW wc = {};
+			wc.cbSize = sizeof(WNDCLASSEX);
 			wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 			wc.lpfnWndProc = WndProc;
 			wc.cbClsExtra = 0;
 			wc.cbWndExtra = 0;
-			wc.hInstance = GetModuleHandle(0);
+			wc.hInstance = instance;
 			wc.hIcon = LoadIcon(0, IDI_APPLICATION);
 			wc.hCursor = LoadCursor(0, IDC_ARROW);
-			wc.hbrBackground = CreateSolidBrush(RGB(0, 0, 0));
+			wc.hbrBackground = static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
 			wc.lpszMenuName = nullptr;
-			wc.lpszClassName = className.CString();
+			wc.lpszClassName = AppWndClass;
 
-			RegisterClass(&wc);
+			if (!RegisterClassExW(&wc))
+			{
+				LOGERROR("Could not register window class");
+				return false;
+			}
 
-			handle = CreateWindowW(WString(className).CString(), WString(title).CString(), windowStyle, position.x, position.y,
-				rect.right - rect.left, rect.bottom - rect.top, 0, 0, GetModuleHandle(0), nullptr);
-			if (!handle)
+			// Create a window.
+			wchar_t titleBuffer[256] = L"";
+
+			if (!_title.empty() &&
+				MultiByteToWideChar(CP_UTF8, 0, _title.c_str(), -1, titleBuffer, 256) == 0)
+			{
+				LOGERROR("Failed to convert UTF-8 to wide char");
+				return false;
+			}
+
+			_handle = CreateWindowExW(
+				dwExStyle,
+				AppWndClass,
+				titleBuffer,
+				windowStyle,
+				position.x,
+				position.y,
+				rect.right - rect.left,
+				rect.bottom - rect.top,
+				0, 0,
+				instance,
+				nullptr);
+
+			if (!_handle)
 			{
 				LOGERROR("Failed to create window");
 				inResize = false;
@@ -153,28 +181,28 @@ namespace Alimer
 
 			// Enable touch input if available
 			if (registerTouchWindow)
-				registerTouchWindow((HWND)handle, TWF_FINETOUCH | TWF_WANTPALM);
+				registerTouchWindow((HWND)_handle, TWF_FINETOUCH | TWF_WANTPALM);
 
 			minimized = false;
 			focus = false;
 
-			SetWindowLongPtr((HWND)handle, GWLP_USERDATA, (LONG_PTR)this);
-			ShowWindow((HWND)handle, SW_SHOW);
+			SetWindowLongPtr((HWND)_handle, GWLP_USERDATA, (LONG_PTR)this);
+			ShowWindow((HWND)_handle, SW_SHOW);
 		}
 		else
 		{
-			SetWindowLong((HWND)handle, GWL_STYLE, windowStyle);
+			SetWindowLong((HWND)_handle, GWL_STYLE, windowStyle);
 
 			if (!fullscreen_ && (savedPosition.x == M_MIN_INT || savedPosition.y == M_MIN_INT))
 			{
 				WINDOWPLACEMENT placement;
 				placement.length = sizeof(placement);
-				GetWindowPlacement((HWND)handle, &placement);
+				GetWindowPlacement((HWND)_handle, &placement);
 				position = IntVector2(placement.rcNormalPosition.left, placement.rcNormalPosition.top);
 			}
 
-			SetWindowPos((HWND)handle, NULL, position.x, position.y, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER);
-			ShowWindow((HWND)handle, SW_SHOW);
+			SetWindowPos((HWND)_handle, NULL, position.x, position.y, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER);
+			ShowWindow((HWND)_handle, SW_SHOW);
 		}
 
 		fullscreen = fullscreen_;
@@ -197,8 +225,8 @@ namespace Alimer
 
 	void Window::SetPosition(const IntVector2& position)
 	{
-		if (handle)
-			SetWindowPos((HWND)handle, NULL, position.x, position.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+		if (_handle)
+			SetWindowPos((HWND)_handle, nullptr, position.x, position.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 	}
 
 	void Window::SetMouseVisible(bool enable)
@@ -212,20 +240,20 @@ namespace Alimer
 
 	void Window::SetMousePosition(const IntVector2& position)
 	{
-		if (handle)
+		if (_handle)
 		{
 			mousePosition = position;
 			POINT screenPosition;
 			screenPosition.x = position.x;
 			screenPosition.y = position.y;
-			ClientToScreen((HWND)handle, &screenPosition);
+			ClientToScreen((HWND)_handle, &screenPosition);
 			SetCursorPos(screenPosition.x, screenPosition.y);
 		}
 	}
 
 	void Window::Close()
 	{
-		if (handle)
+		if (_handle)
 		{
 			// Return to desktop resolution if was fullscreen, else save last windowed mode position
 			if (fullscreen)
@@ -233,53 +261,51 @@ namespace Alimer
 			else
 				savedPosition = Position();
 
-			DestroyWindow((HWND)handle);
-			handle = nullptr;
+			DestroyWindow((HWND)_handle);
+			_handle = nullptr;
 		}
 	}
 
 	void Window::Minimize()
 	{
-		if (handle)
-			ShowWindow((HWND)handle, SW_MINIMIZE);
+		if (_handle)
+			ShowWindow((HWND)_handle, SW_MINIMIZE);
 	}
 
 	void Window::Maximize()
 	{
-		if (handle)
-			ShowWindow((HWND)handle, SW_MAXIMIZE);
+		if (_handle)
+			ShowWindow((HWND)_handle, SW_MAXIMIZE);
 	}
 
 	void Window::Restore()
 	{
-		if (handle)
-			ShowWindow((HWND)handle, SW_RESTORE);
+		if (_handle)
+			ShowWindow((HWND)_handle, SW_RESTORE);
 	}
 
 	void Window::PumpMessages()
 	{
-		if (!handle)
+		if (!_handle)
 			return;
 
 		MSG msg;
 
-		while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
+		while (PeekMessageW(&msg, 0, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+			DispatchMessageW(&msg);
 		}
 	}
 
 	IntVector2 Window::Position() const
 	{
-		if (handle)
-		{
-			RECT rect;
-			GetWindowRect((HWND)handle, &rect);
-			return IntVector2(rect.left, rect.top);
-		}
-		else
+		if (!_handle)
 			return IntVector2::ZERO;
+
+		RECT rect;
+		GetWindowRect((HWND)_handle, &rect);
+		return IntVector2(rect.left, rect.top);
 	}
 
 	bool Window::OnWindowMessage(unsigned msg, unsigned wParam, unsigned lParam)
@@ -293,7 +319,7 @@ namespace Alimer
 		switch (msg)
 		{
 		case WM_DESTROY:
-			handle = nullptr;
+			_handle = nullptr;
 			break;
 
 		case WM_CLOSE:
@@ -327,7 +353,7 @@ namespace Alimer
 
 					// If fullscreen, minimize on focus loss
 					if (fullscreen)
-						ShowWindow((HWND)handle, SW_MINIMIZE);
+						ShowWindow((HWND)_handle, SW_MINIMIZE);
 
 					// Stop mouse cursor hiding & clipping
 					UpdateMouseVisible();
@@ -429,7 +455,7 @@ namespace Alimer
 				unsigned button = (msg == WM_LBUTTONDOWN) ? MOUSEB_LEFT : (msg == WM_MBUTTONDOWN) ? MOUSEB_MIDDLE : MOUSEB_RIGHT;
 				input->OnMouseButton(button, true);
 				// Make sure we track the button release even if mouse moves outside the window
-				SetCapture((HWND)handle);
+				SetCapture((HWND)_handle);
 				// Re-establish mouse cursor hiding & clipping
 				if (!mouseVisible && mouseVisibleInternal)
 					UpdateMouseVisible();
@@ -463,7 +489,7 @@ namespace Alimer
 						POINT point;
 						point.x = it->x / 100;
 						point.y = it->y / 100;
-						ScreenToClient((HWND)handle, &point);
+						ScreenToClient((HWND)_handle, &point);
 						IntVector2 position(point.x, point.y);
 
 						if (it->dwFlags & (TOUCHEVENTF_DOWN || TOUCHEVENTF_UP))
@@ -495,14 +521,12 @@ namespace Alimer
 
 	IntVector2 Window::ClientRectSize() const
 	{
-		if (handle)
-		{
-			RECT rect;
-			GetClientRect((HWND)handle, &rect);
-			return IntVector2(rect.right, rect.bottom);
-		}
-		else
+		if (!_handle)
 			return IntVector2::ZERO;
+
+		RECT rect;
+		GetClientRect((HWND)_handle, &rect);
+		return IntVector2(rect.right, rect.bottom);
 	}
 
 	void Window::SetDisplayMode(int width, int height)
@@ -523,7 +547,7 @@ namespace Alimer
 
 	void Window::UpdateMouseVisible()
 	{
-		if (!handle)
+		if (!_handle)
 			return;
 
 		// When the window is unfocused, mouse should never be hidden
@@ -548,7 +572,7 @@ namespace Alimer
 			IntVector2 windowSize = Size();
 
 			point.x = point.y = 0;
-			ClientToScreen((HWND)handle, &point);
+			ClientToScreen((HWND)_handle, &point);
 			mouseRect.left = point.x;
 			mouseRect.top = point.y;
 			mouseRect.right = point.x + windowSize.x;
@@ -561,7 +585,7 @@ namespace Alimer
 	{
 		POINT screenPosition;
 		GetCursorPos(&screenPosition);
-		ScreenToClient((HWND)handle, &screenPosition);
+		ScreenToClient((HWND)_handle, &screenPosition);
 		mousePosition.x = screenPosition.x;
 		mousePosition.y = screenPosition.y;
 	}

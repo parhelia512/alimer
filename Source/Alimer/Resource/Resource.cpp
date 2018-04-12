@@ -34,10 +34,10 @@ namespace Alimer
 		return success;
 	}
 
-	void Resource::SetName(const String& newName)
+	void Resource::SetName(const std::string& newName)
 	{
-		name = newName;
-		nameHash = StringHash(newName);
+		_name = newName;
+		_nameHash = StringHash(newName);
 	}
 
 }

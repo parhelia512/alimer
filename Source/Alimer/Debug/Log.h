@@ -55,7 +55,7 @@ namespace Alimer
 		}
 
 		/// Construct with parameters.
-		StoredLogMessage(const String& message_, int level_, bool error_) 
+		StoredLogMessage(const std::string& message_, int level_, bool error_) 
 			: message(message_)
 			, level(level_)
 			, error(error_)
@@ -63,7 +63,7 @@ namespace Alimer
 		}
 
 		/// Message text.
-		String message;
+		std::string message;
 		/// Message level. -1 for raw messages.
 		int level;
 		/// Error flag for raw messages.
@@ -75,7 +75,7 @@ namespace Alimer
 	{
 	public:
 		/// Message.
-		String message;
+		std::string message;
 		/// Message level.
 		int level;
 	};
@@ -92,7 +92,7 @@ namespace Alimer
 		~Log();
 
 		/// Open the log file.
-		void Open(const String& fileName);
+		void Open(const std::string& fileName);
 		/// Close the log file.
 		void Close();
 		/// Set logging level.
@@ -109,12 +109,12 @@ namespace Alimer
 		/// Return whether log messages are timestamped.
 		bool HasTimeStamp() const { return timeStamp; }
 		/// Return last log message.
-		String LastMessage() const { return lastMessage; }
+		std::string LastMessage() const { return lastMessage; }
 
 		/// Write to the log. If logging level is higher than the level of the message, the message is ignored.
-		static void Write(int msgLevel, const String& message);
+		static void Write(int msgLevel, const std::string& message);
 		/// Write raw output to the log.
-		static void WriteRaw(const String& message, bool error = false);
+		static void WriteRaw(const std::string& message, bool error = false);
 
 		/// %Log message event.
 		LogMessageEvent logMessageEvent;
@@ -127,7 +127,7 @@ namespace Alimer
 		/// %Log file.
 		std::unique_ptr<File> _logFile;
 		/// Last log message.
-		String lastMessage;
+		std::string lastMessage;
 		/// Logging level.
 		int level;
 		/// Use timestamps flag.
@@ -147,11 +147,11 @@ namespace Alimer
 #	define LOGWARNING(message) Alimer::Log::Write(Alimer::LOG_WARNING, message)
 #	define LOGERROR(message) Alimer::Log::Write(Alimer::LOG_ERROR, message)
 #	define LOGRAW(message) Alimer::Log::WriteRaw(message)
-#	define LOGDEBUGF(format, ...) Alimer::Log::Write(Alimer::LOG_DEBUG, Alimer::String::Format(format, ##__VA_ARGS__))
-#	define LOGINFOF(format, ...) Alimer::Log::Write(Alimer::LOG_INFO, Alimer::String::Format(format, ##__VA_ARGS__))
-#	define LOGWARNINGF(format, ...) Alimer::Log::Write(Alimer::LOG_WARNING, Alimer::String::Format(format, ##__VA_ARGS__))
-#	define LOGERRORF(format, ...) Alimer::Log::Write(Alimer::LOG_ERROR, Alimer::String::Format(format, ##__VA_ARGS__))
-#	define LOGRAWF(format, ...) Alimer::Log::WriteRaw(Alimer::String::Format(format, ##__VA_ARGS__))
+#	define LOGDEBUGF(format, ...) Alimer::Log::Write(Alimer::LOG_DEBUG, Alimer::str::Format(format, ##__VA_ARGS__))
+#	define LOGINFOF(format, ...) Alimer::Log::Write(Alimer::LOG_INFO, Alimer::str::Format(format, ##__VA_ARGS__))
+#	define LOGWARNINGF(format, ...) Alimer::Log::Write(Alimer::LOG_WARNING, Alimer::str::Format(format, ##__VA_ARGS__))
+#	define LOGERRORF(format, ...) Alimer::Log::Write(Alimer::LOG_ERROR, Alimer::str::Format(format, ##__VA_ARGS__))
+#	define LOGRAWF(format, ...) Alimer::Log::WriteRaw(Alimer::str::Format(format, ##__VA_ARGS__))
 
 #else
 

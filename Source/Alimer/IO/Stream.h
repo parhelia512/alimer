@@ -39,7 +39,7 @@ namespace Alimer
 	{
 	public:
 		/// Default-construct with zero size.
-		Stream();
+		Stream() = default;
 		/// Construct with defined byte size.
 		Stream(size_t numBytes);
 		/// Destruct.
@@ -57,9 +57,7 @@ namespace Alimer
 		virtual bool IsWritable() const = 0;
 
 		/// Change the stream name.
-		void SetName(const String& newName);
-		/// Change the stream name.
-		void SetName(const char* newName);
+		void SetName(const std::string& newName);
 
 		/// Read a 8-bit signed integer.
 		int8_t ReadByte();
@@ -88,10 +86,10 @@ namespace Alimer
 		uint32_t ReadVLE();
 
 		/// Read null terminated string.
-		String ReadString();
+		std::string ReadString();
 
 		/// Read a text line.
-		String ReadLine();
+		std::string ReadLine();
 		/// Read a 4-character file ID.
 		std::string ReadFileID();
 		/// Read a byte buffer, with size prepended as a VLE value.
@@ -101,13 +99,13 @@ namespace Alimer
 		Quaternion ReadQuaternion();
 
 		/// Write a four-letter file ID. If the string is not long enough, spaces will be appended.
-		void WriteFileID(const String& value);
+		void WriteFileID(const std::string& value);
 		/// Write a byte buffer, with size encoded as VLE.
 		void WriteBuffer(const std::vector<uint8_t>& buffer);
 		/// Write a variable-length encoded unsigned integer, which can use 29 bits maximum.
 		void WriteVLE(uint32_t value);
 		/// Write a text line. Char codes 13 & 10 will be automatically appended.
-		void WriteLine(const String& value);
+		void WriteLine(const std::string& value);
 
 		/// Write a value, template version.
 		template <class T> void Write(const T& value) { Write(&value, sizeof value); }
@@ -121,21 +119,21 @@ namespace Alimer
 		}
 
 		/// Return the stream name.
-		const String& Name() const { return name; }
+		const std::string& GetName() const { return _name; }
 		/// Return current position in bytes.
-		size_t Position() const { return position; }
+		size_t Position() const { return _position; }
 		/// Return size in bytes.
-		size_t Size() const { return size; }
+		size_t Size() const { return _size; }
 		/// Return whether the end of stream has been reached.
-		bool IsEof() const { return position >= size; }
+		bool IsEof() const { return _position >= _size; }
 
 	protected:
 		/// Stream position.
-		size_t position;
+		size_t _position{};
 		/// Stream size.
-		size_t size;
+		size_t _size{};
 		/// Stream name.
-		String name;
+		std::string _name;
 	};
 
 	template<> ALIMER_API bool Stream::Read();

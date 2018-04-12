@@ -26,10 +26,10 @@
 
 #include <cstdio>
 #include <cstdlib>
+using namespace std;
 
 namespace Alimer
 {
-
 	const JSONValue JSONValue::EMPTY;
 	const JSONArray JSONValue::emptyJSONArray;
 	const JSONObject JSONValue::emptyJSONObject;
@@ -75,8 +75,8 @@ namespace Alimer
 		*this = value;
 	}
 
-	JSONValue::JSONValue(const String& value) :
-		type(JSON_NULL)
+	JSONValue::JSONValue(const std::string& value)
+		: type(JSON_NULL)
 	{
 		*this = value;
 	}
@@ -119,7 +119,7 @@ namespace Alimer
 			break;
 
 		case JSON_STRING:
-			*(reinterpret_cast<String*>(&data)) = *(reinterpret_cast<const String*>(&rhs.data));
+			*(reinterpret_cast<std::string*>(&data)) = *(reinterpret_cast<const std::string*>(&rhs.data));
 			break;
 
 		case JSON_ARRAY:
@@ -175,14 +175,21 @@ namespace Alimer
 	JSONValue& JSONValue::operator = (const String& value)
 	{
 		SetType(JSON_STRING);
-		*(reinterpret_cast<String*>(&data)) = value;
+		*(reinterpret_cast<std::string*>(&data)) = value.CString();
+		return *this;
+	}
+
+	JSONValue& JSONValue::operator = (const std::string& value)
+	{
+		SetType(JSON_STRING);
+		*(reinterpret_cast<std::string*>(&data)) = value;
 		return *this;
 	}
 
 	JSONValue& JSONValue::operator = (const char* value)
 	{
 		SetType(JSON_STRING);
-		*(reinterpret_cast<String*>(&data)) = value;
+		*(reinterpret_cast<std::string*>(&data)) = value;
 		return *this;
 	}
 
@@ -216,7 +223,7 @@ namespace Alimer
 			return EMPTY;
 	}
 
-	JSONValue& JSONValue::operator [] (const String& key)
+	JSONValue& JSONValue::operator [] (const std::string& key)
 	{
 		if (type != JSON_OBJECT)
 			SetType(JSON_OBJECT);
@@ -224,7 +231,7 @@ namespace Alimer
 		return (*(reinterpret_cast<JSONObject*>(&data)))[key];
 	}
 
-	const JSONValue& JSONValue::operator [] (const String& key) const
+	const JSONValue& JSONValue::operator [] (const std::string& key) const
 	{
 		if (type == JSON_OBJECT)
 		{
@@ -250,7 +257,7 @@ namespace Alimer
 			return data.numberValue == rhs.data.numberValue;
 
 		case JSON_STRING:
-			return *(reinterpret_cast<const String*>(&data)) == *(reinterpret_cast<const String*>(&rhs.data));
+			return *(reinterpret_cast<const std::string*>(&data)) == *(reinterpret_cast<const std::string*>(&rhs.data));
 
 		case JSON_ARRAY:
 			return *(reinterpret_cast<const JSONArray*>(&data)) == *(reinterpret_cast<const JSONArray*>(&rhs.data));
@@ -263,17 +270,17 @@ namespace Alimer
 		}
 	}
 
-	bool JSONValue::FromString(const String& str)
+	bool JSONValue::FromString(const std::string& str)
 	{
-		const char* pos = str.CString();
-		const char* end = pos + str.Length();
+		const char* pos = str.c_str();
+		const char* end = pos + str.length();
 		return Parse(pos, end);
 	}
 
 	bool JSONValue::FromString(const char* str)
 	{
 		const char* pos = str;
-		const char* end = pos + String::CStringLength(str);
+		const char* end = pos + strlen(str);
 		return Parse(pos, end);
 	}
 
@@ -296,7 +303,7 @@ namespace Alimer
 			break;
 
 		case JSON_STRING:
-			*this = source.Read<String>();
+			*this = source.ReadString();
 			break;
 
 		case JSON_ARRAY:
@@ -314,7 +321,7 @@ namespace Alimer
 			size_t num = source.ReadVLE();
 			for (size_t i = 0; i < num && !source.IsEof(); ++i)
 			{
-				String key = source.Read<String>();
+				std::string key = source.ReadString();
 				(*this)[key] = source.Read<JSONValue>();
 			}
 		}
@@ -325,20 +332,20 @@ namespace Alimer
 		}
 	}
 
-	void JSONValue::ToString(String& dest, int spacing, int indent) const
+	void JSONValue::ToString(std::string& dest, int spacing, int indent) const
 	{
 		switch (type)
 		{
 		case JSON_BOOL:
-			dest += data.boolValue;
+			dest += std::to_string(data.boolValue);
 			return;
 
 		case JSON_NUMBER:
-			dest += data.numberValue;
+			dest += std::to_string(data.numberValue);
 			return;
 
 		case JSON_STRING:
-			WriteJSONString(dest, *(reinterpret_cast<const String*>(&data)));
+			WriteJSONString(dest, *(reinterpret_cast<const std::string*>(&data)));
 			return;
 
 		case JSON_ARRAY:
@@ -398,9 +405,9 @@ namespace Alimer
 		}
 	}
 
-	String JSONValue::ToString(int spacing) const
+	std::string JSONValue::ToString(int spacing) const
 	{
-		String ret;
+		std::string ret;
 		ToString(ret, spacing);
 		return ret;
 	}
@@ -426,7 +433,7 @@ namespace Alimer
 		case JSON_ARRAY:
 		{
 			const JSONArray& array = GetArray();
-			dest.WriteVLE(array.size());
+			dest.WriteVLE(static_cast<uint32_t>(array.size()));
 			for (auto it = array.begin(); it != array.end(); ++it)
 				it->ToBinary(dest);
 		}
@@ -435,7 +442,7 @@ namespace Alimer
 		case JSON_OBJECT:
 		{
 			const JSONObject& object = GetObject();
-			dest.WriteVLE(object.size());
+			dest.WriteVLE(static_cast<uint32_t>(object.size()));
 			for (auto it = object.begin(); it != object.end(); ++it)
 			{
 				dest.Write(it->first);
@@ -479,13 +486,13 @@ namespace Alimer
 		(*(reinterpret_cast<JSONArray*>(&data))).resize(newSize);
 	}
 
-	void JSONValue::Insert(const std::pair<String, JSONValue>& pair)
+	void JSONValue::Insert(const std::pair<std::string, JSONValue>& pair)
 	{
 		SetType(JSON_OBJECT);
 		(*(reinterpret_cast<JSONObject*>(&data))).insert(pair);
 	}
 
-	void JSONValue::Erase(const String& key)
+	void JSONValue::Erase(const std::string& key)
 	{
 		if (type == JSON_OBJECT)
 			(*(reinterpret_cast<JSONObject*>(&data))).erase(key);
@@ -536,7 +543,7 @@ namespace Alimer
 			return false;
 	}
 
-	bool JSONValue::Contains(const String& key) const
+	bool JSONValue::Contains(const std::string& key) const
 	{
 		if (type == JSON_OBJECT)
 			return (*(reinterpret_cast<const JSONObject*>(&data))).find(key) != end((*(reinterpret_cast<const JSONObject*>(&data))));
@@ -605,7 +612,7 @@ namespace Alimer
 		else if (c == '\"')
 		{
 			SetType(JSON_STRING);
-			return ReadJSONString(*(reinterpret_cast<String*>(&data)), pos, end, true);
+			return ReadJSONString(*(reinterpret_cast<std::string*>(&data)), pos, end, true);
 		}
 		else if (c == '[')
 		{
@@ -645,7 +652,7 @@ namespace Alimer
 
 			for (;;)
 			{
-				String key;
+				std::string key;
 				if (!ReadJSONString(key, pos, end, false))
 					return false;
 				if (!NextChar(c, pos, end, true))
@@ -678,7 +685,7 @@ namespace Alimer
 		switch (type)
 		{
 		case JSON_STRING:
-			(reinterpret_cast<String*>(&data))->~String();
+			(reinterpret_cast<string*>(&data))->~string();
 			break;
 
 		case JSON_ARRAY:
@@ -698,7 +705,7 @@ namespace Alimer
 		switch (type)
 		{
 		case JSON_STRING:
-			new(reinterpret_cast<String*>(&data)) String();
+			new(reinterpret_cast<std::string*>(&data)) std::string();
 			break;
 
 		case JSON_ARRAY:
@@ -714,11 +721,11 @@ namespace Alimer
 		}
 	}
 
-	void JSONValue::WriteJSONString(String& dest, const String& str)
+	void JSONValue::WriteJSONString(std::string& dest, const std::string& str)
 	{
 		dest += '\"';
 
-		for (auto it = str.Begin(); it != str.End(); ++it)
+		for (auto it = str.begin(); it != str.end(); ++it)
 		{
 			char c = *it;
 
@@ -769,15 +776,15 @@ namespace Alimer
 		dest += '\"';
 	}
 
-	void JSONValue::WriteIndent(String& dest, int indent)
+	void JSONValue::WriteIndent(std::string& dest, int indent)
 	{
-		size_t oldLength = dest.Length();
-		dest.Resize(oldLength + indent);
+		size_t oldLength = dest.length();
+		dest.resize(oldLength + indent);
 		for (int i = 0; i < indent; ++i)
 			dest[oldLength + i] = ' ';
 	}
 
-	bool JSONValue::ReadJSONString(String& dest, const char*& pos, const char*& end, bool inQuote)
+	bool JSONValue::ReadJSONString(std::string& dest, const char*& pos, const char*& end, bool inQuote)
 	{
 		char c;
 
@@ -787,7 +794,7 @@ namespace Alimer
 				return false;
 		}
 
-		dest.Clear();
+		dest.clear();
 		for (;;)
 		{
 			if (!NextChar(c, pos, end, false))
@@ -833,10 +840,15 @@ namespace Alimer
 				case 'u':
 				{
 					/// \todo Doesn't handle unicode surrogate pairs
-					unsigned code;
+					uint32_t code;
 					sscanf(pos, "%x", &code);
 					pos += 4;
-					dest.AppendUTF8(code);
+
+					char temp[7];
+					char* destTmp = temp;
+					String::EncodeUTF8(destTmp, code);
+					*destTmp = 0;
+					dest.append(destTmp);
 				}
 				break;
 				}

@@ -56,6 +56,14 @@ namespace Alimer
 	/// Write to all color channels (default.)
 	static const unsigned char COLORMASK_ALL = 0xf;
 
+	enum class GraphicsDeviceType : uint8_t
+	{
+		Default,
+		Empty,
+		D3D11,
+		OpenGL,
+	};
+
 	enum class ClearFlags : uint32_t
 	{
 		None = 0,
