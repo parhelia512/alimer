@@ -26,49 +26,102 @@
 #include "../Input.h"
 #include "Win32Window.h"
 #include "../../PlatformIncl.h"
+#include <mutex>
+
+#ifndef DPI_ENUMS_DECLARED
+typedef enum
+{
+	PROCESS_DPI_UNAWARE = 0,
+	PROCESS_SYSTEM_DPI_AWARE = 1,
+	PROCESS_PER_MONITOR_DPI_AWARE = 2
+} PROCESS_DPI_AWARENESS;
+typedef enum
+{
+	MDT_EFFECTIVE_DPI = 0,
+	MDT_ANGULAR_DPI = 1,
+	MDT_RAW_DPI = 2,
+	MDT_DEFAULT = MDT_EFFECTIVE_DPI
+} MONITOR_DPI_TYPE;
+#endif /*DPI_ENUMS_DECLARED*/
 
 namespace Alimer
 {
-	static BOOL(WINAPI* setProcessDpiAware)() = nullptr;
+	typedef BOOL(WINAPI * PFN_SetProcessDPIAware)(void);
+	static HMODULE s_userDLL = nullptr;
+	static HMODULE s_shCoreDLL = nullptr;
+
+	static PFN_SetProcessDPIAware SetProcessDPIAware_;
 	static BOOL(WINAPI* registerTouchWindow)(HWND, ULONG) = nullptr;
 	static BOOL(WINAPI* getTouchInputInfo)(HTOUCHINPUT, UINT, PTOUCHINPUT, int) = nullptr;
 	static BOOL(WINAPI* closeTouchInputHandle)(HTOUCHINPUT) = nullptr;
-	static bool functionsInitialized = false;
+
+	// ShCore
+	typedef HRESULT(WINAPI * PFN_SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS);
+	typedef HRESULT(WINAPI * PFN_GetDpiForMonitor)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*);
+
+	static PFN_SetProcessDpiAwareness  SetProcessDpiAwareness_;
+	static PFN_GetDpiForMonitor GetDpiForMonitor_;
+
+	std::once_flag functionsInitialized;
 
 	static LRESULT CALLBACK WndProc(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 	const WCHAR AppWndClass[] = L"AlimerWindow";
 
 	Window::Window()
-		: _title("Alimer Window"),
-		size(IntVector2::ZERO),
-		savedPosition(IntVector2(M_MIN_INT, M_MIN_INT)),
-		mousePosition(IntVector2::ZERO),
-		windowStyle(0),
-		minimized(false),
-		focus(false),
-		resizable(false),
-		fullscreen(false),
-		inResize(false),
-		mouseVisible(true),
-		mouseVisibleInternal(true)
+		: _title("Alimer Window")
+		, size(IntVector2::ZERO)
+		, savedPosition(IntVector2(M_MIN_INT, M_MIN_INT))
+		, mousePosition(IntVector2::ZERO)
+		, windowStyle(0)
+		, minimized(false)
+		, focus(false)
+		, resizable(false)
+		, fullscreen(false)
+		, inResize(false)
+		, mouseVisible(true)
+		, mouseVisibleInternal(true)
 	{
 		RegisterSubsystem(this);
 
-		if (!functionsInitialized)
+		std::call_once(functionsInitialized, []()
 		{
-			HMODULE userDll = GetModuleHandleW(L"user32.dll");
-			setProcessDpiAware = (BOOL(WINAPI*)())(void*)GetProcAddress(userDll, "SetProcessDPIAware");
-			registerTouchWindow = (BOOL(WINAPI*)(HWND, ULONG))(void*)GetProcAddress(userDll, "RegisterTouchWindow");
-			getTouchInputInfo = (BOOL(WINAPI*)(HTOUCHINPUT, UINT, PTOUCHINPUT, int))(void*)GetProcAddress(userDll, "GetTouchInputInfo");
-			closeTouchInputHandle = (BOOL(WINAPI*)(HTOUCHINPUT))(void*)GetProcAddress(userDll, "CloseTouchInputHandle");
+			s_userDLL = GetModuleHandleW(L"user32.dll");
+			SetProcessDPIAware_ = reinterpret_cast<PFN_SetProcessDPIAware>(::GetProcAddress(s_userDLL, "SetProcessDPIAware"));
+			registerTouchWindow = (BOOL(WINAPI*)(HWND, ULONG))(void*)GetProcAddress(s_userDLL, "RegisterTouchWindow");
+			getTouchInputInfo = (BOOL(WINAPI*)(HTOUCHINPUT, UINT, PTOUCHINPUT, int))(void*)GetProcAddress(s_userDLL, "GetTouchInputInfo");
+			closeTouchInputHandle = (BOOL(WINAPI*)(HTOUCHINPUT))(void*)GetProcAddress(s_userDLL, "CloseTouchInputHandle");
 
-			// Cancel automatic DPI scaling
-			if (setProcessDpiAware)
-				setProcessDpiAware();
+			s_shCoreDLL = ::LoadLibraryW(L"Shcore.dll");
+			if (s_shCoreDLL)
+			{
+				SetProcessDpiAwareness_ = reinterpret_cast<PFN_SetProcessDpiAwareness>(::GetProcAddress(s_shCoreDLL, "SetProcessDpiAwareness"));
+				GetDpiForMonitor_ = reinterpret_cast<PFN_GetDpiForMonitor>(::GetProcAddress(s_shCoreDLL, "GetDpiForMonitor"));
 
-			functionsInitialized = true;
-		}
+				if (SetProcessDpiAwareness_)
+				{
+					// We only check for E_INVALIDARG because we would get
+					// E_ACCESSDENIED if the DPI was already set previously
+					// and S_OK means the call was successful
+					if (SetProcessDpiAwareness_(PROCESS_PER_MONITOR_DPI_AWARE) == E_INVALIDARG)
+					{
+						LOGERROR("Failed to set process DPI awareness");
+					}
+				}
+			}
+			else
+			{
+				// Fall back to SetProcessDPIAware if SetProcessDpiAwareness
+				// is not available on this system
+				if (SetProcessDPIAware_ != nullptr)
+				{
+					if (!SetProcessDPIAware_())
+					{
+						LOGERROR("Failed to set process DPI awareness");
+					}
+				}
+			}
+		});
 	}
 
 	Window::~Window()
@@ -186,12 +239,12 @@ namespace Alimer
 			minimized = false;
 			focus = false;
 
-			SetWindowLongPtr((HWND)_handle, GWLP_USERDATA, (LONG_PTR)this);
+			SetWindowLongPtrW((HWND)_handle, GWLP_USERDATA, (LONG_PTR)this);
 			ShowWindow((HWND)_handle, SW_SHOW);
 		}
 		else
 		{
-			SetWindowLong((HWND)_handle, GWL_STYLE, windowStyle);
+			SetWindowLongPtrW((HWND)_handle, GWL_STYLE, windowStyle);
 
 			if (!fullscreen_ && (savedPosition.x == M_MIN_INT || savedPosition.y == M_MIN_INT))
 			{
@@ -599,5 +652,4 @@ namespace Alimer
 			handled = window->OnWindowMessage(msg, (unsigned)wParam, (unsigned)lParam);
 		return handled ? 0 : DefWindowProc(hwnd, msg, wParam, lParam);
 	}
-
 }
