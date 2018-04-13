@@ -27,40 +27,62 @@
 
 namespace Alimer
 {
-	bool VertexBuffer::Define(ResourceUsage usage_, size_t numVertices_, const std::vector<VertexElement>& elements_, bool useShadowData, const void* data)
+	VertexBuffer::VertexBuffer() 
+		: Buffer(BufferUsage::Vertex)
 	{
-		if (!numVertices_ || !elements_.size())
+	}
+
+	VertexBuffer::~VertexBuffer()
+	{
+		Release();
+	}
+
+	bool VertexBuffer::Define(
+		ResourceUsage usage, 
+		uint32_t vertexCount,
+		const std::vector<VertexElement>& elements,
+		bool useShadowData, 
+		const void* data)
+	{
+		if (!vertexCount || !elements.size())
 		{
 			LOGERROR("Can not define vertex buffer with no vertices or no elements");
 			return false;
 		}
 
-		return Define(usage_, numVertices_, elements_.size(), elements_.data(), useShadowData, data);
+		return Define(
+			usage, 
+			vertexCount, 
+			static_cast<uint32_t>(elements.size()),
+			elements.data(), 
+			useShadowData, data);
 	}
 
-	bool VertexBuffer::Define(ResourceUsage usage_, size_t numVertices_, size_t numElements_, const VertexElement* elements_, bool useShadowData, const void* data)
+	bool VertexBuffer::Define(
+		ResourceUsage usage,
+		uint32_t vertexCount,
+		uint32_t numElements,
+		const VertexElement* elements,
+		bool useShadowData, 
+		const void* data)
 	{
 		ALIMER_PROFILE(DefineVertexBuffer);
 
-		if (!numVertices_ || !numElements_ || !elements_)
+		if (!vertexCount || !numElements || !elements)
 		{
 			LOGERROR("Can not define vertex buffer with no vertices or no elements");
 			return false;
 		}
-		if (usage_ == USAGE_RENDERTARGET)
-		{
-			LOGERROR("Rendertarget usage is illegal for vertex buffers");
-			return false;
-		}
-		if (usage_ == USAGE_IMMUTABLE && !data)
+
+		if (usage == ResourceUsage::Immutable && !data)
 		{
 			LOGERROR("Immutable vertex buffer must define initial data");
 			return false;
 		}
 
-		for (size_t i = 0; i < numElements_; ++i)
+		for (size_t i = 0; i < numElements; ++i)
 		{
-			if (elements_[i].type >= ELEM_MATRIX3X4)
+			if (elements[i].type >= ELEM_MATRIX3X4)
 			{
 				LOGERROR("Matrix elements are not supported in vertex buffers");
 				return false;
@@ -68,33 +90,53 @@ namespace Alimer
 		}
 
 		Release();
-
-		numVertices = numVertices_;
-		usage = usage_;
+		_vertexCount = vertexCount;
+		_resourceUsage = usage;
 
 		// Determine offset of elements and the vertex size & element hash
-		vertexSize = 0;
-		elementHash = 0;
-		elements.resize(numElements_);
-		for (size_t i = 0; i < numElements_; ++i)
+		_stride = 0;
+		_elementHash = 0;
+		_elements.resize(numElements);
+		for (uint32_t i = 0; i < numElements; ++i)
 		{
-			elements[i] = elements_[i];
-			elements[i].offset = vertexSize;
-			vertexSize += elementSizes[elements[i].type];
-			elementHash |= ElementHash(i, elements[i].semantic);
+			_elements[i] = elements[i];
+			_elements[i].offset = _stride;
+			_stride += elementSizes[elements[i].type];
+			_elementHash |= ElementHash(i, elements[i].semantic);
 		}
 
-		// If buffer is reinitialized with the same shadow data, no need to reallocate
-		if (useShadowData && (!data || data != _shadowData.get()))
-		{
-			_shadowData.reset(new uint8_t[numVertices * vertexSize]);
-			if (data)
-			{
-				memcpy(_shadowData.get(), data, numVertices * vertexSize);
-			}
-		}
-
-		return Create(data);
+		_size = _stride * _vertexCount;
+		return Buffer::Create(useShadowData, data);
 	}
 
+	bool VertexBuffer::SetData(
+		uint32_t firstVertex, 
+		uint32_t vertexCount,
+		const void* data)
+	{
+		ALIMER_PROFILE(UpdateVertexBuffer);
+
+		if (!data)
+		{
+			LOGERROR("Null source data for updating vertex buffer");
+			return false;
+		}
+
+		if (firstVertex + vertexCount > GetVertexCount())
+		{
+			LOGERROR("Out of bounds range for updating vertex buffer");
+			return false;
+		}
+
+		if (_handle && _resourceUsage == ResourceUsage::Immutable)
+		{
+			LOGERROR("Can not update immutable vertex buffer");
+			return false;
+		}
+
+		return Buffer::SetData(
+			firstVertex * _stride, 
+			vertexCount * _stride, 
+			data);
+	}
 }

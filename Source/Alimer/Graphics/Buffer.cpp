@@ -25,6 +25,7 @@
 #include "../Debug/Profiler.h"
 #include "Buffer.h"
 #include "Graphics.h"
+#include "GraphicsImpl.h"
 
 namespace Alimer
 {
@@ -41,10 +42,7 @@ namespace Alimer
 
 	void Buffer::Release()
 	{
-#ifdef ALIMER_D3D11
-		graphics->DestroyBuffer(_handle.ptr);
-		_handle.ptr = nullptr;
-#endif
+		SafeDelete(_handle);
 	}
 
 	static const char* BufferUsageToString(BufferUsage usage)
@@ -71,8 +69,8 @@ namespace Alimer
 				memcpy(_shadowData.get(), initialData, _size);
 		}
 
-		_handle.ptr = graphics->CreateBuffer(_usage, _size, _stride, _resourceUsage, initialData);
-		if (_handle.ptr == nullptr)
+		_handle = graphics->CreateBuffer(_usage, _size, _stride, _resourceUsage, initialData);
+		if (!_handle)
 		{
 			LOGERRORF("Failed to create %s buffer", BufferUsageToString(_usage));
 			return false;
@@ -83,5 +81,15 @@ namespace Alimer
 			_size,
 			_stride);
 		return true;
+	}
+
+	bool Buffer::SetData(uint32_t offset, uint32_t size, const void* data)
+	{
+		if (_shadowData)
+		{
+			memcpy(_shadowData.get() + offset, data, size);
+		}
+
+		return _handle->SetData(offset, size, data);
 	}
 }

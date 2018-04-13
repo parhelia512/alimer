@@ -112,11 +112,28 @@ else ()
 	set (ALIMER_THREADS_DEFAULT OFF)
 endif ()
 
-# Disable SIMD under emscripte 
+# Disable SIMD under emscripten
 if (NOT PLATFORM_WEB OR ALIMER_ENABLE_ALL)
 	set (ALIMER_SIMD_DEFAULT ON)
 else ()
 	set (ALIMER_SIMD_DEFAULT OFF)
+endif ()
+
+# Graphics backends
+if (NOT ALIMER_DISABLE_D3D11)
+	if (PLATFORM_WINDOWS OR PLATFORM_UWP)
+		set (ALIMER_D3D11_DEFAULT ON)
+	else ()
+		set (ALIMER_D3D11_DEFAULT OFF)
+	endif ()
+endif ()
+
+if (NOT ALIMER_DISABLE_D3D12)
+	if (PLATFORM_WINDOWS OR PLATFORM_UWP)
+		set (ALIMER_D3D12_DEFAULT ON)
+	else ()
+		set (ALIMER_D3D12_DEFAULT OFF)
+	endif ()
 endif ()
 
 cmake_dependent_option (ALIMER_STATIC_RUNTIME "Use static C/C++ runtime library with MSVC" FALSE "MSVC" FALSE)
@@ -124,5 +141,7 @@ option (ALIMER_LOGGING "Enable logging" ${ALIMER_LOGGING_DEFAULT})
 option (ALIMER_PROFILING "Enable performance profiling" ${ALIMER_PROFILING_DEFAULT})
 option (ALIMER_THREADING "Enable multithreading" ${ALIMER_THREADS_DEFAULT})
 option (ALIMER_SIMD "Enable SIMD (SSE, NEON) instructions" ${ALIMER_SIMD_DEFAULT})
+option (ALIMER_D3D11 "Enable D3D11 backend" ${ALIMER_D3D11_DEFAULT})
+option (ALIMER_D3D12 "Enable D3D12 backend" ${ALIMER_D3D12_DEFAULT})
 
 cmake_dependent_option (ALIMER_OPENGL "Use OpenGL instead of Direct3D11 on Windows" FALSE "WIN32" TRUE)

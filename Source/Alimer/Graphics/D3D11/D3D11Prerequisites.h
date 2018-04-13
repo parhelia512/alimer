@@ -33,3 +33,38 @@
 #else
 #	include <d3d11_1.h>
 #endif
+
+#if (defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)) || (defined(_XBOX_ONE) && defined(_TITLE))
+#	pragma warning(push)
+#	pragma warning(disable: 4471)
+#	include <Windows.UI.Core.h>
+#	pragma warning(pop)
+#endif
+
+#include <algorithm>
+#include <array>
+#include <exception>
+#include <list>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <set>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
+
+#pragma warning(push)
+#pragma warning(disable : 4702)
+#include <functional>
+#pragma warning(pop)
+
+#include <malloc.h>
+#include <stdint.h>
+
+#pragma warning(push)
+#pragma warning(disable : 4467)
+#include <wrl.h>
+#pragma warning(pop)
+
+#include <wincodec.h>

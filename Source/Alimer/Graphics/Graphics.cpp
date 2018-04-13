@@ -23,11 +23,112 @@
 
 #include "../Debug/Log.h"
 #include "../Debug/Profiler.h"
+#include "../Window/Window.h"
 #include "Graphics.h"
 #include "GraphicsImpl.h"
+#include "IndexBuffer.h"
+
+#ifdef ALIMER_D3D11
+#	include "D3D11/D3D11Graphics.h"
+#endif
+
+#ifdef _WIN32
+// Prefer the high-performance GPU on switchable GPU systems
+extern "C" {
+	__declspec(dllexport) DWORD NvOptimusEnablement = 1;
+	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+
+#endif
+
+#include <algorithm>
+using namespace std;
 
 namespace Alimer
 {
+	Graphics::Graphics(GraphicsDeviceType deviceType, bool validation)
+		: _deviceType(deviceType)
+		, _validation(validation)
+	{
+		RegisterSubsystem(this);
+		window = make_unique<Window>();
+		SubscribeToEvent(window->resizeEvent, &Graphics::HandleResize);
+	}
+
+	Graphics::~Graphics()
+	{
+		Finalize();
+		RemoveSubsystem(this);
+	}
+
+	/// Sort resources by type.
+	//static bool SortResources(GPUObject* x, GPUObject* y)
+	//{
+	//	return x->GetType() < y->GetType();
+	//}
+
+	void Graphics::Finalize()
+	{
+		if (!_initialized)
+			return;
+
+		if (gpuObjects.size())
+		{
+			lock_guard<mutex> lock(_gpuResourceMutex);
+
+			// Release all GPU objects that still exist
+			//std::sort(gpuObjects.begin(), gpuObjects.end(), SortResources);
+			for (size_t i = 0; i < gpuObjects.size(); ++i)
+			{
+				GPUObject* resource = gpuObjects.at(i);
+				assert(resource);
+				resource->Release();
+			}
+
+			gpuObjects.clear();
+		}
+
+		_initialized = false;
+	}
+
+	bool Graphics::IsInitialized() const
+	{
+		return _initialized;
+	}
+
+	void Graphics::SetIndexBuffer(IndexBuffer* buffer)
+	{
+		if (buffer)
+		{
+			SetIndexBufferCore(buffer->GetHandle(), buffer->GetIndexType());
+		}
+		else
+		{
+			SetIndexBufferCore(nullptr, IndexType::UInt16);
+		}
+	}
+
+	std::vector<GraphicsDeviceType> Graphics::GetAvailableDrivers()
+	{
+		static std::vector<GraphicsDeviceType> availableDrivers;
+
+		if (availableDrivers.empty())
+		{
+			availableDrivers.push_back(GraphicsDeviceType::Empty);
+
+#ifdef ALIMER_D3D11
+			if (D3D11Graphics::IsSupported())
+			{
+				availableDrivers.push_back(GraphicsDeviceType::Direct3D11);
+			}
+#endif
+
+			// TODO: Add more
+		}
+
+		return availableDrivers;
+	}
+
 	bool Graphics::IsBackendSupported(GraphicsDeviceType deviceType)
 	{
 		switch (deviceType)
@@ -35,12 +136,12 @@ namespace Alimer
 		case GraphicsDeviceType::Empty:
 			return true;
 
-		case GraphicsDeviceType::D3D11:
+		case GraphicsDeviceType::Direct3D11:
 #ifdef ALIMER_D3D11
-			//if (GraphicsD3D11::IsSupported())
-			//{
+			if (D3D11Graphics::IsSupported())
+			{
 				return true;
-			//}
+			}
 #endif
 			return false;
 
@@ -56,5 +157,53 @@ namespace Alimer
 		default:
 			return false;
 		}
+	}
+
+	Graphics* Graphics::Create(GraphicsDeviceType deviceType, bool validation, const string& applicationName)
+	{
+		if (deviceType == GraphicsDeviceType::Default)
+		{
+			auto availableDrivers = Graphics::GetAvailableDrivers();
+
+			if (std::find(availableDrivers.begin(), availableDrivers.end(), GraphicsDeviceType::Vulkan) != availableDrivers.end())
+			{
+				deviceType = GraphicsDeviceType::Vulkan;
+			}
+			else if (std::find(availableDrivers.begin(), availableDrivers.end(), GraphicsDeviceType::Direct3D11) != availableDrivers.end())
+			{
+				deviceType = GraphicsDeviceType::Direct3D11;
+			}
+			else if (std::find(availableDrivers.begin(), availableDrivers.end(), GraphicsDeviceType::OpenGL) != availableDrivers.end())
+			{
+				deviceType = GraphicsDeviceType::OpenGL;
+			}
+			else
+			{
+				deviceType = GraphicsDeviceType::Empty;
+			}
+		}
+
+		Graphics* graphics = nullptr;
+		switch (deviceType)
+		{
+		case GraphicsDeviceType::Empty:
+		{
+			LOGINFO("Using empty graphics backend.");
+			break;
+		}
+
+		case GraphicsDeviceType::Direct3D11:
+		{
+#ifdef ALIMER_D3D11
+			LOGINFO("Using Direct3D11 graphics backend.");
+			graphics = new D3D11Graphics(validation, applicationName);
+#else
+			LOGWARNING("Direct3D11 backend not supported on given platform.");
+#endif
+			break;
+		}
+		}
+
+		return graphics;
 	}
 }

@@ -166,7 +166,7 @@ namespace Alimer
 		/// Batch queues per pass.
 		std::map<uint8_t, BatchQueue> batchQueues;
 		/// Instance transforms for uploading to the instance vertex buffer.
-		std::vector<Matrix3x4> instanceTransforms;
+		std::vector<Matrix3x4> _instanceTransforms;
 		/// Lit geometries query result.
 		std::vector<GeometryNode*> litGeometries;
 		/// %Light lists.
@@ -186,13 +186,13 @@ namespace Alimer
 		/// Used shadow views so far.
 		size_t usedShadowViews;
 		/// Instance transform vertex buffer.
-		std::unique_ptr<VertexBuffer> instanceVertexBuffer;
+		std::unique_ptr<VertexBuffer> _instanceVertexBuffer;
 		/// Vertex elements for the instance vertex buffer.
-		std::vector<VertexElement> instanceVertexElements;
+		std::vector<VertexElement> _instanceVertexElements;
 		/// First point light face selection cube map.
-		std::unique_ptr<Texture> faceSelectionTexture1;
+		std::unique_ptr<Texture> _faceSelectionTexture1;
 		/// Second point light face selection cube map.
-		std::unique_ptr<Texture> faceSelectionTexture2;
+		std::unique_ptr<Texture> _faceSelectionTexture2;
 	};
 
 	/// Register Renderer related object factories and attributes.

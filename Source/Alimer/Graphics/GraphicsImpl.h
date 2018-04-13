@@ -27,4 +27,21 @@
 
 namespace Alimer
 {
+	class BufferHandle
+	{
+	protected:
+		explicit BufferHandle()
+		{
+		}
+
+	public:
+		/**
+		* Destructor.
+		*/
+		virtual ~BufferHandle() {}
+
+		virtual bool SetData(uint32_t offset, uint32_t size, const void* data) = 0;
+
+	protected:
+	};
 }

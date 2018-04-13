@@ -37,11 +37,6 @@ macro (add_engine_directory_group DIRECTORY GROUP)
 	list (APPEND SOURCE_FILES ${DIR_FILES})
 endmacro ()
 
-# Set definitions
-if (WIN32 AND NOT ALIMER_OPENGL)
-	set (ALIMER_D3D11 TRUE)
-endif ()
-
 # Generate the AlimerConfig.h file
 configure_file (AlimerConfig.h.in ${CMAKE_CURRENT_SOURCE_DIR}/AlimerConfig.h)
 
@@ -57,7 +52,6 @@ add_engine_directory (Renderer)
 add_engine_directory (Resource)
 add_engine_directory (Scene)
 add_engine_directory (Thread)
-add_engine_directory (ThirdParty/STB)
 add_engine_directory (Window)
 
 if (ALIMER_D3D11)
@@ -83,7 +77,9 @@ add_library (${TARGET_NAME} ${ALIMER_LIBRARY_TYPE} ${SOURCE_FILES})
 
 target_include_directories(${TARGET_NAME} PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>        # For parent projects to find engine headers
-	PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+	PRIVATE
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+	${ALIMER_THIRD_PARTY_DIR}/STB
 )
 
 if (BUILD_SHARED_LIBS OR EMSCRIPTEN)
@@ -91,9 +87,6 @@ if (BUILD_SHARED_LIBS OR EMSCRIPTEN)
 else ()
 	target_compile_definitions (${TARGET_NAME} PUBLIC -DALIMER_STATIC)
 endif ()
-
-# Add third party include directories. Only used internally
-include_directories (ThirdParty/STB)
 
 # Add rendering API specific includes and library dependencies
 if (ALIMER_D3D11)

@@ -28,9 +28,9 @@
 #include "../Graphics/GraphicsDefs.h"
 #include <vector>
 #include <map>
+#include <mutex>
 
 #ifdef ALIMER_D3D11
-struct ID3D11Buffer;
 struct ID3D11InputLayout;
 #endif
 
@@ -48,6 +48,9 @@ namespace Alimer
 	class VertexBuffer;
 	class Window;
 	class WindowResizeEvent;
+
+	// Handles.
+	class BufferHandle;
 
 	using InputLayoutDesc = std::pair<uint64_t, uint32_t>;
 	using InputLayoutMap = std::map<InputLayoutDesc, ID3D11InputLayout*>;
@@ -74,7 +77,15 @@ namespace Alimer
 
 		friend class Buffer;
 
+	protected:
+		Graphics(GraphicsDeviceType deviceType, bool validation);
+
 	public:
+		/**
+		* Gets a set of all available backend drivers.
+		*/
+		static std::vector<GraphicsDeviceType> GetAvailableDrivers();
+
 		/**
 		* Checks if given backend is supported.
 		*
@@ -83,8 +94,16 @@ namespace Alimer
 		*/
 		static bool IsBackendSupported(GraphicsDeviceType deviceType);
 
-		/// Construct and register subsystem. The graphics mode is not set & window is not opened yet.
-		Graphics();
+		/**
+		* Create graphics backend.
+		*
+		* @param deviceType The graphics device type.
+		* @param validation Whether to enable debug/validation layer.
+		* @param applicationName Optional application name.
+		* @return Graphics instance or null if failed.
+		*/
+		static Graphics* Create(GraphicsDeviceType deviceType, bool validation = false, const std::string& applicationName = "Alimer");
+
 		/// Destruct. Clean up the window, rendering context and GPU objects.
 		~Graphics();
 
@@ -96,8 +115,6 @@ namespace Alimer
 		bool SetMultisample(int multisample);
 		/// Set vertical sync on/off.
 		void SetVSync(bool enable);
-		/// Close the window and destroy the rendering context and GPU objects.
-		void Close();
 		/// Present the contents of the backbuffer.
 		void Present();
 		/// Set the color rendertarget and depth stencil buffer.
@@ -107,11 +124,11 @@ namespace Alimer
 		/// Set the viewport rectangle. On window resize the viewport will automatically revert to the entire backbuffer.
 		void SetViewport(const IntRect& viewport);
 		/// Bind a vertex buffer.
-		void SetVertexBuffer(size_t index, VertexBuffer* buffer);
+		void SetVertexBuffer(uint32_t index, VertexBuffer* buffer);
 		/// Bind an index buffer.
 		void SetIndexBuffer(IndexBuffer* buffer);
 		/// Bind a constant buffer.
-		void SetConstantBuffer(ShaderStage stage, size_t index, ConstantBuffer* buffer);
+		void SetConstantBuffer(ShaderStage stage, uint32_t index, ConstantBuffer* buffer);
 		/// Bind a texture.
 		void SetTexture(size_t index, Texture* texture);
 		/// Bind vertex and pixel shaders.
@@ -179,8 +196,7 @@ namespace Alimer
 		const IntRect& Viewport() const { return viewport; }
 		/// Return currently bound vertex buffer by index.
 		VertexBuffer* GetVertexBuffer(size_t index) const;
-		/// Return currently bound index buffer.
-		IndexBuffer* GetIndexBuffer() const { return _indexBuffer; }
+		
 		/// Return currently bound constant buffer by shader stage and index.
 		ConstantBuffer* GetConstantBuffer(ShaderStage stage, size_t index) const;
 		/// Return currently bound texture by texture unit.
@@ -212,10 +228,15 @@ namespace Alimer
 
 	private:
 		// Backend methods
-#ifdef ALIMER_D3D11
-		ID3D11Buffer* CreateBuffer(BufferUsage usage, uint64_t size, uint32_t stride, ResourceUsage resourceUsage, const void* initialData);
-		void DestroyBuffer(ID3D11Buffer* buffer);
-#endif
+		virtual BufferHandle* CreateBuffer(BufferUsage usage, uint32_t size, uint32_t stride, ResourceUsage resourceUsage, const void* initialData) = 0;
+
+		virtual void SetIndexBufferCore(BufferHandle* handle, IndexType type) = 0;
+
+	protected:
+		virtual void Finalize();
+
+		/// Implementation for holding OS-specific API objects.
+		GraphicsImpl* impl = nullptr;
 
 	private:
 		/// Create the D3D11 device and swap chain. Requires an open window. Can also be called again to recrease swap chain. Return true on success.
@@ -228,21 +249,21 @@ namespace Alimer
 		void PrepareTextures();
 		/// Set state for the next draw call. Return false if the draw call should not be attempted.
 		bool PrepareDraw(PrimitiveType type);
-		/// Reset internally tracked state.
-		void ResetState();
 
-		/// Implementation for holding OS-specific API objects.
-		std::unique_ptr<GraphicsImpl> impl;
+	protected:
+		GraphicsDeviceType _deviceType;
+		bool _validation;
+		bool _initialized{};
+
 		/// OS-level rendering window.
 		std::unique_ptr<Window> window;
 		/// Current size of the backbuffer.
-		IntVector2 backbufferSize;
+		IntVector2 backbufferSize{ IntVector2::ZERO };
 		/// Current size of the active rendertarget.
-		IntVector2 renderTargetSize;
+		IntVector2 renderTargetSize{ IntVector2::ZERO };
 		/// Bound vertex buffers.
 		VertexBuffer* vertexBuffers[MAX_VERTEX_STREAMS];
-		/// Bound index buffer.
-		IndexBuffer* _indexBuffer = nullptr;
+		
 		/// Bound constant buffers by shader stage.
 		ConstantBuffer* constantBuffers[MAX_SHADER_STAGES][MAX_CONSTANT_BUFFERS];
 		/// Bound textures by texture unit.
@@ -275,6 +296,8 @@ namespace Alimer
 		InputLayoutDesc inputLayout;
 		/// Current viewport rectangle.
 		IntRect viewport;
+		/// GPU objects mutex.
+		std::mutex _gpuResourceMutex;
 		/// GPU objects.
 		std::vector<GPUObject*> gpuObjects;
 		/// Input layouts.
@@ -286,9 +309,9 @@ namespace Alimer
 		/// Rasterizer state objects.
 		StateObjectMap rasterizerStates;
 		/// Multisample level.
-		int multisample;
+		int multisample{ 1 };
 		/// Vertical sync flag.
-		bool vsync;
+		bool vsync{ false };
 	};
 
 	/// Register Graphics related object factories and attributes.

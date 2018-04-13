@@ -45,6 +45,18 @@ namespace Alimer
 		TypeCube,
 	};
 
+	enum class TextureUsage : uint32_t
+	{
+		Unknown = 0,
+		/// An option that enables reading or sampling from the texture.
+		ShaderRead = 1 << 0,
+		/// An option that enables writing to the texture.
+		ShaderWrite = 1 << 1,
+		///An option that enables using the texture as a color, depth, or stencil render target in a RenderPass.
+		RenderTarget = 1 << 2,
+	};
+	ALIMER_BITMASK(TextureUsage);
+
 	/// GPU Texture.
 	class ALIMER_API Texture : public Resource, public GPUObject
 	{
@@ -67,7 +79,14 @@ namespace Alimer
 		void Release() override;
 
 		/// Define texture type and dimensions and set initial data. %ImageLevel structures only need the data pointer and row byte size filled. Return true on success.
-		bool Define(TextureType type, ResourceUsage usage, const IntVector2& size, ImageFormat format, uint32_t numLevels, const ImageLevel* initialData = 0);
+		bool Define(
+			TextureType type,
+			const IntVector2& size,
+			ImageFormat format,
+			uint32_t numLevels,
+			TextureUsage usage = TextureUsage::ShaderRead,
+			const ImageLevel* initialData = 0);
+
 		/// Define sampling parameters. Return true on success.
 		bool DefineSampler(TextureFilterMode filter = FILTER_TRILINEAR, TextureAddressMode u = ADDRESS_WRAP, TextureAddressMode v = ADDRESS_WRAP, TextureAddressMode w = ADDRESS_WRAP, unsigned maxAnisotropy = 16, float minLod = -M_MAX_FLOAT, float maxLod = M_MAX_FLOAT, const Color& borderColor = Color::BLACK);
 		/// Set data for a mipmap level. Not supported for immutable textures. Return true on success.
@@ -91,15 +110,11 @@ namespace Alimer
 			return _type == TextureType::TypeCube ? MAX_CUBE_FACES : 1;
 		}
 		/// Return resource usage type.
-		ResourceUsage Usage() const { return _usage; }
-		/// Return whether is dynamic.
-		bool IsDynamic() const { return _usage == USAGE_DYNAMIC; }
-		/// Return whether is immutable.
-		bool IsImmutable() const { return _usage == USAGE_IMMUTABLE; }
+		TextureUsage GetUsage() const { return _usage; }
 		/// Return whether is a color rendertarget texture.
-		bool IsRenderTarget() const { return _usage == USAGE_RENDERTARGET && (_format < FMT_D16 || _format > FMT_D24S8); }
+		bool IsRenderTarget() const { return any(_usage & TextureUsage::RenderTarget) && (_format < FMT_D16 || _format > FMT_D24S8); }
 		/// Return whether is a depth-stencil texture.
-		bool IsDepthStencil() const { return _usage == USAGE_RENDERTARGET && _format >= FMT_D16 && _format <= FMT_D24S8; }
+		bool IsDepthStencil() const { return any(_usage & TextureUsage::RenderTarget) && _format >= FMT_D16 && _format <= FMT_D24S8; }
 
 #ifdef ALIMER_D3D11
 		/// Return the D3D11 texture object. Used internally and should not be called by portable application code.
@@ -115,9 +130,9 @@ namespace Alimer
 
 	private:
 		/// Texture type.
-		TextureType _type{TextureType::Type2D};
+		TextureType _type{ TextureType::Type2D };
 		/// Texture usage mode.
-		ResourceUsage _usage{ USAGE_DEFAULT };
+		TextureUsage _usage{ TextureUsage::ShaderRead };
 		/// Texture dimensions in pixels.
 		uint32_t _width{ 1 };
 		uint32_t _height{ 1 };

@@ -49,7 +49,7 @@ public:
 		log = std::make_unique<Log>();
 		input = std::make_unique<Input>();
 
-		graphics = std::make_unique<Graphics>();
+		graphics.reset(Graphics::Create(GraphicsDeviceType::Direct3D11));
 		graphics->GetRenderWindow()->SetTitle("Graphics test");
 		if (!graphics->SetMode(IntVector2(800, 600), false, true))
 			return;
@@ -70,26 +70,26 @@ public:
 		vertexDeclaration.push_back(VertexElement(ELEM_VECTOR2, SEM_TEXCOORD));
 		
 		auto vb = std::make_unique<VertexBuffer>();
-		vb->Define(USAGE_IMMUTABLE, 3, vertexDeclaration, true, vertexData);
+		vb->Define(ResourceUsage::Immutable, 3, vertexDeclaration, true, vertexData);
 
 		std::vector<VertexElement> instanceVertexDeclaration;
 		instanceVertexDeclaration.push_back(VertexElement(ELEM_VECTOR3, SEM_TEXCOORD, 1, true));
 		SharedPtr<VertexBuffer> ivb = new VertexBuffer();
-		ivb->Define(USAGE_DYNAMIC, NUM_OBJECTS, instanceVertexDeclaration, true);
+		ivb->Define(ResourceUsage::Dynamic, NUM_OBJECTS, instanceVertexDeclaration, true);
 
-		unsigned short indexData[] = {
+		uint16_t indexData[] = {
 			0,
 			1,
 			2
 		};
 
 		std::unique_ptr<IndexBuffer> ib = std::make_unique<IndexBuffer>();
-		ib->Define(USAGE_IMMUTABLE, 3, IndexType::UInt16, true, indexData);
+		ib->Define(ResourceUsage::Immutable, 3, IndexType::UInt16, true, indexData);
 
 		Constant pc(ELEM_VECTOR4, "Color");
 		
 		auto pcb = std::make_unique<ConstantBuffer>();
-		pcb->Define(USAGE_IMMUTABLE, 1, &pc);
+		pcb->Define(1, &pc, true);
 		pcb->SetConstant("Color", Color::WHITE);
 		pcb->Apply();
 
@@ -176,10 +176,10 @@ public:
 			if (input->IsKeyPress('M'))
 				graphics->SetMultisample(graphics->Multisample() > 1 ? 1 : 4);
 			if (input->IsKeyPress(27))
-				graphics->Close();
+				graphics.reset();
 
 			// Break if window closed; Graphics drawing functions are not safe to any more
-			if (!graphics->IsInitialized())
+			if (!graphics || !graphics->IsInitialized())
 				break;
 
 			Vector3 instanceData[NUM_OBJECTS];
@@ -205,7 +205,7 @@ public:
 
 	void HandleCloseRequest(Event& /* event */)
 	{
-		graphics->Close();
+		graphics.reset();
 	}
 
 	std::unique_ptr<ResourceCache> cache;

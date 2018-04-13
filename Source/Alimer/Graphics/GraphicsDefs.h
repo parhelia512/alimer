@@ -60,8 +60,9 @@ namespace Alimer
 	{
 		Default,
 		Empty,
-		D3D11,
+		Direct3D11,
 		OpenGL,
+		Vulkan
 	};
 
 	enum class ClearFlags : uint32_t
@@ -215,12 +216,11 @@ namespace Alimer
 	};
 
 	/// Resource usage modes. Rendertarget usage can only be used with textures.
-	enum ResourceUsage
+	enum class ResourceUsage : uint8_t
 	{
-		USAGE_DEFAULT = 0,
-		USAGE_IMMUTABLE,
-		USAGE_DYNAMIC,
-		USAGE_RENDERTARGET
+		Default = 0,
+		Immutable,
+		Dynamic
 	};
 
 	/// Texture filtering modes.
@@ -292,11 +292,11 @@ namespace Alimer
 		/// Semantic of element.
 		ElementSemantic semantic;
 		/// Semantic index of element, for example multi-texcoords.
-		unsigned char index;
+		uint8_t index;
 		/// Per-instance flag.
 		bool perInstance;
 		/// Offset of element from vertex start. Filled by VertexBuffer.
-		size_t offset;
+		uint32_t offset;
 	};
 
 	/// Description of a shader constant.

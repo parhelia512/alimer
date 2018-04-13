@@ -91,10 +91,10 @@ namespace Alimer
 		Image* image = _loadImages[0].get();
 		bool success = Define(
 			TextureType::Type2D,
-			USAGE_IMMUTABLE,
 			image->Size(),
 			image->Format(),
 			static_cast<uint32_t>(initialData.size()),
+			TextureUsage::ShaderRead,
 			initialData.data());
 
 		/// \todo Read a parameter file for the sampling parameters

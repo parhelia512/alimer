@@ -55,16 +55,12 @@ namespace Alimer
 			return false;
 		}
 
-		if (usage == USAGE_RENDERTARGET)
-		{
-			LOGERROR("Rendertarget usage is illegal for index buffers");
-			return false;
-		}
-		if (usage == USAGE_IMMUTABLE && !data)
+		if (usage == ResourceUsage::Immutable && !data)
 		{
 			LOGERROR("Immutable index buffer must define initial data");
 			return false;
 		}
+
 		if (indexType != IndexType::UInt16
 			&& indexType != IndexType::UInt32)
 		{
@@ -72,10 +68,41 @@ namespace Alimer
 			return false;
 		}
 
+		_indexCount = indexCount;
 		_stride = indexType == IndexType::UInt16 ? 2 : 4;
-		_size = indexCount * _stride;
+		_size = _indexCount * _stride;
 		_resourceUsage = usage;
 
 		return Buffer::Create(useShadowData, data);
+	}
+
+	bool IndexBuffer::SetData(
+		uint32_t firstIndex, 
+		uint32_t indexCount, 
+		const void* data)
+	{
+		ALIMER_PROFILE(UpdateIndexBuffer);
+
+		if (!data)
+		{
+			LOGERROR("Null source data for updating index buffer");
+			return false;
+		}
+		if (firstIndex + indexCount > GetIndexCount())
+		{
+			LOGERROR("Out of bounds range for updating index buffer");
+			return false;
+		}
+
+		if (_handle && _resourceUsage == ResourceUsage::Immutable)
+		{
+			LOGERROR("Can not update immutable index buffer");
+			return false;
+		}
+
+		return Buffer::SetData(
+			firstIndex * _stride,
+			indexCount * _stride,
+			data);
 	}
 }

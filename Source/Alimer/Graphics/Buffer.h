@@ -26,24 +26,10 @@
 #include "../Graphics/GraphicsDefs.h"
 #include "../Graphics/GPUObject.h"
 
-#ifdef ALIMER_D3D11
-struct ID3D11Buffer;
-#endif
-
 namespace Alimer
 {
 	class Graphics;
-
-	/// API-specific GPU buffer representation.
-	union BufferHandle
-	{
-#ifdef ALIMER_D3D11
-		/// Object pointer (Direct3D.)
-		ID3D11Buffer* ptr;
-#endif
-		/// Object name (OpenGL.)
-		unsigned id;
-	};
+	class BufferHandle;
 
 	/// GPU buffer for index data.
 	class ALIMER_API Buffer : public RefCounted, public GPUObject
@@ -62,16 +48,14 @@ namespace Alimer
 		/// Return resource usage type.
 		ResourceUsage GetResourceUsage() const { return _resourceUsage; }
 		/// Return whether is dynamic.
-		bool IsDynamic() const { return _resourceUsage == USAGE_DYNAMIC; }
+		bool IsDynamic() const { return _resourceUsage == ResourceUsage::Dynamic; }
 		/// Return whether is immutable.
-		bool IsImmutable() const { return _resourceUsage == USAGE_IMMUTABLE; }
+		bool IsImmutable() const { return _resourceUsage == ResourceUsage::Immutable; }
 
 		BufferUsage GetUsage() const { return _usage; }
-#ifdef ALIMER_D3D11
-		ID3D11Buffer* GetHandle() { return _handle.ptr; }
-#endif
-
-		uint32_t GetId() { return _handle.id; }
+		BufferHandle* GetHandle() { return _handle; }
+		uint32_t GetSize() const { return _size; }
+		uint32_t GetStride() const { return _stride; }
 
 		/// Return CPU-side shadow data if exists.
 		uint8_t* GetShadowData() const { return _shadowData.get(); }
@@ -80,16 +64,19 @@ namespace Alimer
 		/// Create the GPU-side buffer. Return true on success.
 		bool Create(bool useShadowData, const void* initialData);
 
+		bool SetData(uint32_t offset, uint32_t size, const void* data);
+
 	protected:
-		uint64_t _size{};
+		uint32_t _size{};
 		uint32_t _stride{};
 		BufferUsage _usage;
 		/// Resource usage type.
-		ResourceUsage _resourceUsage{ USAGE_DEFAULT };
+		ResourceUsage _resourceUsage{ ResourceUsage::Default };
 
 		/// CPU-side shadow data.
 		std::unique_ptr<uint8_t[]> _shadowData;
 
-		BufferHandle _handle{};
+		/// Backend side handle.
+		BufferHandle* _handle = nullptr;
 	};
 }

@@ -23,7 +23,6 @@
 
 #pragma once
 
-#include "../AlimerConfig.h"
 #include "../Graphics/Buffer.h"
 
 namespace Alimer
@@ -35,7 +34,7 @@ namespace Alimer
 		/// Construct.
 		IndexBuffer();
 		/// Destruct.
-		~IndexBuffer();
+		~IndexBuffer() override;
 
 		/// Define buffer. Immutable buffers must specify initial data here.  Return true on success.
 		bool Define(ResourceUsage usage, uint32_t indexCount, IndexType indexType = IndexType::UInt16, bool useShadowData = false, const void* data = nullptr);
@@ -43,10 +42,13 @@ namespace Alimer
 		bool SetData(uint32_t firstIndex, uint32_t indexCount, const void* data);
 
 		/// Return number of indices.
-		uint64_t GetIndexCount() const { return _size / _stride; }
+		uint32_t GetIndexCount() const { return _indexCount; }
 		/// Return single element type.
 		IndexType GetIndexType() const { return  _stride == 2 ? IndexType::UInt16 : IndexType::UInt32; }
 		/// Return size of index in bytes.
 		uint32_t GetIndexSize() const { return _stride; }
+
+	private:
+		uint32_t _indexCount{};
 	};
 }

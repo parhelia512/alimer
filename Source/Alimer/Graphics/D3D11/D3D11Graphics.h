@@ -23,40 +23,45 @@
 
 #pragma once
 
+#include "../Graphics.h"
 #include "D3D11Prerequisites.h"
-#include "../GraphicsDefs.h"
-#include "../Texture.h"
 
 namespace Alimer
 {
-	namespace d3d11
+	struct GraphicsImpl;
+	class D3D11Buffer;
+
+	/// Compiled shader with specific defines.
+	class D3D11Graphics final : public Graphics
 	{
-		static inline UINT Convert(BufferUsage usage)
-		{
-			if (any(usage & BufferUsage::Uniform))
-				return D3D11_BIND_CONSTANT_BUFFER;
+	public:
+		/// Construct. Set parent shader and defines but do not compile yet.
+		D3D11Graphics(bool validation, const std::string& applicationName);
+		/// Destruct.
+		~D3D11Graphics() override;
 
-			UINT d3dUsage = 0;
-			if (any(usage & BufferUsage::Vertex))
-				d3dUsage |= D3D11_BIND_VERTEX_BUFFER;
+		/// Is backend supported?
+		static bool IsSupported();
 
-			if (any(usage & BufferUsage::Index))
-				d3dUsage |= D3D11_BIND_INDEX_BUFFER;
+		ID3D11Device* GetD3DDevice() const;
+		ID3D11DeviceContext* GetD3DDeviceContext() const;
 
-			if (any(usage & BufferUsage::Storage))
-				d3dUsage |= D3D11_BIND_UNORDERED_ACCESS;
+		/// Return currently bound index buffer.
+		D3D11Buffer* GetIndexBuffer() const { return _indexBuffer; }
 
-			return d3dUsage;
-		}
+	private:
+		void Finalize() override;
+		BufferHandle* CreateBuffer(BufferUsage usage, uint32_t size, uint32_t stride, ResourceUsage resourceUsage, const void* initialData) override;
 
-		static inline DXGI_FORMAT Convert(IndexType type)
-		{
-			switch (type)
-			{
-			case IndexType::UInt16: return DXGI_FORMAT_R16_UINT;
-			case IndexType::UInt32: return DXGI_FORMAT_R32_UINT;
-			default: return DXGI_FORMAT_UNKNOWN;
-			}
-		}
-	}
+		void SetIndexBufferCore(BufferHandle* handle, IndexType type) override;
+
+		void WaitIdle();
+
+		/// Reset internally tracked state.
+		void ResetState();
+
+		/// Bound index buffer.
+		D3D11Buffer* _indexBuffer = nullptr;
+	};
+
 }

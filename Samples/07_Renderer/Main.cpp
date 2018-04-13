@@ -52,7 +52,7 @@ public:
 		log = std::make_unique<Log>();
 		input = std::make_unique<Input>();
 		profiler = std::make_unique<Profiler>();
-		graphics = std::make_unique<Graphics>();
+		graphics.reset(Graphics::Create(GraphicsDeviceType::Direct3D11));
 		renderer = std::make_unique<Renderer>();
 
 		graphics->GetRenderWindow()->SetTitle("Renderer test");
@@ -127,10 +127,10 @@ public:
 
 			input->Update();
 			if (input->IsKeyPress(27))
-				graphics->Close();
+				graphics.reset();
 
 			// Break if window closed; Graphics drawing functions are not safe to any more
-			if (!graphics->IsInitialized())
+			if (!graphics || !graphics->IsInitialized())
 				break;
 
 			if (input->IsKeyPress('F'))
@@ -179,7 +179,7 @@ public:
 
 	void HandleCloseRequest(Event& /* event */)
 	{
-		graphics->Close();
+		graphics.reset();
 	}
 
 	std::unique_ptr<ResourceCache> cache;

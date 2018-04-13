@@ -43,16 +43,15 @@ using namespace std;
 
 namespace Alimer
 {
+	static const uint32_t LVS_GEOMETRY = (0x1 | 0x2);
+	static const uint32_t LVS_NUMSHADOWCOORDS = (0x4 | 0x8 | 0x10);
 
-	static const unsigned LVS_GEOMETRY = (0x1 | 0x2);
-	static const unsigned LVS_NUMSHADOWCOORDS = (0x4 | 0x8 | 0x10);
-
-	static const unsigned LPS_AMBIENT = 0x1;
-	static const unsigned LPS_NUMSHADOWCOORDS = (0x2 | 0x4 | 0x8);
-	static const unsigned LPS_LIGHT0 = (0x10 | 0x20 | 0x40);
-	static const unsigned LPS_LIGHT1 = (0x80 | 0x100 | 0x200);
-	static const unsigned LPS_LIGHT2 = (0x400 | 0x800 | 0x1000);
-	static const unsigned LPS_LIGHT3 = (0x2000 | 0x4000 | 0x8000);
+	static const uint32_t LPS_AMBIENT = 0x1;
+	static const uint32_t LPS_NUMSHADOWCOORDS = (0x2 | 0x4 | 0x8);
+	static const uint32_t LPS_LIGHT0 = (0x10 | 0x20 | 0x40);
+	static const uint32_t LPS_LIGHT1 = (0x80 | 0x100 | 0x200);
+	static const uint32_t LPS_LIGHT2 = (0x400 | 0x800 | 0x1000);
+	static const uint32_t LPS_LIGHT3 = (0x2000 | 0x4000 | 0x8000);
 
 	static const CullMode cullModeFlip[] =
 	{
@@ -102,9 +101,10 @@ namespace Alimer
 		{
 			if (it->texture->Define(
 				TextureType::Type2D,
-				USAGE_RENDERTARGET,
 				IntVector2(size, size),
-				format, 1))
+				format, 
+				1,
+				TextureUsage::ShaderRead | TextureUsage::RenderTarget))
 			{
 				// Setup shadow map sampling with hardware depth compare
 				it->texture->DefineSampler(COMPARE_BILINEAR, ADDRESS_CLAMP, ADDRESS_CLAMP, ADDRESS_CLAMP, 1);
@@ -135,7 +135,7 @@ namespace Alimer
 
 		geometries.clear();
 		lights.clear();
-		instanceTransforms.clear();
+		_instanceTransforms.clear();
 		lightLists.clear();
 		lightPasses.clear();
 		for (auto it = batchQueues.begin(); it != batchQueues.end(); ++it)
@@ -316,7 +316,7 @@ namespace Alimer
 					break;
 				}
 
-				shadowQueue.Sort(instanceTransforms);
+				shadowQueue.Sort(_instanceTransforms);
 
 				// Mark shadow map for rendering only if it has a view with some batches
 				if (shadowQueue.batches.size())
@@ -532,17 +532,19 @@ namespace Alimer
 			}
 		}
 
-		size_t oldSize = instanceTransforms.size();
+		size_t oldSize = _instanceTransforms.size();
 
 		for (auto qIt = currentQueues.begin(); qIt != currentQueues.end(); ++qIt)
 		{
 			BatchQueue& batchQueue = **qIt;
-			batchQueue.Sort(instanceTransforms);
+			batchQueue.Sort(_instanceTransforms);
 		}
 
 		// Check if more instances where added
-		if (instanceTransforms.size() != oldSize)
+		if (_instanceTransforms.size() != oldSize)
+		{
 			_instanceTransformsDirty = true;
+		}
 	}
 
 	void Renderer::CollectBatches(const PassDesc& pass)
@@ -612,22 +614,22 @@ namespace Alimer
 		constants.push_back(Constant(ELEM_MATRIX4, "projectionMatrix"));
 		constants.push_back(Constant(ELEM_MATRIX4, "viewProjMatrix"));
 		constants.push_back(Constant(ELEM_VECTOR4, "depthParameters"));
-		vsFrameConstantBuffer->Define(USAGE_DEFAULT, constants);
+		vsFrameConstantBuffer->Define(constants, true);
 
 		psFrameConstantBuffer = new ConstantBuffer();
 		constants.clear();
 		constants.push_back(Constant(ELEM_VECTOR4, "ambientColor"));
-		psFrameConstantBuffer->Define(USAGE_DEFAULT, constants);
+		psFrameConstantBuffer->Define(constants, true);
 
 		vsObjectConstantBuffer = new ConstantBuffer();
 		constants.clear();
 		constants.push_back(Constant(ELEM_MATRIX3X4, "worldMatrix"));
-		vsObjectConstantBuffer->Define(USAGE_DEFAULT, constants);
+		vsObjectConstantBuffer->Define(constants, true);
 
 		vsLightConstantBuffer = new ConstantBuffer();
 		constants.clear();
 		constants.push_back(Constant(ELEM_MATRIX4, "shadowMatrices", MAX_LIGHTS_PER_PASS));
-		vsLightConstantBuffer->Define(USAGE_DEFAULT, constants);
+		vsLightConstantBuffer->Define(constants, true);
 
 		psLightConstantBuffer = new ConstantBuffer();
 		constants.clear();
@@ -639,21 +641,21 @@ namespace Alimer
 		constants.push_back(Constant(ELEM_VECTOR4, "pointShadowParameters", MAX_LIGHTS_PER_PASS));
 		constants.push_back(Constant(ELEM_VECTOR4, "dirShadowSplits"));
 		constants.push_back(Constant(ELEM_VECTOR4, "dirShadowFade"));
-		psLightConstantBuffer->Define(USAGE_DEFAULT, constants);
+		psLightConstantBuffer->Define(constants, true);
 
 		// Instance vertex buffer contains texcoords 4-6 which define the instances' world matrices
-		instanceVertexBuffer = std::make_unique<VertexBuffer>();
-		instanceVertexElements.push_back(VertexElement(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD, true));
-		instanceVertexElements.push_back(VertexElement(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD + 1, true));
-		instanceVertexElements.push_back(VertexElement(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD + 2, true));
+		_instanceVertexBuffer = std::make_unique<VertexBuffer>();
+		_instanceVertexElements.emplace_back(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD, true);
+		_instanceVertexElements.emplace_back(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD + 1, true);
+		_instanceVertexElements.emplace_back(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD + 2, true);
 
 		// Setup ambient light only -pass
 		ambientLightPass.vsBits = 0;
 		ambientLightPass.psBits = LPS_AMBIENT;
 
 		// Setup point light face selection textures
-		faceSelectionTexture1 = std::make_unique<Texture>();
-		faceSelectionTexture2 = std::make_unique<Texture>();
+		_faceSelectionTexture1 = make_unique<Texture>();
+		_faceSelectionTexture2 = make_unique<Texture>();
 		DefineFaceSelectionTextures();
 	}
 
@@ -691,13 +693,13 @@ namespace Alimer
 			faces2.push_back(level);
 		}
 
-		faceSelectionTexture1->Define(TextureType::TypeCube, USAGE_DEFAULT, IntVector2(1, 1), FMT_RGBA32F, 1, &faces1[0]);
-		faceSelectionTexture1->DefineSampler(FILTER_POINT, ADDRESS_CLAMP, ADDRESS_CLAMP, ADDRESS_CLAMP);
-		faceSelectionTexture1->SetDataLost(false);
+		_faceSelectionTexture1->Define(TextureType::TypeCube, IntVector2(1, 1), FMT_RGBA32F, 1, TextureUsage::ShaderRead, &faces1[0]);
+		_faceSelectionTexture1->DefineSampler(FILTER_POINT, ADDRESS_CLAMP, ADDRESS_CLAMP, ADDRESS_CLAMP);
+		_faceSelectionTexture1->SetDataLost(false);
 
-		faceSelectionTexture2->Define(TextureType::TypeCube, USAGE_DEFAULT, IntVector2(1, 1), FMT_RGBA32F, 1, &faces2[0]);
-		faceSelectionTexture2->DefineSampler(FILTER_POINT, ADDRESS_CLAMP, ADDRESS_CLAMP, ADDRESS_CLAMP);
-		faceSelectionTexture2->SetDataLost(false);
+		_faceSelectionTexture2->Define(TextureType::TypeCube, IntVector2(1, 1), FMT_RGBA32F, 1, TextureUsage::ShaderRead, &faces2[0]);
+		_faceSelectionTexture2->DefineSampler(FILTER_POINT, ADDRESS_CLAMP, ADDRESS_CLAMP, ADDRESS_CLAMP);
+		_faceSelectionTexture2->SetDataLost(false);
 	}
 
 	void Renderer::CollectGeometriesAndLights(
@@ -840,12 +842,12 @@ namespace Alimer
 		int depthBias, 
 		float slopeScaledDepthBias)
 	{
-		if (faceSelectionTexture1->IsDataLost() || faceSelectionTexture2->IsDataLost())
+		if (_faceSelectionTexture1->IsDataLost() || _faceSelectionTexture2->IsDataLost())
 			DefineFaceSelectionTextures();
 
 		// Bind point light shadow face selection textures
-		graphics->SetTexture(MAX_MATERIAL_TEXTURE_UNITS + MAX_LIGHTS_PER_PASS, faceSelectionTexture1.get());
-		graphics->SetTexture(MAX_MATERIAL_TEXTURE_UNITS + MAX_LIGHTS_PER_PASS + 1, faceSelectionTexture2.get());
+		graphics->SetTexture(MAX_MATERIAL_TEXTURE_UNITS + MAX_LIGHTS_PER_PASS, _faceSelectionTexture1.get());
+		graphics->SetTexture(MAX_MATERIAL_TEXTURE_UNITS + MAX_LIGHTS_PER_PASS + 1, _faceSelectionTexture2.get());
 
 		// If rendering to a texture on OpenGL, flip the camera vertically to ensure similar texture coordinate addressing
 #ifdef ALIMER_OPENGL
@@ -890,12 +892,18 @@ namespace Alimer
 		}
 
 		if (_instanceTransformsDirty 
-			&& instanceTransforms.size())
+			&& _instanceTransforms.size())
 		{
-			if (instanceVertexBuffer->NumVertices() < instanceTransforms.size())
-				instanceVertexBuffer->Define(USAGE_DYNAMIC, NextPowerOfTwo(instanceTransforms.size()), instanceVertexElements, false);
-			instanceVertexBuffer->SetData(0, instanceTransforms.size(), instanceTransforms.data());
-			graphics->SetVertexBuffer(1, instanceVertexBuffer.get());
+			if (_instanceVertexBuffer->GetVertexCount() < _instanceTransforms.size())
+			{
+				_instanceVertexBuffer->Define(
+					ResourceUsage::Dynamic, 
+					NextPowerOfTwo(_instanceTransforms.size()), 
+					_instanceVertexElements, false);
+			}
+
+			_instanceVertexBuffer->SetData(0, _instanceTransforms.size(), _instanceTransforms.data());
+			graphics->SetVertexBuffer(1, _instanceVertexBuffer.get());
 			_instanceTransformsDirty = false;
 		}
 

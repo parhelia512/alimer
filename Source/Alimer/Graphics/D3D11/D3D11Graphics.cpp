@@ -24,28 +24,27 @@
 #include "../../Debug/Log.h"
 #include "../../Debug/Profiler.h"
 #include "../../Window/Window.h"
+#include "D3D11Graphics.h"
+#include "D3D11Buffer.h"
 #include "../GPUObject.h"
 #include "../Shader.h"
 #include "../Graphics.h"
-#include "D3D11ConstantBuffer.h"
+#include "../ConstantBuffer.h"
 #include "../IndexBuffer.h"
 #include "D3D11ShaderVariation.h"
 #include "../Texture.h"
-#include "D3D11VertexBuffer.h"
+#include "../VertexBuffer.h"
 #include "D3D11Convert.h"
 
 #include <cstdlib>
-
-// Prefer the high-performance GPU on switchable GPU systems
-extern "C" {
-	__declspec(dllexport) DWORD NvOptimusEnablement = 1;
-	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-}
 
 using namespace std;
 
 namespace Alimer
 {
+	static_assert(static_cast<uint32_t>(ResourceUsage::Default) == D3D11_USAGE_DEFAULT, "D3D11: Wrong ResourceUsage map");
+	static_assert(static_cast<uint32_t>(ResourceUsage::Immutable) == D3D11_USAGE_IMMUTABLE, "D3D11: Wrong ResourceUsage map");
+	static_assert(static_cast<uint32_t>(ResourceUsage::Dynamic) == D3D11_USAGE_DYNAMIC, "D3D11: Wrong ResourceUsage map");
 
 	static const DXGI_FORMAT d3dElementFormats[] = {
 		DXGI_FORMAT_R32_SINT,
@@ -119,23 +118,38 @@ namespace Alimer
 	};
 	/// \endcond
 
-	Graphics::Graphics() :
-		backbufferSize(IntVector2::ZERO),
-		renderTargetSize(IntVector2::ZERO),
-		multisample(1),
-		vsync(false)
+	D3D11Graphics::D3D11Graphics(bool validation, const string& applicationName)
+		: Graphics(GraphicsDeviceType::Direct3D11, validation)
 	{
-		RegisterSubsystem(this);
-		impl = make_unique<GraphicsImpl>();
-		window = make_unique<Window>();
-		SubscribeToEvent(window->resizeEvent, &Graphics::HandleResize);
+		Unused(applicationName);
+		impl = new GraphicsImpl();
 		ResetState();
 	}
 
-	Graphics::~Graphics()
+	D3D11Graphics::~D3D11Graphics()
 	{
-		Close();
-		RemoveSubsystem(this);
+		WaitIdle();
+		Finalize();
+	}
+
+	void D3D11Graphics::WaitIdle()
+	{
+
+	}
+
+	bool D3D11Graphics::IsSupported()
+	{
+		return true;
+	}
+
+	ID3D11Device* D3D11Graphics::GetD3DDevice() const
+	{
+		return impl->device;
+	}
+
+	ID3D11DeviceContext* D3D11Graphics::GetD3DDeviceContext() const
+	{
+		return impl->deviceContext;
 	}
 
 	bool Graphics::SetMode(const IntVector2& size, bool fullscreen, bool resizable, int multisample_)
@@ -163,6 +177,7 @@ namespace Alimer
 		LOGDEBUGF("Set screen mode %dx%d fullscreen %d resizable %d multisample %d", backbufferSize.x, backbufferSize.y,
 			IsFullscreen(), IsResizable(), multisample);
 
+		_initialized = true;
 		return true;
 	}
 
@@ -187,13 +202,10 @@ namespace Alimer
 		vsync = enable;
 	}
 
-	void Graphics::Close()
+	void D3D11Graphics::Finalize()
 	{
 		// Release all GPU objects
-		for (GPUObject* object : gpuObjects)
-		{
-			object->Release();
-		}
+		Graphics::Finalize();
 
 		for (auto it = _inputLayouts.begin(); it != _inputLayouts.end(); ++it)
 		{
@@ -268,7 +280,11 @@ namespace Alimer
 		{
 			ALIMER_PROFILE(Present);
 
-			impl->swapChain->Present(vsync ? 1 : 0, 0);
+			HRESULT hr = impl->swapChain->Present(vsync ? 1 : 0, 0);
+			if (FAILED(hr))
+			{
+				LOGERROR("[D3D11] - Swapchain Present failed");
+			}
 		}
 	}
 
@@ -340,34 +356,42 @@ namespace Alimer
 		impl->deviceContext->RSSetViewports(1, &d3dViewport);
 	}
 
-	void Graphics::SetVertexBuffer(size_t index, VertexBuffer* buffer)
+	void Graphics::SetVertexBuffer(uint32_t index, VertexBuffer* buffer)
 	{
-		if (index < MAX_VERTEX_STREAMS && buffer != vertexBuffers[index])
+		if (index < MAX_VERTEX_STREAMS
+			&& buffer != vertexBuffers[index])
 		{
 			vertexBuffers[index] = buffer;
-			ID3D11Buffer* d3dBuffer = buffer ? (ID3D11Buffer*)buffer->D3DBuffer() : nullptr;
-			unsigned stride = buffer ? (unsigned)buffer->VertexSize() : 0;
-			unsigned offset = 0;
-			impl->deviceContext->IASetVertexBuffers((unsigned)index, 1, &d3dBuffer, &stride, &offset);
+			ID3D11Buffer* d3dBuffer = buffer ? static_cast<D3D11Buffer*>(buffer->GetHandle())->GetD3DBuffer() : nullptr;
+			UINT stride = buffer ? buffer->GetStride() : 0;
+			UINT offset = 0;
+			impl->deviceContext->IASetVertexBuffers(
+				index, 
+				1,
+				&d3dBuffer, 
+				&stride,
+				&offset);
 			inputLayoutDirty = true;
 		}
 	}
 
-	void Graphics::SetConstantBuffer(ShaderStage stage, size_t index, ConstantBuffer* buffer)
+	void Graphics::SetConstantBuffer(ShaderStage stage, uint32_t index, ConstantBuffer* buffer)
 	{
-		if (stage < MAX_SHADER_STAGES && index < MAX_CONSTANT_BUFFERS && buffer != constantBuffers[stage][index])
+		if (stage < MAX_SHADER_STAGES
+			&& index < MAX_CONSTANT_BUFFERS
+			&& buffer != constantBuffers[stage][index])
 		{
 			constantBuffers[stage][index] = buffer;
-			ID3D11Buffer* d3dBuffer = buffer ? (ID3D11Buffer*)buffer->D3DBuffer() : nullptr;
+			ID3D11Buffer* d3dBuffer = buffer ? static_cast<D3D11Buffer*>(buffer->GetHandle())->GetD3DBuffer() : nullptr;
 
 			switch (stage)
 			{
 			case SHADER_VS:
-				impl->deviceContext->VSSetConstantBuffers((unsigned)index, 1, &d3dBuffer);
+				impl->deviceContext->VSSetConstantBuffers(index, 1, &d3dBuffer);
 				break;
 
 			case SHADER_PS:
-				impl->deviceContext->PSSetConstantBuffers((unsigned)index, 1, &d3dBuffer);
+				impl->deviceContext->PSSetConstantBuffers(index, 1, &d3dBuffer);
 				break;
 
 			default:
@@ -399,23 +423,23 @@ namespace Alimer
 		}
 	}
 
-	void Graphics::SetIndexBuffer(IndexBuffer* buffer)
+	void D3D11Graphics::SetIndexBufferCore(BufferHandle* handle, IndexType type)
 	{
-		if (buffer == _indexBuffer)
+		if (handle == _indexBuffer)
 			return;
 
-		_indexBuffer = buffer;
-		if (buffer)
-		{
-			impl->deviceContext->IASetIndexBuffer(
-				buffer->GetHandle(),
-				buffer->GetIndexSize() == sizeof(uint16_t) ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT,
-				0);
-		}
-		else
+		// Unset?
+		if (!handle)
 		{
 			impl->deviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+			return;
 		}
+
+		_indexBuffer = static_cast<D3D11Buffer*>(handle);
+		impl->deviceContext->IASetIndexBuffer(
+			_indexBuffer->GetD3DBuffer(),
+			d3d11::Convert(type),
+			0);
 	}
 
 	void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
@@ -533,16 +557,18 @@ namespace Alimer
 
 	void Graphics::ResetVertexBuffers()
 	{
-		for (size_t i = 0; i < MAX_VERTEX_STREAMS; ++i)
+		for (uint32_t i = 0; i < MAX_VERTEX_STREAMS; ++i)
 			SetVertexBuffer(i, nullptr);
 	}
 
 	void Graphics::ResetConstantBuffers()
 	{
-		for (size_t i = 0; i < MAX_SHADER_STAGES; ++i)
+		for (uint32_t i = 0; i < MAX_SHADER_STAGES; ++i)
 		{
-			for (size_t j = 0; i < MAX_CONSTANT_BUFFERS; ++j)
+			for (uint32_t j = 0; i < MAX_CONSTANT_BUFFERS; ++j)
+			{
 				SetConstantBuffer((ShaderStage)i, j, nullptr);
+			}
 		}
 	}
 
@@ -610,10 +636,7 @@ namespace Alimer
 			vertexStart, (unsigned)instanceStart);
 	}
 
-	bool Graphics::IsInitialized() const
-	{
-		return window->IsOpen() && impl->device != nullptr;
-	}
+
 
 	bool Graphics::IsFullscreen() const
 	{
@@ -722,7 +745,9 @@ namespace Alimer
 		dxgiFactory->CreateSwapChain(impl->device, &swapChainDesc, &impl->swapChain);
 		// After creating the swap chain, disable automatic Alt-Enter fullscreen/windowed switching
 		// (the application will switch manually if it wants to)
-		dxgiFactory->MakeWindowAssociation((HWND)window->GetHandle(), DXGI_MWA_NO_ALT_ENTER);
+		dxgiFactory->MakeWindowAssociation(
+			(HWND)window->GetHandle(),
+			DXGI_MWA_NO_WINDOW_CHANGES | DXGI_MWA_NO_ALT_ENTER);
 
 		dxgiFactory->Release();
 		dxgiAdapter->Release();
@@ -830,38 +855,9 @@ namespace Alimer
 		}
 	}
 
-	ID3D11Buffer* Graphics::CreateBuffer(BufferUsage usage, uint64_t size, uint32_t stride, ResourceUsage resourceUsage, const void* initialData)
+	BufferHandle* D3D11Graphics::CreateBuffer(BufferUsage usage, uint32_t size, uint32_t stride, ResourceUsage resourceUsage, const void* initialData)
 	{
-		D3D11_SUBRESOURCE_DATA resourceData = { initialData, 0, 0 };
-
-		D3D11_BUFFER_DESC bufferDesc = {};
-		bufferDesc.BindFlags = d3d11::Convert(usage);
-		bufferDesc.CPUAccessFlags = (resourceUsage == USAGE_DYNAMIC) ? D3D11_CPU_ACCESS_WRITE : 0;
-		bufferDesc.Usage = d3d11::Convert(resourceUsage);
-		bufferDesc.ByteWidth = static_cast<UINT>(size);
-
-		if (any(usage & BufferUsage::Indirect))
-		{
-			bufferDesc.StructureByteStride = stride;
-			bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS;
-		}
-
-		ID3D11Buffer* buffer;
-		HRESULT hr = impl->device->CreateBuffer(
-			&bufferDesc,
-			initialData ? &resourceData : nullptr,
-			&buffer);
-		if (FAILED(hr))
-		{
-
-		}
-
-		return buffer;
-	}
-
-	void Graphics::DestroyBuffer(ID3D11Buffer* buffer)
-	{
-		SafeRelease(buffer);
+		return new D3D11Buffer(this, usage, size, stride, resourceUsage, initialData);
 	}
 
 	bool Graphics::PrepareDraw(PrimitiveType type)
@@ -887,7 +883,7 @@ namespace Alimer
 			for (size_t i = 0; i < MAX_VERTEX_STREAMS; ++i)
 			{
 				if (vertexBuffers[i])
-					newInputLayout.first |= (unsigned long long)vertexBuffers[i]->ElementHash() << (i * 16);
+					newInputLayout.first |= (uint64_t)vertexBuffers[i]->GetElementHash() << (i * 16);
 			}
 
 			if (newInputLayout != inputLayout)
@@ -908,7 +904,7 @@ namespace Alimer
 					{
 						if (vertexBuffers[i])
 						{
-							const std::vector<VertexElement>& elements = vertexBuffers[i]->Elements();
+							const std::vector<VertexElement>& elements = vertexBuffers[i]->GetElements();
 
 							for (const VertexElement& element : elements)
 							{
@@ -918,7 +914,7 @@ namespace Alimer
 								newDesc.Format = (element.semantic == SEM_COLOR && element.type == ELEM_UBYTE4) ?
 									DXGI_FORMAT_R8G8B8A8_UNORM : d3dElementFormats[element.type];
 								newDesc.InputSlot = (unsigned)i;
-								newDesc.AlignedByteOffset = (unsigned)element.offset;
+								newDesc.AlignedByteOffset = element.offset;
 								newDesc.InputSlotClass = element.perInstance ? D3D11_INPUT_PER_INSTANCE_DATA :
 									D3D11_INPUT_PER_VERTEX_DATA;
 								newDesc.InstanceDataStepRate = element.perInstance ? 1 : 0;
@@ -1128,7 +1124,7 @@ namespace Alimer
 		return true;
 	}
 
-	void Graphics::ResetState()
+	void D3D11Graphics::ResetState()
 	{
 		for (size_t i = 0; i < MAX_VERTEX_STREAMS; ++i)
 			vertexBuffers[i] = nullptr;

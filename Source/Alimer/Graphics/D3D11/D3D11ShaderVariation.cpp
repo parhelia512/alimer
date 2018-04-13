@@ -26,7 +26,7 @@
 #include "../Shader.h"
 #include "../Graphics.h"
 #include "D3D11ShaderVariation.h"
-#include "D3D11VertexBuffer.h"
+#include "../VertexBuffer.h"
 
 #include <d3d11.h>
 #include <d3dcompiler.h>

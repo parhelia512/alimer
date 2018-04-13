@@ -23,40 +23,32 @@
 
 #pragma once
 
+#include "../GraphicsImpl.h"
 #include "D3D11Prerequisites.h"
-#include "../GraphicsDefs.h"
-#include "../Texture.h"
 
 namespace Alimer
 {
-	namespace d3d11
+	class D3D11Graphics;
+
+	class ALIMER_API D3D11Buffer final : public BufferHandle
 	{
-		static inline UINT Convert(BufferUsage usage)
-		{
-			if (any(usage & BufferUsage::Uniform))
-				return D3D11_BIND_CONSTANT_BUFFER;
+	public:
+		/// Construct.
+		D3D11Buffer(D3D11Graphics* graphics, BufferUsage usage, uint32_t size, uint32_t stride, ResourceUsage resourceUsage, const void* initialData);
+		/// Destruct.
+		~D3D11Buffer();
 
-			UINT d3dUsage = 0;
-			if (any(usage & BufferUsage::Vertex))
-				d3dUsage |= D3D11_BIND_VERTEX_BUFFER;
+		bool SetData(uint32_t offset, uint32_t size, const void* data) override;
 
-			if (any(usage & BufferUsage::Index))
-				d3dUsage |= D3D11_BIND_INDEX_BUFFER;
+		/// Return the D3D11 buffer.
+		ID3D11Buffer* GetD3DBuffer() const { return _buffer.Get(); }
 
-			if (any(usage & BufferUsage::Storage))
-				d3dUsage |= D3D11_BIND_UNORDERED_ACCESS;
+	private:
+		D3D11Graphics* _graphics;
+		bool _isDynamic;
 
-			return d3dUsage;
-		}
+		/// D3D11 buffer.
+		Microsoft::WRL::ComPtr<ID3D11Buffer> _buffer;
+	};
 
-		static inline DXGI_FORMAT Convert(IndexType type)
-		{
-			switch (type)
-			{
-			case IndexType::UInt16: return DXGI_FORMAT_R16_UINT;
-			case IndexType::UInt32: return DXGI_FORMAT_R32_UINT;
-			default: return DXGI_FORMAT_UNKNOWN;
-			}
-		}
-	}
 }

@@ -115,7 +115,7 @@ namespace Alimer
 					graphics->SetTexture(i, 0);
 			}
 
-			if (_usage == USAGE_RENDERTARGET)
+			if (any(_usage & TextureUsage::RenderTarget))
 			{
 				bool clear = false;
 
@@ -172,14 +172,13 @@ namespace Alimer
 
 	bool Texture::Define(
 		TextureType type_, 
-		ResourceUsage usage_, 
 		const IntVector2& size_, 
 		ImageFormat format_, 
 		uint32_t numLevels_,
+		TextureUsage usage,
 		const ImageLevel* initialData)
 	{
 		ALIMER_PROFILE(DefineTexture);
-
 		Release();
 
 		if (type_ != TextureType::Type2D
@@ -203,7 +202,18 @@ namespace Alimer
 			numLevels_ = 1;
 
 		_type = type_;
-		_usage = usage_;
+		_usage = usage;
+
+		D3D11_USAGE textureUsage = D3D11_USAGE_DEFAULT;
+		UINT d3dUsage = 0;
+		if (any(usage & TextureUsage::ShaderRead))
+			d3dUsage |= D3D11_BIND_SHADER_RESOURCE;
+
+		if (any(usage & TextureUsage::ShaderWrite))
+			d3dUsage |= D3D11_BIND_UNORDERED_ACCESS;
+
+		if (any(usage & TextureUsage::RenderTarget))
+			d3dUsage |= D3D11_BIND_RENDER_TARGET;
 
 		if (graphics && graphics->IsInitialized())
 		{
@@ -218,16 +228,19 @@ namespace Alimer
 			/// \todo Support defining multisampled textures
 			textureDesc.SampleDesc.Count = 1;
 			textureDesc.SampleDesc.Quality = 0;
-			textureDesc.Usage = (_usage != USAGE_RENDERTARGET) ? (D3D11_USAGE)_usage : D3D11_USAGE_DEFAULT;
-			textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-			if (_usage == USAGE_RENDERTARGET)
+			textureDesc.Usage = textureUsage;
+			textureDesc.BindFlags = d3dUsage;
+			if (any(usage & TextureUsage::RenderTarget))
 			{
 				if (format_ < FMT_D16 || format_ > FMT_D24S8)
 					textureDesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
 				else
 					textureDesc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
 			}
-			textureDesc.CPUAccessFlags = _usage == USAGE_DYNAMIC ? D3D11_CPU_ACCESS_WRITE : 0;
+
+			const bool dynamic = false;
+
+			textureDesc.CPUAccessFlags = dynamic ? D3D11_CPU_ACCESS_WRITE : 0;
 			if (_type == TextureType::TypeCube)
 				textureDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
 
@@ -379,11 +392,6 @@ namespace Alimer
 
 		if (_texture)
 		{
-			if (_usage == USAGE_IMMUTABLE)
-			{
-				LOGERROR("Can not update immutable texture");
-				return false;
-			}
 			if (face >= NumFaces())
 			{
 				LOGERROR("Face to update out of bounds");
@@ -421,8 +429,9 @@ namespace Alimer
 				level, 
 				face, 
 				_mipLevels);
-
-			if (_usage == USAGE_DYNAMIC)
+			
+			const bool dynamic = false;
+			if (dynamic)
 			{
 				size_t pixelByteSize = Image::pixelByteSizes[_format];
 				if (!pixelByteSize)

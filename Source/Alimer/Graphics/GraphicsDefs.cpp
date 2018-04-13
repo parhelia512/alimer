@@ -57,7 +57,6 @@ namespace Alimer
 		"default",
 		"immutable",
 		"dynamic",
-		"rendertarget",
 		nullptr
 	};
 

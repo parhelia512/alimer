@@ -27,7 +27,7 @@
 #ifdef _WIN32
 // This is needed for _fdopen on MinGW
 #	undef __STRICT_ANSI__
-#	include "../../PlatformIncl.h"
+#	include "../PlatformIncl.h"
 #	include <io.h>
 #else
 #	include <unistd.h>

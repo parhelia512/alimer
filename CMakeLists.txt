@@ -64,9 +64,14 @@ if (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 	set (CMAKE_BUILD_TYPE Release)
 endif ()
 
+# Set alimer sdk path.
+set (ALIMER_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set (ALIMER_SDK_SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Source/Alimer)
+set (ALIMER_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/ThirdParty)
+
 # Find DirectX SDK
 # Based on realXtend Tundra CMake build system (https://github.com/realXtend/tundra)
-if (WIN32 AND NOT TURSO3D_OPENGL)
+if (WIN32 AND NOT ALIMER_OPENGL)
 	# Do not search for the SDK from Visual Studio 2012 onward to avoid incompatibility
 	# between DirectX SDK and Windows SDK defines and the resulting warning spam
 	if (MSVC AND MSVC_VERSION LESS 1700)
@@ -175,6 +180,8 @@ endif ()
 
 message(STATUS "  Library         ${ALIMER_LIBRARY_TYPE}")
 message(STATUS "  SIMD            ${ALIMER_SIMD}")
+message(STATUS "  D3D11           ${ALIMER_D3D11}")
+message(STATUS "  D3D12           ${ALIMER_D3D12}")
 
 message(STATUS "Developer options:")
 message(STATUS "  Logging         ${ALIMER_LOGGING}")
