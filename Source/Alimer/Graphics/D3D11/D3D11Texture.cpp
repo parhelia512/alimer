@@ -157,24 +157,16 @@ namespace Alimer
 			}
 			_renderTargetView = nullptr;
 		}
-		if (_sampler)
-		{
-			_sampler->Release();
-			_sampler = nullptr;
-		}
 
-		if (_texture)
-		{
-			_texture->Release();
-			_texture = nullptr;
-		}
+		SafeRelease(_sampler);
+		SafeRelease(_texture);
 	}
 
 	bool Texture::Define(
 		TextureType type, 
 		const Size& size, 
-		ImageFormat format_, 
-		uint32_t numLevels_,
+		ImageFormat format, 
+		uint32_t mipLevels,
 		TextureUsage usage,
 		const ImageLevel* initialData)
 	{
@@ -188,7 +180,7 @@ namespace Alimer
 			return false;
 		}
 
-		if (format_ > FMT_DXT5)
+		if (format > FMT_DXT5)
 		{
 			LOGERROR("ETC1 and PVRTC formats are unsupported");
 			return false;
@@ -200,8 +192,8 @@ namespace Alimer
 			return false;
 		}
 
-		if (numLevels_ < 1)
-			numLevels_ = 1;
+		if (mipLevels < 1)
+			mipLevels = 1;
 
 		_type = type;
 		_usage = usage;
@@ -214,9 +206,6 @@ namespace Alimer
 		if (any(usage & TextureUsage::ShaderWrite))
 			d3dUsage |= D3D11_BIND_UNORDERED_ACCESS;
 
-		if (any(usage & TextureUsage::RenderTarget))
-			d3dUsage |= D3D11_BIND_RENDER_TARGET;
-
 		if (graphics && graphics->IsInitialized())
 		{
 			ID3D11Device* d3dDevice = (ID3D11Device*)graphics->D3DDevice();
@@ -224,24 +213,28 @@ namespace Alimer
 			D3D11_TEXTURE2D_DESC textureDesc = {};
 			textureDesc.Width = size.width;
 			textureDesc.Height = size.height;
-			textureDesc.MipLevels = numLevels_;
+			textureDesc.MipLevels = mipLevels;
 			textureDesc.ArraySize = NumFaces();
-			textureDesc.Format = textureFormat[format_];
+			textureDesc.Format = textureFormat[format];
 			/// \todo Support defining multisampled textures
 			textureDesc.SampleDesc.Count = 1;
 			textureDesc.SampleDesc.Quality = 0;
 			textureDesc.Usage = textureUsage;
 			textureDesc.BindFlags = d3dUsage;
+
 			if (any(usage & TextureUsage::RenderTarget))
 			{
-				if (format_ < FMT_D16 || format_ > FMT_D24S8)
+				if (format < FMT_D16 || format > FMT_D24S8)
+				{
 					textureDesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+				}
 				else
+				{
 					textureDesc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
+				}
 			}
 
 			const bool dynamic = false;
-
 			textureDesc.CPUAccessFlags = dynamic ? D3D11_CPU_ACCESS_WRITE : 0;
 			if (_type == TextureType::TypeCube)
 				textureDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
@@ -249,8 +242,8 @@ namespace Alimer
 			std::vector<D3D11_SUBRESOURCE_DATA> subResourceData;
 			if (initialData)
 			{
-				subResourceData.resize(NumFaces() * numLevels_);
-				for (size_t i = 0; i < NumFaces() * numLevels_; ++i)
+				subResourceData.resize(NumFaces() * mipLevels);
+				for (size_t i = 0; i < NumFaces() * mipLevels; ++i)
 				{
 					subResourceData[i].pSysMem = initialData[i].data;
 					subResourceData[i].SysMemPitch = (UINT)initialData[i].rowSize;
@@ -258,12 +251,12 @@ namespace Alimer
 				}
 			}
 
-			d3dDevice->CreateTexture2D(
+			HRESULT hr = d3dDevice->CreateTexture2D(
 				&textureDesc, 
 				subResourceData.size() ? subResourceData.data() : (D3D11_SUBRESOURCE_DATA*)nullptr, 
 				(ID3D11Texture2D**)&_texture);
 
-			if (!_texture)
+			if (FAILED(hr))
 			{
 				_size = Size::Empty;
 				_format = FMT_NONE;
@@ -275,8 +268,8 @@ namespace Alimer
 			else
 			{
 				_size = size;
-				_format = format_;
-				_mipLevels = numLevels_;
+				_format = format;
+				_mipLevels = mipLevels;
 
 				LOGDEBUGF("Created texture width %d height %d format %d numLevels %d", _size.width, _size.height, (int)_format, _mipLevels);
 			}

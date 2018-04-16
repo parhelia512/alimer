@@ -69,14 +69,14 @@ namespace Alimer
 		for (size_t i = 0; i < jsonConstants.Size(); ++i)
 		{
 			const JSONValue& jsonConstant = jsonConstants[i];
-			const String& type = jsonConstant["type"].GetString();
+			const string& type = jsonConstant["type"].GetStdString();
 
 			Constant newConstant;
 			newConstant.name = jsonConstant["name"].GetString();
-			newConstant.type = (ElementType)String::ListIndex(type, elementTypeNames, MAX_ELEMENT_TYPES);
+			newConstant.type = (ElementType)str::ListIndex(type, elementTypeNames, MAX_ELEMENT_TYPES);
 			if (newConstant.type == MAX_ELEMENT_TYPES)
 			{
-				LOGERRORF("Unknown element type %s in constant buffer JSON", type.CString());
+				LOGERRORF("Unknown element type %s in constant buffer JSON", type.c_str());
 				break;
 			}
 			if (jsonConstant.Contains("numElements"))

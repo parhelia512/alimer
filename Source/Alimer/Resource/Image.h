@@ -125,7 +125,7 @@ namespace Alimer
 		/// Return the data for a mip level. Images loaded from eg. PNG or JPG formats will only have one (index 0) level.
 		ImageLevel GetLevel(uint32_t index) const;
 		/// Decompress a mip level as 8-bit RGBA. Supports compressed images only. Return true on success.
-		bool DecompressLevel(unsigned char* dest, size_t levelIndex) const;
+		bool DecompressLevel(uint8_t* dest, uint32_t levelIndex) const;
 
 		/// Calculate the data size of an image level.
 		static uint32_t CalculateDataSize(const Size& size, ImageFormat format, uint32_t* numRows = 0, uint32_t* rowSize = 0);

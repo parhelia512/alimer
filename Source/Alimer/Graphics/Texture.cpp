@@ -24,18 +24,24 @@
 #include "../Debug/Log.h"
 #include "../Debug/Profiler.h"
 #include "Texture.h"
+#include "GraphicsImpl.h"
 
 namespace Alimer
 {
+	void Texture::RegisterObject()
+	{
+		RegisterFactory<Texture>();
+	}
+
 	Texture::~Texture()
 	{
 		Release();
 	}
 
-	void Texture::RegisterObject()
+	/*void Texture::Release()
 	{
-		RegisterFactory<Texture>();
-	}
+		SafeDelete(_handle);
+	}*/
 
 	bool Texture::BeginLoad(Stream& source)
 	{

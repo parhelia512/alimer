@@ -222,11 +222,49 @@ namespace Alimer
 		}
 
 		// Static buffer too small
-		std::string s(n + 1, 0);
+		string s(n + 1, 0);
 		va_start(args, format);
 		std::vsnprintf(const_cast<char*>(s.data()), s.size(), format, args);
 		va_end(args);
 		return s;
+	}
+
+	size_t str::ListIndex(const string& value, const string* strings, size_t defaultIndex, bool caseSensitive)
+	{
+		return str::ListIndex(value.c_str(), strings, defaultIndex, caseSensitive);
+	}
+
+	size_t str::ListIndex(const char* value, const string* strings, size_t defaultIndex, bool caseSensitive)
+	{
+		size_t i = 0;
+
+		while (!strings[i].empty())
+		{
+			if (!str::Compare(strings[i], value, caseSensitive))
+				return i;
+			++i;
+		}
+
+		return defaultIndex;
+	}
+
+	size_t str::ListIndex(const string& value, const char** strings, size_t defaultIndex, bool caseSensitive)
+	{
+		return ListIndex(value.c_str(), strings, defaultIndex, caseSensitive);
+	}
+
+	size_t str::ListIndex(const char* value, const char** strings, size_t defaultIndex, bool caseSensitive)
+	{
+		size_t i = 0;
+
+		while (strings[i])
+		{
+			if (!str::Compare(value, strings[i], caseSensitive))
+				return i;
+			++i;
+		}
+
+		return defaultIndex;
 	}
 
 	char String::endZero = 0;

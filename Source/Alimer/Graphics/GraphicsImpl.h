@@ -44,4 +44,20 @@ namespace Alimer
 
 	protected:
 	};
+
+	class TextureHandle
+	{
+	protected:
+		explicit TextureHandle()
+		{
+		}
+
+	public:
+		/**
+		* Destructor.
+		*/
+		virtual ~TextureHandle() {}
+
+	protected:
+	};
 }

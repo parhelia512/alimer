@@ -50,6 +50,7 @@ namespace Alimer
 
 	// Handles.
 	class BufferHandle;
+	class TextureHandle;
 
 	using InputLayoutDesc = std::pair<uint64_t, uint32_t>;
 	using InputLayoutMap = std::map<InputLayoutDesc, ID3D11InputLayout*>;

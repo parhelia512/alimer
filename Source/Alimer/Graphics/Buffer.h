@@ -76,7 +76,7 @@ namespace Alimer
 		/// CPU-side shadow data.
 		std::unique_ptr<uint8_t[]> _shadowData;
 
-		/// Backend side handle.
+		/// Backend handle.
 		BufferHandle* _handle = nullptr;
 	};
 }

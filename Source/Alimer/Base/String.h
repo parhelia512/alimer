@@ -68,6 +68,15 @@ namespace Alimer
 
 		/// Return a formatted string.
 		std::string Format(const char* format, ...);
+
+		/// Return an index to a string list corresponding to the given string, or a default value if not found. The string list must be empty-terminated.
+		size_t ListIndex(const std::string& value, const std::string* strings, size_t defaultIndex, bool caseSensitive = false);
+		/// Return an index to a string list corresponding to the given C string, or a default value if not found. The string list must be empty-terminated.
+		size_t ListIndex(const char* value, const std::string* strings, size_t defaultIndex, bool caseSensitive = false);
+		/// Return an index to a C string list corresponding to the given string, or a default value if not found. The string list must be null-terminated.
+		size_t ListIndex(const std::string& value, const char** strings, size_t defaultIndex, bool caseSensitive = false);
+		/// Return an index to a C string list corresponding to the given C string, or a default value if not found. The string list must be null-terminated.
+		size_t ListIndex(const char* value, const char** strings, size_t defaultIndex, bool caseSensitive = false);
 	}
 
 	static const size_t CONVERSION_BUFFER_LENGTH = 256;

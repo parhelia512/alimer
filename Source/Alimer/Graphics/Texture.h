@@ -58,6 +58,8 @@ namespace Alimer
 	};
 	ALIMER_BITMASK(TextureUsage);
 
+	class TextureHandle;
+
 	/// GPU Texture.
 	class ALIMER_API Texture : public Resource, public GPUObject
 	{
@@ -84,7 +86,7 @@ namespace Alimer
 			TextureType type,
 			const Size& size,
 			ImageFormat format,
-			uint32_t numLevels,
+			uint32_t mipLevels,
 			TextureUsage usage = TextureUsage::ShaderRead,
 			const ImageLevel* initialData = 0);
 
@@ -116,6 +118,8 @@ namespace Alimer
 		bool IsRenderTarget() const { return any(_usage & TextureUsage::RenderTarget) && (_format < FMT_D16 || _format > FMT_D24S8); }
 		/// Return whether is a depth-stencil texture.
 		bool IsDepthStencil() const { return any(_usage & TextureUsage::RenderTarget) && _format >= FMT_D16 && _format <= FMT_D24S8; }
+
+		TextureHandle* GetHandle() { return _handle; }
 
 #ifdef ALIMER_D3D11
 		/// Return the D3D11 texture object. Used internally and should not be called by portable application code.
@@ -156,6 +160,9 @@ namespace Alimer
 		float _maxLod;
 		/// Border color. Only effective in border addressing mode.
 		Color _borderColor;
+
+		/// Backend handle.
+		TextureHandle* _handle = nullptr;
 
 #ifdef ALIMER_D3D11
 		/// D3D11 texture object.

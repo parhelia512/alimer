@@ -686,7 +686,7 @@ namespace Alimer
 		}
 	}
 
-	bool Image::DecompressLevel(unsigned char* dest, size_t index) const
+	bool Image::DecompressLevel(uint8_t* dest, uint32_t index) const
 	{
 		ALIMER_PROFILE(DecompressImageLevel);
 
@@ -733,7 +733,7 @@ namespace Alimer
 
 	uint32_t Image::CalculateDataSize(const Size& size, ImageFormat format, uint32_t* dstRows, uint32_t* dstRowSize)
 	{
-		size_t rows, rowSize, dataSize;
+		uint32_t rows, rowSize, dataSize;
 
 		if (format < FMT_DXT1)
 		{
@@ -743,15 +743,15 @@ namespace Alimer
 		}
 		else if (format < FMT_PVRTC_RGB_2BPP)
 		{
-			size_t blockSize = (format == FMT_DXT1 || format == FMT_ETC1) ? 8 : 16;
+			uint32_t blockSize = (format == FMT_DXT1 || format == FMT_ETC1) ? 8 : 16;
 			rows = (size.height + 3) / 4;
 			rowSize = ((size.width + 3) / 4) * blockSize;
 			dataSize = rows * rowSize;
 		}
 		else
 		{
-			size_t blockSize = format < FMT_PVRTC_RGB_4BPP ? 2 : 4;
-			size_t dataWidth = Max(size.width, blockSize == 2 ? 16 : 8);
+			uint32_t blockSize = format < FMT_PVRTC_RGB_4BPP ? 2 : 4;
+			uint32_t dataWidth = Max(size.width, blockSize == 2 ? 16 : 8);
 			rows = Max(size.height, 8);
 			dataSize = (dataWidth * rows * blockSize + 7) >> 3;
 			rowSize = dataSize / rows;
