@@ -47,13 +47,13 @@ namespace Alimer
 	};
 
 	/// Parameter indices in constant buffers used by high-level rendering.
-	static const size_t VS_FRAME_VIEW_MATRIX = 0;
+	static const uint32_t VS_FRAME_VIEW_MATRIX = 0;
 	static const uint32_t VS_FRAME_PROJECTION_MATRIX = 1;
 	static const uint32_t VS_FRAME_VIEWPROJ_MATRIX = 2;
 	static const uint32_t VS_FRAME_DEPTH_PARAMETERS = 3;
-	static const size_t VS_OBJECT_WORLD_MATRIX = 0;
+	static const uint32_t VS_OBJECT_WORLD_MATRIX = 0;
 	static const uint32_t VS_LIGHT_SHADOW_MATRICES = 0;
-	static const size_t PS_FRAME_AMBIENT_COLOR = 0;
+	static const uint32_t PS_FRAME_AMBIENT_COLOR = 0;
 	static const uint32_t PS_LIGHT_POSITIONS = 0;
 	static const uint32_t PS_LIGHT_DIRECTIONS = 1;
 	static const uint32_t PS_LIGHT_ATTENUATIONS = 2;

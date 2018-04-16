@@ -21,14 +21,10 @@
 # THE SOFTWARE.
 #
 
-# ThirdParty
-add_subdirectory(ThirdParty)
+set (TARGET_NAME AlimerStudio)
+file (GLOB_RECURSE SOURCE_FILES *.cpp *.h *.hpp)
+add_executable (${TARGET_NAME} WIN32 ${SOURCE_FILES})
+target_link_libraries (${TARGET_NAME} Alimer)
+install(TARGETS ${TARGET_NAME} RUNTIME DESTINATION ${DEST_TOOLS_DIR})
 
-# Engine
-add_subdirectory (Alimer)
-
-if (NOT CMAKE_CROSS_COMPILING AND ALIMER_TOOLS)
-    add_subdirectory (Tools)
-endif ()
-
-install(EXPORT Alimer DESTINATION ${DEST_SHARE_DIR}/CMake)
+set_property(TARGET ${TARGET_NAME} PROPERTY FOLDER "Tools")

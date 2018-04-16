@@ -143,5 +143,12 @@ option (ALIMER_THREADING "Enable multithreading" ${ALIMER_THREADS_DEFAULT})
 option (ALIMER_SIMD "Enable SIMD (SSE, NEON) instructions" ${ALIMER_SIMD_DEFAULT})
 option (ALIMER_D3D11 "Enable D3D11 backend" ${ALIMER_D3D11_DEFAULT})
 option (ALIMER_D3D12 "Enable D3D12 backend" ${ALIMER_D3D12_DEFAULT})
-
 cmake_dependent_option (ALIMER_OPENGL "Use OpenGL instead of Direct3D11 on Windows" FALSE "WIN32" TRUE)
+
+# Tools
+set (ALIMER_BUILD_TOOLS OFF CACHE BOOL "Build asset pipeline and tools.")
+if (ANDROID OR WEB OR IOS)
+    set (ALIMER_TOOLS OFF)
+else ()
+    option(ALIMER_TOOLS "Tools enabled" ${ALIMER_BUILD_TOOLS})
+endif ()

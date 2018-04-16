@@ -21,14 +21,6 @@
 # THE SOFTWARE.
 #
 
-# ThirdParty
-add_subdirectory(ThirdParty)
-
-# Engine
-add_subdirectory (Alimer)
-
-if (NOT CMAKE_CROSS_COMPILING AND ALIMER_TOOLS)
-    add_subdirectory (Tools)
+if (ALIMER_DESKTOP)
+    add_subdirectory (Editor)
 endif ()
-
-install(EXPORT Alimer DESTINATION ${DEST_SHARE_DIR}/CMake)

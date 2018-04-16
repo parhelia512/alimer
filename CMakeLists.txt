@@ -186,3 +186,14 @@ message(STATUS "  D3D12           ${ALIMER_D3D12}")
 message(STATUS "Developer options:")
 message(STATUS "  Logging         ${ALIMER_LOGGING}")
 message(STATUS "  Profiling       ${ALIMER_PROFILING}")
+message(STATUS "  Tools           ${ALIMER_TOOLS}")
+
+
+# Set VS Startup project.
+if(CMAKE_VERSION VERSION_GREATER  "3.6")
+	if(ALIMER_BUILD_TOOLS)
+		set_property( DIRECTORY PROPERTY VS_STARTUP_PROJECT "AlimerStudio" )
+	else()
+		# set_property( DIRECTORY PROPERTY VS_STARTUP_PROJECT "AlimerPlayer" )
+	endif()
+endif()
