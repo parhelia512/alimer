@@ -54,7 +54,7 @@ namespace Alimer
 
 			for (size_t j = 0; elementSemanticNames[j]; ++j)
 			{
-				if (!String::Compare(paramDesc.SemanticName, elementSemanticNames[j]))
+				if (!str::Compare(paramDesc.SemanticName, elementSemanticNames[j]))
 				{
 					elementHash |= VertexBuffer::ElementHash(i, (ElementSemantic)j);
 					break;
@@ -191,7 +191,7 @@ namespace Alimer
 		D3DDisassemble(d3dBlob->GetBufferPointer(), d3dBlob->GetBufferSize(), 0, nullptr, &asmBlob);
 		if (asmBlob)
 		{
-			String text((const char*)asmBlob->GetBufferPointer(), asmBlob->GetBufferSize());
+			std::string text((const char*)asmBlob->GetBufferPointer(), asmBlob->GetBufferSize());
 			LOGINFOF("Shader %s disassembly: %s", FullName().CString(), text.CString());
 			asmBlob->Release();
 		}

@@ -51,12 +51,12 @@ public:
 
 		graphics.reset(Graphics::Create(GraphicsDeviceType::Direct3D11));
 		graphics->GetRenderWindow()->SetTitle("Graphics test");
-		if (!graphics->SetMode(IntVector2(800, 600), false, true))
+		if (!graphics->SetMode(Size(800, 600), false, true))
 			return;
 
 		SubscribeToEvent(graphics->GetRenderWindow()->closeRequestEvent, &GraphicsTest::HandleCloseRequest);
 
-		const size_t NUM_OBJECTS = 1000;
+		const uint32_t ObjectsCount = 1000;
 
 		float vertexData[] = {
 			// Position             // Texcoord
@@ -75,7 +75,7 @@ public:
 		std::vector<VertexElement> instanceVertexDeclaration;
 		instanceVertexDeclaration.push_back(VertexElement(ELEM_VECTOR3, SEM_TEXCOORD, 1, true));
 		SharedPtr<VertexBuffer> ivb = new VertexBuffer();
-		ivb->Define(ResourceUsage::Dynamic, NUM_OBJECTS, instanceVertexDeclaration, true);
+		ivb->Define(ResourceUsage::Dynamic, ObjectsCount, instanceVertexDeclaration, true);
 
 		uint16_t indexData[] = {
 			0,
@@ -182,10 +182,12 @@ public:
 			if (!graphics || !graphics->IsInitialized())
 				break;
 
-			Vector3 instanceData[NUM_OBJECTS];
-			for (size_t i = 0; i < NUM_OBJECTS; ++i)
+			Vector3 instanceData[ObjectsCount];
+			for (uint32_t i = 0; i < ObjectsCount; ++i)
+			{
 				instanceData[i] = Vector3(Random() * 2.0f - 1.0f, Random() * 2.0f - 1.0f, 0.0f);
-			ivb->SetData(0, NUM_OBJECTS, instanceData);
+			}
+			ivb->SetData(0, ObjectsCount, instanceData);
 
 			graphics->Clear(ClearFlags::Color | ClearFlags::Depth, Color(0.0f, 0.0f, 0.5f));
 			graphics->SetVertexBuffer(0, vb.get());
@@ -197,7 +199,7 @@ public:
 			graphics->SetDepthState(CMP_LESS_EQUAL, true);
 			graphics->SetColorState(BLEND_MODE_REPLACE);
 			graphics->SetRasterizerState(CULL_BACK, FILL_SOLID);
-			graphics->DrawIndexedInstanced(TRIANGLE_LIST, 0, 3, 0, 0, NUM_OBJECTS);
+			graphics->DrawIndexedInstanced(TRIANGLE_LIST, 0, 3, 0, 0, ObjectsCount);
 
 			graphics->Present();
 		}

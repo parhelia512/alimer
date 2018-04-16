@@ -272,18 +272,20 @@ namespace Alimer
 			type(ELEM_VECTOR3),
 			semantic(SEM_POSITION),
 			index(0),
-			perInstance(false),
-			offset(0)
+			perInstance(false)
 		{
 		}
 
 		/// Construct with type, semantic, index and whether is per-instance data.
-		VertexElement(ElementType type_, ElementSemantic semantic_, unsigned char index_ = 0, bool perInstance_ = false) :
-			type(type_),
-			semantic(semantic_),
-			index(index_),
-			perInstance(perInstance_),
-			offset(0)
+		VertexElement(
+			ElementType type_, 
+			ElementSemantic semantic_, 
+			uint32_t index_ = 0,
+			bool perInstance_ = false) 
+			: type(type_)
+			, semantic(semantic_)
+			, index(index_)
+			, perInstance(perInstance_)
 		{
 		}
 
@@ -292,11 +294,11 @@ namespace Alimer
 		/// Semantic of element.
 		ElementSemantic semantic;
 		/// Semantic index of element, for example multi-texcoords.
-		uint8_t index;
+		uint32_t index;
 		/// Per-instance flag.
 		bool perInstance;
 		/// Offset of element from vertex start. Filled by VertexBuffer.
-		uint32_t offset;
+		uint32_t offset = 0;
 	};
 
 	/// Description of a shader constant.

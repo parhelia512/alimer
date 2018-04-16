@@ -69,9 +69,9 @@ int main()
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     #endif
     
-    printf("Size of String: %d\n", sizeof(String));
-    printf("Size of Vector: %d\n", sizeof(Vector<int>));
-    printf("Size of RefCounted: %d\n", sizeof(RefCounted));
+    printf("Size of String: %zd\n", sizeof(String));
+    printf("Size of Vector: %zd\n", sizeof(Vector<int>));
+    printf("Size of RefCounted: %zd\n", sizeof(RefCounted));
 
     {
         printf("\nTesting SharedPtr\n");
@@ -106,7 +106,7 @@ int main()
             ++count;
         }
         int usec = (int)t.ElapsedUSec();
-        printf("Size: %d capacity: %d\n", vec.Size(), vec.Capacity());
+        printf("Size: %zd capacity: %zd\n", vec.Size(), vec.Capacity());
         printf("Counted vector items %d, sum: %d\n", count, sum);
         printf("Processing took %d usec\n", usec);
     }

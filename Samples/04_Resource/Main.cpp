@@ -58,7 +58,7 @@ int main()
 
     if (image)
     {
-        printf("Image loaded successfully, size %dx%d pixel byte size %d\n", image->Width(), image->Height(), (int)image->PixelByteSize());
+        printf("Image loaded successfully, size %dx%d pixel byte size %d\n", image->GetWidth(), image->GetHeight(), image->GetPixelByteSize());
         File saveFile("Test_Save.png", FILE_WRITE);
         image->Save(saveFile);
     }

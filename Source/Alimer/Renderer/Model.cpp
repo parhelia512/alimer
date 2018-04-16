@@ -243,17 +243,17 @@ namespace Alimer
 
 	bool Model::EndLoad()
 	{
-		Vector<SharedPtr<VertexBuffer> > vbs;
+		std::vector<SharedPtr<VertexBuffer> > vbs;
 		for (size_t i = 0; i < vbDescs.size(); ++i)
 		{
 			const VertexBufferDesc& vbDesc = vbDescs[i];
 			SharedPtr<VertexBuffer> vb(new VertexBuffer());
 
 			vb->Define(ResourceUsage::Immutable, vbDesc.numVertices, vbDesc.vertexElements, true, vbDesc.vertexData.get());
-			vbs.Push(vb);
+			vbs.push_back(vb);
 		}
 
-		Vector<SharedPtr<IndexBuffer> > ibs;
+		std::vector<SharedPtr<IndexBuffer> > ibs;
 		for (size_t i = 0; i < ibDescs.size(); ++i)
 		{
 			const IndexBufferDesc& ibDesc = ibDescs[i];
@@ -265,7 +265,7 @@ namespace Alimer
 				ibDesc.indexType,
 				true,
 				ibDesc.indexData.get());
-			ibs.Push(ib);
+			ibs.push_back(ib);
 		}
 
 		// Set the buffers to each geometry
@@ -283,12 +283,12 @@ namespace Alimer
 				geom->drawStart = geomDesc.drawStart;
 				geom->drawCount = geomDesc.drawCount;
 
-				if (geomDesc.vbRef < vbs.Size())
+				if (geomDesc.vbRef < vbs.size())
 					geom->vertexBuffer = vbs[geomDesc.vbRef];
 				else
 					LOGERROR("Out of range vertex buffer reference in " + Name());
 
-				if (geomDesc.ibRef < ibs.Size())
+				if (geomDesc.ibRef < ibs.size())
 					geom->indexBuffer = ibs[geomDesc.ibRef];
 				else
 					LOGERROR("Out of range index buffer reference in " + Name());

@@ -21,41 +21,40 @@
 // THE SOFTWARE.
 //
 
-#include "../Base/String.h"
-#include "IntRect.h"
+#pragma once
 
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
+#include <cstring>
+#include <cstdarg>
+#include <cmath>
+
+#include <memory>
+
+// STL containers
+#include <vector>
+#include <stack>
+#include <map>
+#include <string>
+#include <set>
+#include <list>
+#include <deque>
+#include <queue>
+#include <bitset>
+#include <array>
+
+#include <unordered_map>
+#include <unordered_set>
+
+// STL algorithms & functions
+#include <algorithm>
+#include <functional>
+#include <limits>
 
 namespace Alimer
 {
-	const IntRect IntRect::ZERO(0, 0, 0, 0);
-
-	bool IntRect::FromString(const std::string& str)
-	{
-		return FromString(str.c_str());
-	}
-
-	bool IntRect::FromString(const char* str)
-	{
-		size_t elements = String::CountElements(str, ' ');
-		if (elements < 4)
-			return false;
-
-		char* ptr = (char*)str;
-		left = strtol(ptr, &ptr, 10);
-		top = strtol(ptr, &ptr, 10);
-		right = strtol(ptr, &ptr, 10);
-		bottom = strtol(ptr, &ptr, 10);
-
-		return true;
-	}
-
-	std::string IntRect::ToString() const
-	{
-		char tempBuffer[CONVERSION_BUFFER_LENGTH];
-		sprintf(tempBuffer, "%d %d %d %d", left, top, right, bottom);
-		return std::string(tempBuffer);
-	}
-
+	template <typename T>
+	using UniquePtr = std::unique_ptr<T>;
 }

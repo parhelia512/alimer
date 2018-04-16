@@ -90,7 +90,7 @@ namespace Alimer
 	{
 	}
 
-	void Renderer::SetupShadowMaps(size_t num, int size, ImageFormat format)
+	void Renderer::SetupShadowMaps(uint32_t num, uint32_t size, ImageFormat format)
 	{
 		if (size < 1)
 			size = 1;
@@ -101,7 +101,7 @@ namespace Alimer
 		{
 			if (it->texture->Define(
 				TextureType::Type2D,
-				IntVector2(size, size),
+				Size(size, size),
 				format, 
 				1,
 				TextureUsage::ShaderRead | TextureUsage::RenderTarget))
@@ -693,11 +693,11 @@ namespace Alimer
 			faces2.push_back(level);
 		}
 
-		_faceSelectionTexture1->Define(TextureType::TypeCube, IntVector2(1, 1), FMT_RGBA32F, 1, TextureUsage::ShaderRead, &faces1[0]);
+		_faceSelectionTexture1->Define(TextureType::TypeCube, Size(1, 1), FMT_RGBA32F, 1, TextureUsage::ShaderRead, &faces1[0]);
 		_faceSelectionTexture1->DefineSampler(FILTER_POINT, ADDRESS_CLAMP, ADDRESS_CLAMP, ADDRESS_CLAMP);
 		_faceSelectionTexture1->SetDataLost(false);
 
-		_faceSelectionTexture2->Define(TextureType::TypeCube, IntVector2(1, 1), FMT_RGBA32F, 1, TextureUsage::ShaderRead, &faces2[0]);
+		_faceSelectionTexture2->Define(TextureType::TypeCube, Size(1, 1), FMT_RGBA32F, 1, TextureUsage::ShaderRead, &faces2[0]);
 		_faceSelectionTexture2->DefineSampler(FILTER_POINT, ADDRESS_CLAMP, ADDRESS_CLAMP, ADDRESS_CLAMP);
 		_faceSelectionTexture2->SetDataLost(false);
 	}
@@ -712,7 +712,7 @@ namespace Alimer
 			for (auto it = begin; it != end; ++it)
 			{
 				OctreeNode* node = *it;
-				unsigned short flags = node->Flags();
+				uint16_t flags = node->GetFlags();
 				if ((flags & NF_ENABLED) && (flags & (NF_GEOMETRY | NF_LIGHT)) && (node->LayerMask() & viewMask))
 				{
 					if (flags & NF_GEOMETRY)
@@ -735,7 +735,7 @@ namespace Alimer
 			for (auto it = begin; it != end; ++it)
 			{
 				OctreeNode* node = *it;
-				unsigned short flags = node->Flags();
+				uint16_t flags = node->GetFlags();
 				if ((flags & NF_ENABLED) && (flags & (NF_GEOMETRY | NF_LIGHT)) && (node->LayerMask() & viewMask) &&
 					frustum.IsInsideFast(node->WorldBoundingBox()))
 				{
@@ -804,7 +804,7 @@ namespace Alimer
 		for (auto gIt = nodes.begin(), gEnd = nodes.end(); gIt != gEnd; ++gIt)
 		{
 			GeometryNode* node = *gIt;
-			if (checkShadowCaster && !(node->Flags() & NF_CASTSHADOWS))
+			if (checkShadowCaster && !(node->GetFlags() & NF_CASTSHADOWS))
 				continue;
 			if (checkFrustum && !frustum.IsInsideFast(node->WorldBoundingBox()))
 				continue;
@@ -898,11 +898,11 @@ namespace Alimer
 			{
 				_instanceVertexBuffer->Define(
 					ResourceUsage::Dynamic, 
-					NextPowerOfTwo(_instanceTransforms.size()), 
+					NextPowerOfTwo(static_cast<uint32_t>(_instanceTransforms.size())), 
 					_instanceVertexElements, false);
 			}
 
-			_instanceVertexBuffer->SetData(0, _instanceTransforms.size(), _instanceTransforms.data());
+			_instanceVertexBuffer->SetData(0, static_cast<uint32_t>(_instanceTransforms.size()), _instanceTransforms.data());
 			graphics->SetVertexBuffer(1, _instanceVertexBuffer.get());
 			_instanceTransformsDirty = false;
 		}

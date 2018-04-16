@@ -51,7 +51,7 @@ namespace Alimer
 		if (_loadImages[0]->Format() >= FMT_ETC1)
 		{
 			Image* rgbaImage = new Image();
-			rgbaImage->SetSize(_loadImages[0]->Size(), FMT_RGBA8);
+			rgbaImage->SetSize(_loadImages[0]->GetSize(), FMT_RGBA8);
 			_loadImages[0]->DecompressLevel(rgbaImage->Data(), 0);
 			_loadImages[0].reset(rgbaImage); // This destroys the original compressed image
 		}
@@ -61,8 +61,8 @@ namespace Alimer
 		{
 			auto* mipImage = _loadImages[0].get();
 
-			while (mipImage->Width() > 1
-				|| mipImage->Height() > 1)
+			while (mipImage->GetWidth() > 1
+				|| mipImage->GetHeight() > 1)
 			{
 				_loadImages.push_back(std::make_unique<Image>());
 				mipImage->GenerateMipImage(*_loadImages.back());
@@ -91,7 +91,7 @@ namespace Alimer
 		Image* image = _loadImages[0].get();
 		bool success = Define(
 			TextureType::Type2D,
-			image->Size(),
+			image->GetSize(),
 			image->Format(),
 			static_cast<uint32_t>(initialData.size()),
 			TextureUsage::ShaderRead,

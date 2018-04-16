@@ -152,7 +152,7 @@ namespace Alimer
 		return impl->deviceContext;
 	}
 
-	bool Graphics::SetMode(const IntVector2& size, bool fullscreen, bool resizable, int multisample_)
+	bool Graphics::SetMode(const Size& size, bool fullscreen, bool resizable, int multisample_)
 	{
 		multisample_ = Clamp(multisample_, 1, 16);
 
@@ -165,16 +165,18 @@ namespace Alimer
 			if (!CreateD3DDevice(multisample_))
 				return false;
 			// Swap chain needs to be updated manually for the first time, otherwise window resize event takes care of it
-			UpdateSwapChain(window->Width(), window->Height());
+			UpdateSwapChain(window->GetWidth(), window->GetHeight());
 		}
 
-		screenModeEvent.size = backbufferSize;
+		screenModeEvent.size = _backbufferSize;
 		screenModeEvent.fullscreen = IsFullscreen();
 		screenModeEvent.resizable = IsResizable();
 		screenModeEvent.multisample = multisample;
 		SendEvent(screenModeEvent);
 
-		LOGDEBUGF("Set screen mode %dx%d fullscreen %d resizable %d multisample %d", backbufferSize.x, backbufferSize.y,
+		LOGDEBUGF("Set screen mode %dx%d fullscreen %d resizable %d multisample %d",
+			_backbufferSize.width,
+			_backbufferSize.height,
 			IsFullscreen(), IsResizable(), multisample);
 
 		_initialized = true;
@@ -185,16 +187,16 @@ namespace Alimer
 	{
 		if (!IsInitialized())
 			return false;
-		else
-			return SetMode(backbufferSize, enable, window->IsResizable(), multisample);
+
+		return SetMode(_backbufferSize, enable, window->IsResizable(), multisample);
 	}
 
 	bool Graphics::SetMultisample(int multisample_)
 	{
 		if (!IsInitialized())
 			return false;
-		else
-			return SetMode(backbufferSize, window->IsFullscreen(), window->IsResizable(), multisample_);
+
+		return SetMode(_backbufferSize, window->IsFullscreen(), window->IsResizable(), multisample_);
 	}
 
 	void Graphics::SetVSync(bool enable)
@@ -303,7 +305,7 @@ namespace Alimer
 
 		// If depth stencil is specified but no rendertarget, use null instead of backbuffer, unless the depth stencil has same
 		// size as the backbuffer
-		bool depthOnlyRendering = depthStencil && depthStencil->GetSize() != backbufferSize;
+		bool depthOnlyRendering = depthStencil && depthStencil->GetSize() != _backbufferSize;
 		for (size_t i = 0; i < MAX_RENDERTARGETS && i < renderTargets.size(); ++i)
 		{
 			_renderTargets[i] = (renderTargets[i] && renderTargets[i]->IsRenderTarget()) ? renderTargets[i] : nullptr;
@@ -323,15 +325,15 @@ namespace Alimer
 
 		if (_renderTargets[0])
 		{
-			renderTargetSize = IntVector2(renderTargets[0]->GetWidth(), renderTargets[0]->GetHeight());
+			_renderTargetSize = renderTargets[0]->GetSize();
 		}
 		else if (depthStencil)
 		{
-			renderTargetSize = IntVector2(depthStencil->GetWidth(), depthStencil->GetHeight());
+			_renderTargetSize = depthStencil->GetSize();
 		}
 		else
 		{
-			renderTargetSize = backbufferSize;
+			_renderTargetSize = _backbufferSize;
 		}
 
 		impl->deviceContext->OMSetRenderTargets(MAX_RENDERTARGETS, impl->renderTargetViews, impl->depthStencilView);
@@ -340,16 +342,16 @@ namespace Alimer
 	void Graphics::SetViewport(const IntRect& viewport_)
 	{
 		/// \todo Implement a member function in IntRect for clipping
-		viewport.left = Clamp(viewport_.left, 0, renderTargetSize.x - 1);
-		viewport.top = Clamp(viewport_.top, 0, renderTargetSize.y - 1);
-		viewport.right = Clamp(viewport_.right, viewport.left + 1, renderTargetSize.x);
-		viewport.bottom = Clamp(viewport_.bottom, viewport.top + 1, renderTargetSize.y);
+		viewport.left = Clamp(viewport_.left, 0, _renderTargetSize.width - 1);
+		viewport.top = Clamp(viewport_.top, 0, _renderTargetSize.height - 1);
+		viewport.right = Clamp(viewport_.right, viewport.left + 1, _renderTargetSize.width);
+		viewport.bottom = Clamp(viewport_.bottom, viewport.top + 1, _renderTargetSize.height);
 
 		static D3D11_VIEWPORT d3dViewport;
-		d3dViewport.TopLeftX = (float)viewport.left;
-		d3dViewport.TopLeftY = (float)viewport.top;
-		d3dViewport.Width = (float)(viewport.right - viewport.left);
-		d3dViewport.Height = (float)(viewport.bottom - viewport.top);
+		d3dViewport.TopLeftX = static_cast<float>(viewport.left);
+		d3dViewport.TopLeftY = static_cast<float>(viewport.top);
+		d3dViewport.Width = static_cast<float>(viewport.right - viewport.left);
+		d3dViewport.Height = static_cast<float>(viewport.bottom - viewport.top);
 		d3dViewport.MinDepth = 0.0f;
 		d3dViewport.MaxDepth = 1.0f;
 
@@ -519,10 +521,10 @@ namespace Alimer
 		if (scissorRect != renderState.scissorRect)
 		{
 			/// \todo Implement a member function in IntRect for clipping
-			renderState.scissorRect.left = Clamp(scissorRect.left, 0, renderTargetSize.x - 1);
-			renderState.scissorRect.top = Clamp(scissorRect.top, 0, renderTargetSize.y - 1);
-			renderState.scissorRect.right = Clamp(scissorRect.right, renderState.scissorRect.left + 1, renderTargetSize.x);
-			renderState.scissorRect.bottom = Clamp(scissorRect.bottom, renderState.scissorRect.top + 1, renderTargetSize.y);
+			renderState.scissorRect.left = Clamp(scissorRect.left, 0, _renderTargetSize.width - 1);
+			renderState.scissorRect.top = Clamp(scissorRect.top, 0, _renderTargetSize.height - 1);
+			renderState.scissorRect.right = Clamp(scissorRect.right, renderState.scissorRect.left + 1, _renderTargetSize.width);
+			renderState.scissorRect.bottom = Clamp(scissorRect.bottom, renderState.scissorRect.top + 1, _renderTargetSize.height);
 
 			D3D11_RECT d3dRect;
 			d3dRect.left = renderState.scissorRect.left;
@@ -552,7 +554,7 @@ namespace Alimer
 
 	void Graphics::ResetViewport()
 	{
-		SetViewport(IntRect(0, 0, renderTargetSize.x, renderTargetSize.y));
+		SetViewport(IntRect(_renderTargetSize));
 	}
 
 	void Graphics::ResetVertexBuffers()
@@ -726,8 +728,8 @@ namespace Alimer
 		DXGI_SWAP_CHAIN_DESC swapChainDesc;
 		memset(&swapChainDesc, 0, sizeof swapChainDesc);
 		swapChainDesc.BufferCount = 1;
-		swapChainDesc.BufferDesc.Width = window->Width();
-		swapChainDesc.BufferDesc.Height = window->Height();
+		swapChainDesc.BufferDesc.Width = window->GetWidth();
+		swapChainDesc.BufferDesc.Height = window->GetHeight();
 		swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		swapChainDesc.OutputWindow = (HWND)window->GetHandle();
@@ -765,7 +767,7 @@ namespace Alimer
 		}
 	}
 
-	bool Graphics::UpdateSwapChain(int width, int height)
+	bool Graphics::UpdateSwapChain(uint32_t width, uint32_t height)
 	{
 		bool success = true;
 
@@ -805,7 +807,7 @@ namespace Alimer
 
 		// Create default depth-stencil texture and view
 		D3D11_TEXTURE2D_DESC depthDesc;
-		memset(&depthDesc, 0, sizeof depthDesc);
+		ZeroMemory(&depthDesc, sizeof(D3D11_TEXTURE2D_DESC));
 		depthDesc.Width = width;
 		depthDesc.Height = height;
 		depthDesc.MipLevels = 1;
@@ -827,8 +829,8 @@ namespace Alimer
 		}
 
 		// Update internally held backbuffer size and fullscreen state
-		backbufferSize.x = width;
-		backbufferSize.y = height;
+		_backbufferSize.width = width;
+		_backbufferSize.height = height;
 
 		ResetRenderTargets();
 		ResetViewport();
@@ -838,8 +840,11 @@ namespace Alimer
 	void Graphics::HandleResize(WindowResizeEvent& /*event*/)
 	{
 		// Handle window resize
-		if (impl->swapChain && (window->Width() != backbufferSize.x || window->Height() != backbufferSize.y))
-			UpdateSwapChain(window->Width(), window->Height());
+		if (impl->swapChain
+			&& (window->GetWidth() != _backbufferSize.width || window->GetHeight() != _backbufferSize.height))
+		{
+			UpdateSwapChain(window->GetWidth(), window->GetHeight());
+		}
 	}
 
 	void Graphics::PrepareTextures()

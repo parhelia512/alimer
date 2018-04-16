@@ -171,8 +171,8 @@ namespace Alimer
 	}
 
 	bool Texture::Define(
-		TextureType type_, 
-		const IntVector2& size_, 
+		TextureType type, 
+		const Size& size, 
 		ImageFormat format_, 
 		uint32_t numLevels_,
 		TextureUsage usage,
@@ -181,18 +181,20 @@ namespace Alimer
 		ALIMER_PROFILE(DefineTexture);
 		Release();
 
-		if (type_ != TextureType::Type2D
-			&& type_ != TextureType::TypeCube)
+		if (type != TextureType::Type2D
+			&& type != TextureType::TypeCube)
 		{
 			LOGERROR("Only 2D textures and cube maps supported for now");
 			return false;
 		}
+
 		if (format_ > FMT_DXT5)
 		{
 			LOGERROR("ETC1 and PVRTC formats are unsupported");
 			return false;
 		}
-		if (type_ == TextureType::TypeCube && size_.x != size_.y)
+		if (type == TextureType::TypeCube 
+			&& size.width != size.height)
 		{
 			LOGERROR("Cube map must have square dimensions");
 			return false;
@@ -201,7 +203,7 @@ namespace Alimer
 		if (numLevels_ < 1)
 			numLevels_ = 1;
 
-		_type = type_;
+		_type = type;
 		_usage = usage;
 
 		D3D11_USAGE textureUsage = D3D11_USAGE_DEFAULT;
@@ -220,8 +222,8 @@ namespace Alimer
 			ID3D11Device* d3dDevice = (ID3D11Device*)graphics->D3DDevice();
 
 			D3D11_TEXTURE2D_DESC textureDesc = {};
-			textureDesc.Width = size_.x;
-			textureDesc.Height = size_.y;
+			textureDesc.Width = size.width;
+			textureDesc.Height = size.height;
 			textureDesc.MipLevels = numLevels_;
 			textureDesc.ArraySize = NumFaces();
 			textureDesc.Format = textureFormat[format_];
@@ -244,27 +246,26 @@ namespace Alimer
 			if (_type == TextureType::TypeCube)
 				textureDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
 
-			Vector<D3D11_SUBRESOURCE_DATA> subResourceData;
+			std::vector<D3D11_SUBRESOURCE_DATA> subResourceData;
 			if (initialData)
 			{
-				subResourceData.Resize(NumFaces() * numLevels_);
+				subResourceData.resize(NumFaces() * numLevels_);
 				for (size_t i = 0; i < NumFaces() * numLevels_; ++i)
 				{
 					subResourceData[i].pSysMem = initialData[i].data;
-					subResourceData[i].SysMemPitch = (unsigned)initialData[i].rowSize;
+					subResourceData[i].SysMemPitch = (UINT)initialData[i].rowSize;
 					subResourceData[i].SysMemSlicePitch = 0;
 				}
 			}
 
 			d3dDevice->CreateTexture2D(
 				&textureDesc, 
-				subResourceData.Size() ? &subResourceData[0] : (D3D11_SUBRESOURCE_DATA*)0, 
+				subResourceData.size() ? subResourceData.data() : (D3D11_SUBRESOURCE_DATA*)nullptr, 
 				(ID3D11Texture2D**)&_texture);
 
 			if (!_texture)
 			{
-				_width = 0;
-				_height = 0;
+				_size = Size::Empty;
 				_format = FMT_NONE;
 				_mipLevels = 0;
 
@@ -273,12 +274,11 @@ namespace Alimer
 			}
 			else
 			{
-				_width = size_.x;
-				_height = size_.y;
+				_size = size;
 				_format = format_;
 				_mipLevels = numLevels_;
 
-				LOGDEBUGF("Created texture width %d height %d format %d numLevels %d", _width, _height, (int)_format, _mipLevels);
+				LOGDEBUGF("Created texture width %d height %d format %d numLevels %d", _size.width, _size.height, (int)_format, _mipLevels);
 			}
 
 			D3D11_SHADER_RESOURCE_VIEW_DESC resourceViewDesc = {};
@@ -337,27 +337,32 @@ namespace Alimer
 		return true;
 	}
 
-	bool Texture::DefineSampler(TextureFilterMode filter_, TextureAddressMode u, TextureAddressMode v, TextureAddressMode w, unsigned maxAnisotropy_, float minLod_, float maxLod_, const Color& borderColor_)
+	bool Texture::DefineSampler(
+		TextureFilterMode filter,
+		TextureAddressMode u, 
+		TextureAddressMode v, 
+		TextureAddressMode w, 
+		uint32_t maxAnisotropy,
+		float minLod, 
+		float maxLod, 
+		const Color& borderColor)
 	{
 		ALIMER_PROFILE(DefineTextureSampler);
 
-		filter = filter_;
-		addressModes[0] = u;
-		addressModes[1] = v;
-		addressModes[2] = w;
-		maxAnisotropy = maxAnisotropy_;
-		minLod = minLod_;
-		maxLod = maxLod_;
-		borderColor = borderColor_;
+		_filter = filter;
+		_addressModes[0] = u;
+		_addressModes[1] = v;
+		_addressModes[2] = w;
+		_maxAnisotropy = maxAnisotropy;
+		_minLod = minLod;
+		_maxLod = maxLod;
+		_borderColor = borderColor;
 
-		// Release the previous sampler first
-		if (_sampler)
-		{
-			_sampler->Release();
-			_sampler = nullptr;
-		}
+		// Release the previous sampler first.
+		SafeRelease(_sampler);
 
-		if (graphics && graphics->IsInitialized())
+		if (graphics
+			&& graphics->IsInitialized())
 		{
 			D3D11_SAMPLER_DESC samplerDesc = {};
 
@@ -405,8 +410,8 @@ namespace Alimer
 			}
 
 			IntRect levelRect(0, 0, 
-				Max(_width >> level, 1), 
-				Max(_height >> level, 1));
+				Max(_size.width >> level, 1), 
+				Max(_size.height >> level, 1));
 			if (levelRect.IsInside(rect) != INSIDE)
 			{
 				LOGERROR("Texture update region is outside level");
@@ -433,7 +438,7 @@ namespace Alimer
 			const bool dynamic = false;
 			if (dynamic)
 			{
-				size_t pixelByteSize = Image::pixelByteSizes[_format];
+				const uint32_t pixelByteSize = Image::_pixelByteSizes[_format];
 				if (!pixelByteSize)
 				{
 					LOGERROR("Updating dynamic compressed texture is not supported");
@@ -443,7 +448,7 @@ namespace Alimer
 				D3D11_MAPPED_SUBRESOURCE mappedData;
 				mappedData.pData = nullptr;
 
-				d3dDeviceContext->Map((ID3D11Resource*)_texture, subResource, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
+				d3dDeviceContext->Map(_texture, subResource, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
 				if (mappedData.pData)
 				{
 					for (int y = rect.top; y < rect.bottom; ++y)

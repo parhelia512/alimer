@@ -1,9 +1,30 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #pragma once
 
 #include "../AlimerConfig.h"
-#include "../Math/IntVector2.h"
+#include "../Math/Size.h"
 #include "Resource.h"
 #include <memory>
 
@@ -45,22 +66,16 @@ namespace Alimer
 	struct ALIMER_API ImageLevel
 	{
 		/// Default construct.
-		ImageLevel() :
-			data(nullptr),
-			size(IntVector2::ZERO),
-			rowSize(0),
-			rows(0)
-		{
-		}
+		ImageLevel() = default;
 
 		/// Pointer to pixel data.
-		unsigned char* data;
+		uint8_t* data = nullptr;
 		/// Level size in pixels.
-		IntVector2 size;
+		Size size = Size::Empty;
 		/// Row size in bytes.
-		size_t rowSize;
+		uint32_t rowSize = 0;
 		/// Number of rows.
-		size_t rows;
+		uint32_t rows = 0;
 	};
 
 	/// %Image resource.
@@ -83,20 +98,20 @@ namespace Alimer
 		bool Save(Stream& dest) override;
 
 		/// Set new image pixel dimensions and format. Setting a compressed format is not supported.
-		void SetSize(const IntVector2& newSize, ImageFormat newFormat);
+		void SetSize(const Size& newSize, ImageFormat newFormat);
 		/// Set new pixel data.
-		void SetData(const unsigned char* pixelData);
+		void SetData(const uint8_t* pixelData);
 
 		/// Return image dimensions in pixels.
-		const IntVector2& Size() const { return size; }
+		const Size& GetSize() const { return _size; }
 		/// Return image width in pixels.
-		int Width() const { return size.x; }
+		uint32_t GetWidth() const { return _size.width; }
 		/// Return image height in pixels.
-		int Height() const { return size.y; }
+		uint32_t GetHeight() const { return _size.height; }
 		/// Return number of components in a pixel. Will return 0 for formats which are not 8 bits per pixel.
-		int Components() const { return components[format]; }
+		int Components() const { return _components[format]; }
 		/// Return byte size of a pixel. Will return 0 for block compressed formats.
-		size_t PixelByteSize() const { return pixelByteSizes[format]; }
+		uint32_t GetPixelByteSize() const { return _pixelByteSizes[format]; }
 		/// Return pixel data.
 		uint8_t* Data() const { return _data.get(); }
 		/// Return the image format.
@@ -113,12 +128,12 @@ namespace Alimer
 		bool DecompressLevel(unsigned char* dest, size_t levelIndex) const;
 
 		/// Calculate the data size of an image level.
-		static size_t CalculateDataSize(const IntVector2& size, ImageFormat format, size_t* numRows = 0, size_t* rowSize = 0);
+		static uint32_t CalculateDataSize(const Size& size, ImageFormat format, uint32_t* numRows = 0, uint32_t* rowSize = 0);
 
 		/// Pixel components per format.
-		static const int components[];
+		static const int _components[];
 		/// Pixel byte sizes per format.
-		static const size_t pixelByteSizes[];
+		static const uint32_t _pixelByteSizes[];
 
 	private:
 		/// Decode image pixel data using the stb_image library.
@@ -127,7 +142,7 @@ namespace Alimer
 		static void FreePixelData(uint8_t* pixelData);
 
 		/// Image dimensions.
-		IntVector2 size{ IntVector2::ZERO };
+		Size _size{ Size::Empty };
 		/// Image format.
 		ImageFormat format{ FMT_NONE };
 		/// Number of mip levels. 1 for uncompressed images.

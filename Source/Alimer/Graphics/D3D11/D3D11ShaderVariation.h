@@ -23,7 +23,6 @@
 
 #pragma once
 
-#include "../../Base/String.h"
 #include "../GPUObject.h"
 #include "../GraphicsDefs.h"
 

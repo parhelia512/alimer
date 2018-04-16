@@ -1,4 +1,25 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #include "../Debug/Log.h"
 #include "../Debug/Profiler.h"
@@ -27,7 +48,7 @@
 namespace Alimer
 {
 
-	const int Image::components[] =
+	const int Image::_components[] =
 	{
 		0,      // FMT_NONE
 		1,      // FMT_R8
@@ -57,7 +78,7 @@ namespace Alimer
 		0       // FMT_PVRTC_RGBA_4BPP
 	};
 
-	const size_t Image::pixelByteSizes[] =
+	const uint32_t Image::_pixelByteSizes[] =
 	{
 		0,      // FMT_NONE
 		1,      // FMT_R8
@@ -256,7 +277,7 @@ namespace Alimer
 
 			size_t dataSize = source.Size() - source.Position();
 			_data.reset(new uint8_t[dataSize]);
-			size = IntVector2(ddsd.dwWidth, ddsd.dwHeight);
+			_size = Size(ddsd.dwWidth, ddsd.dwHeight);
 			_mipLevels = ddsd.dwMipMapCount ? ddsd.dwMipMapCount : 1;
 			source.Read(_data.get(), dataSize);
 		}
@@ -264,19 +285,19 @@ namespace Alimer
 		{
 			source.Seek(12);
 
-			unsigned endianness = source.Read<unsigned>();
-			unsigned type = source.Read<unsigned>();
-			/* unsigned typeSize = */ source.Read<unsigned>();
-			unsigned imageFormat = source.Read<unsigned>();
-			unsigned internalFormat = source.Read<unsigned>();
-			/* unsigned baseInternalFormat = */ source.Read<unsigned>();
-			unsigned imageWidth = source.Read<unsigned>();
-			unsigned imageHeight = source.Read<unsigned>();
-			unsigned depth = source.Read<unsigned>();
-			/* unsigned arrayElements = */ source.Read<unsigned>();
-			unsigned faces = source.Read<unsigned>();
-			unsigned mipmaps = source.Read<unsigned>();
-			unsigned keyValueBytes = source.Read<unsigned>();
+			uint32_t endianness = source.ReadUInt();
+			uint32_t type = source.ReadUInt();
+			/* unsigned typeSize = */ source.ReadUInt();
+			uint32_t imageFormat = source.ReadUInt();
+			uint32_t internalFormat = source.ReadUInt();
+			/* uint32_t baseInternalFormat = */ source.ReadUInt();
+			uint32_t imageWidth = source.ReadUInt();
+			uint32_t imageHeight = source.ReadUInt();
+			uint32_t depth = source.ReadUInt();
+			/* uint32_t arrayElements = */ source.ReadUInt();
+			uint32_t faces = source.ReadUInt();
+			uint32_t mipmaps = source.ReadUInt();
+			uint32_t keyValueBytes = source.ReadUInt();
 
 			if (endianness != 0x04030201)
 			{
@@ -348,7 +369,7 @@ namespace Alimer
 			size_t dataSize = source.Size() - source.Position() - mipmaps * sizeof(unsigned);
 
 			_data.reset(new uint8_t[dataSize]);
-			size = IntVector2(imageWidth, imageHeight);
+			_size = Size(imageWidth, imageHeight);
 			_mipLevels = mipmaps;
 
 			size_t dataOffset = 0;
@@ -369,18 +390,18 @@ namespace Alimer
 		}
 		else if (fileID == "PVR\3")
 		{
-			/* unsigned flags = */ source.Read<unsigned>();
-			unsigned pixelFormatLo = source.Read<unsigned>();
-			/* unsigned pixelFormatHi = */ source.Read<unsigned>();
-			/* unsigned colourSpace = */ source.Read<unsigned>();
-			/* unsigned channelType = */ source.Read<unsigned>();
-			unsigned imageHeight = source.Read<unsigned>();
-			unsigned imageWidth = source.Read<unsigned>();
-			unsigned depth = source.Read<unsigned>();
-			/* unsigned numSurfaces = */ source.Read<unsigned>();
-			unsigned numFaces = source.Read<unsigned>();
-			unsigned mipmapCount = source.Read<unsigned>();
-			unsigned metaDataSize = source.Read<unsigned>();
+			/* uint32_t flags = */ source.ReadUInt();
+			uint32_t pixelFormatLo = source.ReadUInt();
+			/* uint32_t pixelFormatHi = */ source.ReadUInt();
+			/* uint32_t colourSpace = */ source.ReadUInt();
+			/* uint32_t channelType = */ source.ReadUInt();
+			uint32_t imageHeight = source.ReadUInt();
+			uint32_t imageWidth = source.ReadUInt();
+			uint32_t depth = source.ReadUInt();
+			/* uint32_t numSurfaces = */ source.ReadUInt();
+			uint32_t numFaces = source.ReadUInt();
+			uint32_t mipmapCount = source.ReadUInt();
+			uint32_t metaDataSize = source.ReadUInt();
 
 			if (depth > 1 || numFaces > 1)
 			{
@@ -440,7 +461,7 @@ namespace Alimer
 			size_t dataSize = source.Size() - source.Position();
 
 			_data.reset(new uint8_t[dataSize]);
-			size = IntVector2(imageWidth, imageHeight);
+			_size = Size(imageWidth, imageHeight);
 			_mipLevels = mipmapCount;
 
 			source.Read(_data.get(), dataSize);
@@ -450,15 +471,15 @@ namespace Alimer
 			// Not DDS, KTX or PVR, use STBImage to load other image formats as uncompressed
 			source.Seek(0);
 			int imageWidth, imageHeight;
-			unsigned imageComponents;
-			unsigned char* pixelData = DecodePixelData(source, imageWidth, imageHeight, imageComponents);
+			uint32_t imageComponents;
+			uint8_t* pixelData = DecodePixelData(source, imageWidth, imageHeight, imageComponents);
 			if (!pixelData)
 			{
 				LOGERROR("Could not load image " + source.GetName() + ": " + std::string(stbi_failure_reason()));
 				return false;
 			}
 
-			SetSize(IntVector2(imageWidth, imageHeight), componentsToFormat[imageComponents]);
+			SetSize(Size(imageWidth, imageHeight), componentsToFormat[imageComponents]);
 
 			if (imageComponents != 3)
 			{
@@ -503,7 +524,7 @@ namespace Alimer
 			return false;
 		}
 
-		int components = (int)PixelByteSize();
+		int components = (int)GetPixelByteSize();
 		if (components < 1 || components > 4)
 		{
 			LOGERROR("Unsupported pixel format for PNG save on image " + Name());
@@ -511,45 +532,51 @@ namespace Alimer
 		}
 
 		int len;
-		uint8_t *png = stbi_write_png_to_mem(_data.get(), 0, size.x, size.y, components, &len);
+		uint8_t *png = stbi_write_png_to_mem(
+			_data.get(), 
+			0, 
+			static_cast<int>(_size.width),
+			static_cast<int>(_size.height),
+			components, &len);
 		bool success = dest.Write(png, len) == (size_t)len;
 		free(png);
 		return success;
 	}
 
-	void Image::SetSize(const IntVector2& newSize, ImageFormat newFormat)
+	void Image::SetSize(const Size& newSize, ImageFormat newFormat)
 	{
-		if (newSize == size && newFormat == format)
+		if (newSize == _size && newFormat == format)
 			return;
 
-		if (newSize.x <= 0 || newSize.y <= 0)
+		if (newSize.width <= 0 || newSize.height <= 0)
 		{
 			LOGERROR("Can not set zero or negative image size");
 			return;
 		}
-		if (pixelByteSizes[newFormat] == 0)
+
+		if (_pixelByteSizes[newFormat] == 0)
 		{
 			LOGERROR("Can not set image size with unspecified pixel byte size (including compressed formats)");
 			return;
 		}
 
-		_data.reset(new uint8_t[newSize.x * newSize.y * pixelByteSizes[newFormat]]);
-		size = newSize;
+		_data.reset(new uint8_t[newSize.width * newSize.height * _pixelByteSizes[newFormat]]);
+		_size = newSize;
 		format = newFormat;
 		_mipLevels = 1;
 	}
 
-	void Image::SetData(const unsigned char* pixelData)
+	void Image::SetData(const uint8_t* pixelData)
 	{
 		if (!IsCompressed())
 		{
-			memcpy(_data.get(), pixelData, size.x * size.y * PixelByteSize());
+			memcpy(_data.get(), pixelData, _size.width * _size.height * GetPixelByteSize());
 		}
 		else
 			LOGERROR("Can not set pixel data of a compressed image");
 	}
 
-	unsigned char* Image::DecodePixelData(Stream& source, int& width, int& height, unsigned& components)
+	uint8_t* Image::DecodePixelData(Stream& source, int& width, int& height, unsigned& components)
 	{
 		size_t dataSize = source.Size();
 
@@ -558,7 +585,7 @@ namespace Alimer
 		return stbi_load_from_memory(buffer.get(), (int)dataSize, &width, &height, (int *)&components, 0);
 	}
 
-	void Image::FreePixelData(unsigned char* pixelData)
+	void Image::FreePixelData(uint8_t* pixelData)
 	{
 		if (!pixelData)
 			return;
@@ -577,7 +604,7 @@ namespace Alimer
 			return false;
 		}
 
-		IntVector2 sizeOut(Max(size.x / 2, 1), Max(size.y / 2, 1));
+		Size sizeOut(Max(_size.width / 2, 1), Max(_size.height / 2, 1));
 		dest.SetSize(sizeOut, format);
 
 		const uint8_t* pixelDataIn = _data.get();
@@ -586,45 +613,47 @@ namespace Alimer
 		switch (components)
 		{
 		case 1:
-			for (int y = 0; y < sizeOut.y; ++y)
+			for (uint32_t y = 0; y < sizeOut.height; ++y)
 			{
-				const unsigned char* inUpper = &pixelDataIn[(y * 2) * size.x];
-				const unsigned char* inLower = &pixelDataIn[(y * 2 + 1) * size.x];
-				unsigned char* out = &pixelDataOut[y * sizeOut.x];
+				const uint8_t* inUpper = &pixelDataIn[(y * 2) * _size.width];
+				const uint8_t* inLower = &pixelDataIn[(y * 2 + 1) * _size.width];
+				uint8_t* out = &pixelDataOut[y * sizeOut.width];
 
-				for (int x = 0; x < sizeOut.x; ++x)
-					out[x] = ((unsigned)inUpper[x * 2] + inUpper[x * 2 + 1] + inLower[x * 2] + inLower[x * 2 + 1]) >> 2;
+				for (uint32_t x = 0; x < sizeOut.width; ++x)
+				{
+					out[x] = ((uint32_t)inUpper[x * 2] + inUpper[x * 2 + 1] + inLower[x * 2] + inLower[x * 2 + 1]) >> 2;
+				}
 			}
 			break;
 
 		case 2:
-			for (int y = 0; y < sizeOut.y; ++y)
+			for (uint32_t y = 0; y < sizeOut.height; ++y)
 			{
-				const unsigned char* inUpper = &pixelDataIn[(y * 2) * size.x * 2];
-				const unsigned char* inLower = &pixelDataIn[(y * 2 + 1) * size.x * 2];
-				unsigned char* out = &pixelDataOut[y * sizeOut.x * 2];
+				const uint8_t* inUpper = &pixelDataIn[(y * 2) * _size.width * 2];
+				const uint8_t* inLower = &pixelDataIn[(y * 2 + 1) * _size.width * 2];
+				uint8_t* out = &pixelDataOut[y * sizeOut.width * 2];
 
-				for (int x = 0; x < sizeOut.x * 2; x += 2)
+				for (uint32_t x = 0; x < sizeOut.width * 2; x += 2)
 				{
-					out[x] = ((unsigned)inUpper[x * 2] + inUpper[x * 2 + 2] + inLower[x * 2] + inLower[x * 2 + 2]) >> 2;
-					out[x + 1] = ((unsigned)inUpper[x * 2 + 1] + inUpper[x * 2 + 3] + inLower[x * 2 + 1] + inLower[x * 2 + 3]) >> 2;
+					out[x] = ((uint32_t)inUpper[x * 2] + inUpper[x * 2 + 2] + inLower[x * 2] + inLower[x * 2 + 2]) >> 2;
+					out[x + 1] = ((uint32_t)inUpper[x * 2 + 1] + inUpper[x * 2 + 3] + inLower[x * 2 + 1] + inLower[x * 2 + 3]) >> 2;
 				}
 			}
 			break;
 
 		case 4:
-			for (int y = 0; y < sizeOut.y; ++y)
+			for (uint32_t y = 0; y < sizeOut.height; ++y)
 			{
-				const unsigned char* inUpper = &pixelDataIn[(y * 2) * size.x * 4];
-				const unsigned char* inLower = &pixelDataIn[(y * 2 + 1) * size.x * 4];
-				unsigned char* out = &pixelDataOut[y * sizeOut.x * 4];
+				const uint8_t* inUpper = &pixelDataIn[(y * 2) * _size.width * 4];
+				const uint8_t* inLower = &pixelDataIn[(y * 2 + 1) * _size.width * 4];
+				uint8_t* out = &pixelDataOut[y * sizeOut.width * 4];
 
-				for (int x = 0; x < sizeOut.x * 4; x += 4)
+				for (uint32_t x = 0; x < sizeOut.width * 4; x += 4)
 				{
-					out[x] = ((unsigned)inUpper[x * 2] + inUpper[x * 2 + 4] + inLower[x * 2] + inLower[x * 2 + 4]) >> 2;
-					out[x + 1] = ((unsigned)inUpper[x * 2 + 1] + inUpper[x * 2 + 5] + inLower[x * 2 + 1] + inLower[x * 2 + 5]) >> 2;
-					out[x + 2] = ((unsigned)inUpper[x * 2 + 2] + inUpper[x * 2 + 6] + inLower[x * 2 + 2] + inLower[x * 2 + 6]) >> 2;
-					out[x + 3] = ((unsigned)inUpper[x * 2 + 3] + inUpper[x * 2 + 7] + inLower[x * 2 + 3] + inLower[x * 2 + 7]) >> 2;
+					out[x] = ((uint32_t)inUpper[x * 2] + inUpper[x * 2 + 4] + inLower[x * 2] + inLower[x * 2 + 4]) >> 2;
+					out[x + 1] = ((uint32_t)inUpper[x * 2 + 1] + inUpper[x * 2 + 5] + inLower[x * 2 + 1] + inLower[x * 2 + 5]) >> 2;
+					out[x + 2] = ((uint32_t)inUpper[x * 2 + 2] + inUpper[x * 2 + 6] + inLower[x * 2 + 2] + inLower[x * 2 + 6]) >> 2;
+					out[x + 3] = ((uint32_t)inUpper[x * 2 + 3] + inUpper[x * 2 + 7] + inLower[x * 2 + 3] + inLower[x * 2 + 7]) >> 2;
 				}
 			}
 			break;
@@ -645,7 +674,7 @@ namespace Alimer
 
 		for (;;)
 		{
-			level.size = IntVector2(Max(size.x >> i, 1), Max(size.y >> i, 1));
+			level.size = Size(Max(_size.width >> i, 1), Max(_size.height >> i, 1));
 			level.data = _data.get() + offset;
 
 			size_t dataSize = CalculateDataSize(level.size, format, &level.rows, &level.rowSize);
@@ -680,18 +709,18 @@ namespace Alimer
 		case FMT_DXT1:
 		case FMT_DXT3:
 		case FMT_DXT5:
-			DecompressImageDXT(dest, level.data, level.size.x, level.size.y, format);
+			DecompressImageDXT(dest, level.data, level.size.width, level.size.height, format);
 			break;
 
 		case FMT_ETC1:
-			DecompressImageETC(dest, level.data, level.size.x, level.size.y);
+			DecompressImageETC(dest, level.data, level.size.width, level.size.height);
 			break;
 
 		case FMT_PVRTC_RGB_2BPP:
 		case FMT_PVRTC_RGBA_2BPP:
 		case FMT_PVRTC_RGB_4BPP:
 		case FMT_PVRTC_RGBA_4BPP:
-			DecompressImagePVRTC(dest, level.data, level.size.x, level.size.y, format);
+			DecompressImagePVRTC(dest, level.data, level.size.width, level.size.height, format);
 			break;
 
 		default:
@@ -702,28 +731,28 @@ namespace Alimer
 		return true;
 	}
 
-	size_t Image::CalculateDataSize(const IntVector2& size, ImageFormat format, size_t* dstRows, size_t* dstRowSize)
+	uint32_t Image::CalculateDataSize(const Size& size, ImageFormat format, uint32_t* dstRows, uint32_t* dstRowSize)
 	{
 		size_t rows, rowSize, dataSize;
 
 		if (format < FMT_DXT1)
 		{
-			rows = size.y;
-			rowSize = size.x * pixelByteSizes[format];
+			rows = size.height;
+			rowSize = size.width * _pixelByteSizes[format];
 			dataSize = rows * rowSize;
 		}
 		else if (format < FMT_PVRTC_RGB_2BPP)
 		{
 			size_t blockSize = (format == FMT_DXT1 || format == FMT_ETC1) ? 8 : 16;
-			rows = (size.y + 3) / 4;
-			rowSize = ((size.x + 3) / 4) * blockSize;
+			rows = (size.height + 3) / 4;
+			rowSize = ((size.width + 3) / 4) * blockSize;
 			dataSize = rows * rowSize;
 		}
 		else
 		{
 			size_t blockSize = format < FMT_PVRTC_RGB_4BPP ? 2 : 4;
-			size_t dataWidth = Max(size.x, blockSize == 2 ? 16 : 8);
-			rows = Max(size.y, 8);
+			size_t dataWidth = Max(size.width, blockSize == 2 ? 16 : 8);
+			rows = Max(size.height, 8);
 			dataSize = (dataWidth * rows * blockSize + 7) >> 3;
 			rowSize = dataSize / rows;
 		}

@@ -1,4 +1,25 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #include "../Debug/Log.h"
 #include "../IO/Stream.h"
@@ -12,13 +33,10 @@ namespace Alimer
 {
 	static std::vector<SharedPtr<Node> > noChildren;
 
-	Node::Node() :
-		flags(NF_ENABLED),
-		layer(LAYER_DEFAULT),
-		tag(TAG_NONE),
-		parent(nullptr),
-		scene(nullptr),
-		id(0)
+	Node::Node() 
+		: flags(NF_ENABLED)
+		, layer(LAYER_DEFAULT)
+		, tag(TAG_NONE)
 	{
 	}
 
@@ -33,7 +51,7 @@ namespace Alimer
 	void Node::RegisterObject()
 	{
 		RegisterFactory<Node>();
-		RegisterRefAttribute("name", &Node::Name, &Node::SetName);
+		RegisterRefAttribute("name", &Node::GetName, &Node::SetName);
 		RegisterAttribute("enabled", &Node::IsEnabled, &Node::SetEnabled, true);
 		RegisterAttribute("temporary", &Node::IsTemporary, &Node::SetTemporary, false);
 		RegisterAttribute("layer", &Node::Layer, &Node::SetLayer, LAYER_DEFAULT);
@@ -72,7 +90,7 @@ namespace Alimer
 		Serializable::Save(dest);
 		dest.WriteVLE(NumPersistentChildren());
 
-		for (auto it = children.begin(); it != children.end(); ++it)
+		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
 			if (!child->IsTemporary())
@@ -112,7 +130,7 @@ namespace Alimer
 		if (NumPersistentChildren())
 		{
 			dest["children"].SetEmptyArray();
-			for (auto it = children.begin(); it != children.end(); ++it)
+			for (auto it = _children.begin(); it != _children.end(); ++it)
 			{
 				Node* child = *it;
 				if (!child->IsTemporary())
@@ -132,17 +150,12 @@ namespace Alimer
 		return json.Save(dest);
 	}
 
-	void Node::SetName(const String& newName)
+	void Node::SetName(const std::string& newName)
 	{
-		SetName(newName.CString());
+		_name = newName;
 	}
 
-	void Node::SetName(const char* newName)
-	{
-		name = newName;
-	}
-
-	void Node::SetLayer(unsigned char newLayer)
+	void Node::SetLayer(uint8_t newLayer)
 	{
 		if (layer < 32)
 			layer = newLayer;
@@ -163,7 +176,7 @@ namespace Alimer
 			LOGERROR("Layer " + newLayerName + " not defined in the scene");
 	}
 
-	void Node::SetTag(unsigned char newTag)
+	void Node::SetTag(uint8_t newTag)
 	{
 		tag = newTag;
 	}
@@ -190,7 +203,7 @@ namespace Alimer
 	void Node::SetEnabledRecursive(bool enable)
 	{
 		SetEnabled(enable);
-		for (Node* child : children)
+		for (Node* child : _children)
 		{
 			child->SetEnabledRecursive(enable);
 		}
@@ -268,12 +281,12 @@ namespace Alimer
 		Node* oldParent = child->parent;
 		if (oldParent)
 		{
-			auto it = std::find(oldParent->children.begin(), oldParent->children.end(), child);
-			if (it != end(oldParent->children))
-				oldParent->children.erase(it);
+			auto it = std::find(oldParent->_children.begin(), oldParent->_children.end(), child);
+			if (it != end(oldParent->_children))
+				oldParent->_children.erase(it);
 		}
 
-		children.push_back(child);
+		_children.push_back(child);
 		child->parent = this;
 		child->OnParentSet(this, oldParent);
 		if (scene)
@@ -285,9 +298,9 @@ namespace Alimer
 		if (!child || child->parent != this)
 			return;
 
-		for (size_t i = 0; i < children.size(); ++i)
+		for (size_t i = 0; i < _children.size(); ++i)
 		{
-			if (children[i] == child)
+			if (_children[i] == child)
 			{
 				RemoveChild(i);
 				break;
@@ -297,21 +310,21 @@ namespace Alimer
 
 	void Node::RemoveChild(size_t index)
 	{
-		if (index >= children.size())
+		if (index >= _children.size())
 			return;
 
-		Node* child = children[index];
+		Node* child = _children[index];
 		// Detach from both the parent and the scene (removes id assignment)
 		child->parent = nullptr;
 		child->OnParentSet(this, nullptr);
 		if (scene)
 			scene->RemoveNode(child);
-		children.erase(children.begin() + index);
+		_children.erase(_children.begin() + index);
 	}
 
 	void Node::RemoveAllChildren()
 	{
-		for (auto it = children.begin(); it != children.end(); ++it)
+		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
 			child->parent = nullptr;
@@ -321,7 +334,7 @@ namespace Alimer
 			it->Reset();
 		}
 
-		children.clear();
+		_children.clear();
 	}
 
 	void Node::RemoveSelf()
@@ -350,11 +363,11 @@ namespace Alimer
 		return tag < tagNames.size() ? tagNames[layer] : String::EMPTY;
 	}
 
-	size_t Node::NumPersistentChildren() const
+	uint32_t Node::NumPersistentChildren() const
 	{
-		size_t ret = 0;
+		uint32_t ret = 0;
 
-		for (auto it = children.begin(); it != children.end(); ++it)
+		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
 			if (!child->IsTemporary())
@@ -366,7 +379,7 @@ namespace Alimer
 
 	void Node::AllChildren(std::vector<Node*>& result) const
 	{
-		for (auto it = children.begin(); it != children.end(); ++it)
+		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
 			result.push_back(child);
@@ -381,12 +394,12 @@ namespace Alimer
 
 	Node* Node::FindChild(const char* childName, bool recursive) const
 	{
-		for (auto it = children.begin(); it != children.end(); ++it)
+		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
-			if (child->name == childName)
+			if (child->_name == childName)
 				return child;
-			else if (recursive && child->children.size())
+			else if (recursive && child->_children.size())
 			{
 				Node* childResult = child->FindChild(childName, recursive);
 				if (childResult)
@@ -399,12 +412,12 @@ namespace Alimer
 
 	Node* Node::FindChild(StringHash childType, bool recursive) const
 	{
-		for (auto it = children.begin(); it != children.end(); ++it)
+		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
 			if (child->Type() == childType)
 				return child;
-			else if (recursive && child->children.size())
+			else if (recursive && child->_children.size())
 			{
 				Node* childResult = child->FindChild(childType, recursive);
 				if (childResult)
@@ -422,12 +435,12 @@ namespace Alimer
 
 	Node* Node::FindChild(StringHash childType, const char* childName, bool recursive) const
 	{
-		for (auto it = children.begin(); it != children.end(); ++it)
+		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
-			if (child->Type() == childType && child->name == childName)
+			if (child->Type() == childType && child->_name == childName)
 				return child;
-			else if (recursive && child->children.size())
+			else if (recursive && child->_children.size())
 			{
 				Node* childResult = child->FindChild(childType, childName, recursive);
 				if (childResult)
@@ -440,12 +453,12 @@ namespace Alimer
 
 	Node* Node::FindChildByLayer(unsigned layerMask, bool recursive) const
 	{
-		for (auto it = children.begin(); it != children.end(); ++it)
+		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
 			if (child->LayerMask() && layerMask)
 				return child;
-			else if (recursive && child->children.size())
+			else if (recursive && child->_children.size())
 			{
 				Node* childResult = child->FindChildByLayer(layerMask, recursive);
 				if (childResult)
@@ -458,12 +471,12 @@ namespace Alimer
 
 	Node* Node::FindChildByTag(unsigned char tag_, bool recursive) const
 	{
-		for (auto it = children.begin(); it != children.end(); ++it)
+		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
 			if (child->tag == tag_)
 				return child;
-			else if (recursive && child->children.size())
+			else if (recursive && child->_children.size())
 			{
 				Node* childResult = child->FindChildByTag(tag_, recursive);
 				if (childResult)
@@ -481,12 +494,12 @@ namespace Alimer
 
 	Node* Node::FindChildByTag(const char* tagName, bool recursive) const
 	{
-		for (auto it = children.begin(); it != children.end(); ++it)
+		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
 			if (!String::Compare(child->TagName().CString(), tagName))
 				return child;
-			else if (recursive && child->children.size())
+			else if (recursive && child->_children.size())
 			{
 				Node* childResult = child->FindChildByTag(tagName, recursive);
 				if (childResult)
@@ -497,55 +510,55 @@ namespace Alimer
 		return nullptr;
 	}
 
-	void Node::FindChildren(Vector<Node*>& result, StringHash childType, bool recursive) const
+	void Node::FindChildren(std::vector<Node*>& result, StringHash childType, bool recursive) const
 	{
-		for (auto it = children.begin(); it != children.end(); ++it)
+		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
 			if (child->Type() == childType)
-				result.Push(child);
-			if (recursive && child->children.size())
+				result.push_back(child);
+			if (recursive && child->_children.size())
 				child->FindChildren(result, childType, recursive);
 		}
 	}
 
-	void Node::FindChildrenByLayer(Vector<Node*>& result, unsigned layerMask, bool recursive) const
+	void Node::FindChildrenByLayer(std::vector<Node*>& result, unsigned layerMask, bool recursive) const
 	{
-		for (auto it = children.begin(); it != children.end(); ++it)
+		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
 			if (child->LayerMask() & layerMask)
-				result.Push(child);
-			if (recursive && child->children.size())
+				result.push_back(child);
+			if (recursive && child->_children.size())
 				child->FindChildrenByLayer(result, layerMask, recursive);
 		}
 	}
 
-	void Node::FindChildrenByTag(Vector<Node*>& result, unsigned char tag_, bool recursive) const
+	void Node::FindChildrenByTag(std::vector<Node*>& result, unsigned char tag_, bool recursive) const
 	{
-		for (auto it = children.begin(); it != children.end(); ++it)
+		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
 			if (child->tag == tag_)
-				result.Push(child);
-			if (recursive && child->children.size())
+				result.push_back(child);
+			if (recursive && child->_children.size())
 				child->FindChildrenByTag(result, tag_, recursive);
 		}
 	}
 
-	void Node::FindChildrenByTag(Vector<Node*>& result, const String& tagName, bool recursive) const
+	void Node::FindChildrenByTag(std::vector<Node*>& result, const String& tagName, bool recursive) const
 	{
 		FindChildrenByTag(result, tagName.CString(), recursive);
 	}
 
-	void Node::FindChildrenByTag(Vector<Node*>& result, const char* tagName, bool recursive) const
+	void Node::FindChildrenByTag(std::vector<Node*>& result, const char* tagName, bool recursive) const
 	{
-		for (auto it = children.begin(); it != children.end(); ++it)
+		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
 			if (!String::Compare(child->TagName().CString(), tagName))
-				result.Push(child);
-			if (recursive && child->children.size())
+				result.push_back(child);
+			if (recursive && child->_children.size())
 				child->FindChildrenByTag(result, tagName, recursive);
 		}
 	}
@@ -557,9 +570,9 @@ namespace Alimer
 		OnSceneSet(scene, oldScene);
 	}
 
-	void Node::SetId(unsigned newId)
+	void Node::SetId(uint32_t newId)
 	{
-		id = newId;
+		_id = newId;
 	}
 
 	void Node::SkipHierarchy(Stream& source)

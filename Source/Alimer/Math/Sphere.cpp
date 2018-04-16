@@ -73,11 +73,11 @@ namespace Alimer
 
 	void Sphere::Merge(const Polyhedron& poly)
 	{
-		for (size_t i = 0; i < poly.faces.Size(); ++i)
+		for (size_t i = 0; i < poly.faces.size(); ++i)
 		{
-			const Vector<Vector3>& face = poly.faces[i];
-			if (!face.IsEmpty())
-				Merge(&face[0], face.Size());
+			const std::vector<Vector3>& face = poly.faces[i];
+			if (!face.empty())
+				Merge(&face[0], face.size());
 		}
 	}
 

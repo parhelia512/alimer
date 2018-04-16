@@ -195,8 +195,8 @@ namespace Alimer
 				return *(reinterpret_cast<const std::string*>(&data));
 			}
 
-			static std::string empty;
-			return empty;
+			static std::string Empty;
+			return Empty;
 		}
 
 		/// Return value as an array, or empty on type mismatch.

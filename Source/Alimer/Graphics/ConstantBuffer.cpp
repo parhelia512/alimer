@@ -30,6 +30,7 @@
 #include "../Math/Matrix3x4.h"
 #include "ConstantBuffer.h"
 #include "GraphicsDefs.h"
+using namespace std;
 
 namespace Alimer
 {
@@ -203,7 +204,7 @@ namespace Alimer
 		return Create(true, nullptr);
 	}
 
-	bool ConstantBuffer::SetConstant(uint32_t index, const void* data, uint32_t numElements)
+	bool ConstantBuffer::SetConstant(size_t index, const void* data, uint32_t numElements)
 	{
 		if (index >= _constants.size())
 			return false;
@@ -218,9 +219,9 @@ namespace Alimer
 		return true;
 	}
 
-	bool ConstantBuffer::SetConstant(const String& name, const void* data, uint32_t numElements)
+	bool ConstantBuffer::SetConstant(const string& name, const void* data, uint32_t numElements)
 	{
-		return SetConstant(name.CString(), data, numElements);
+		return SetConstant(name.c_str(), data, numElements);
 	}
 
 	bool ConstantBuffer::SetConstant(const char* name, const void* data, uint32_t numElements)
@@ -228,7 +229,9 @@ namespace Alimer
 		for (size_t i = 0; i < _constants.size(); ++i)
 		{
 			if (_constants[i].name == name)
+			{
 				return SetConstant(i, data, numElements);
+			}
 		}
 
 		return false;
@@ -250,9 +253,9 @@ namespace Alimer
 		return Buffer::SetData(0, _size, data);
 	}
 
-	size_t ConstantBuffer::FindConstantIndex(const String& name) const
+	size_t ConstantBuffer::FindConstantIndex(const string& name) const
 	{
-		return FindConstantIndex(name.CString());
+		return FindConstantIndex(name.c_str());
 	}
 
 	size_t ConstantBuffer::FindConstantIndex(const char* name) const
@@ -272,7 +275,7 @@ namespace Alimer
 			_constants[index].offset + elementIndex * _constants[index].elementSize : nullptr;
 	}
 
-	const void* ConstantBuffer::GetConstantValue(const String& name, size_t elementIndex) const
+	const void* ConstantBuffer::GetConstantValue(const string& name, size_t elementIndex) const
 	{
 		return GetConstantValue(FindConstantIndex(name), elementIndex);
 	}

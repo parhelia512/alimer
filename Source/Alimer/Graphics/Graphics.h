@@ -24,10 +24,9 @@
 #pragma once
 
 #include "../Math/Color.h"
+#include "../Math/Size.h"
 #include "../Object/Object.h"
 #include "../Graphics/GraphicsDefs.h"
-#include <vector>
-#include <map>
 #include <mutex>
 
 #ifdef ALIMER_D3D11
@@ -61,7 +60,7 @@ namespace Alimer
 	{
 	public:
 		/// New backbuffer size.
-		IntVector2 size;
+		Size size;
 		/// Fullscreen flag.
 		bool fullscreen;
 		/// Window resizable flag.
@@ -108,7 +107,7 @@ namespace Alimer
 		~Graphics();
 
 		/// Set graphics mode. Create the window and rendering context if not created yet. Return true on success.
-		bool SetMode(const IntVector2& size, bool fullscreen = false, bool resizable = false, int multisample = 1);
+		bool SetMode(const Size& size, bool fullscreen = false, bool resizable = false, int multisample = 1);
 		/// Set fullscreen mode on/off while retaining previous resolution. The initial graphics mode must have been set first. Return true on success.
 		bool SetFullscreen(bool enable);
 		/// Set new multisample level while retaining previous resolution. The initial graphics mode must have been set first. Return true on success.
@@ -169,17 +168,17 @@ namespace Alimer
 		/// Return whether has the rendering window and context.
 		bool IsInitialized() const;
 		/// Return backbuffer size, or 0,0 if not initialized.
-		const IntVector2& Size() const { return backbufferSize; }
+		const Size& GetSize() const { return _backbufferSize; }
 		/// Return backbuffer width, or 0 if not initialized.
-		int Width() const { return backbufferSize.x; }
+		uint32_t GetWidth() const { return _backbufferSize.width; }
 		/// Return backbuffer height, or 0 if not initialized.
-		int Height() const { return backbufferSize.y; }
+		uint32_t GetHeight() const { return _backbufferSize.height; }
 		/// Return multisample level, or 1 if not using multisampling.
 		int Multisample() const { return multisample; }
 		/// Return current rendertarget width.
-		int RenderTargetWidth() const { return renderTargetSize.x; }
+		uint32_t GetRenderTargetWidth() const { return _renderTargetSize.width; }
 		/// Return current rendertarget height.
-		int RenderTargetHeight() const { return renderTargetSize.y; }
+		uint32_t GetRenderTargetHeight() const { return _renderTargetSize.height; }
 		/// Return whether is using fullscreen mode.
 		bool IsFullscreen() const;
 		/// Return whether the window is resizable.
@@ -242,7 +241,7 @@ namespace Alimer
 		/// Create the D3D11 device and swap chain. Requires an open window. Can also be called again to recrease swap chain. Return true on success.
 		bool CreateD3DDevice(int multisample);
 		/// Update swap chain state for a new mode and create views for the backbuffer & default depth buffer.
-		bool UpdateSwapChain(int width, int height);
+		bool UpdateSwapChain(uint32_t width, uint32_t height);
 		/// Handle window resize event.
 		void HandleResize(WindowResizeEvent& event);
 		/// Set texture state for the next draw call. PrepareDraw() calls this.
@@ -258,9 +257,9 @@ namespace Alimer
 		/// OS-level rendering window.
 		std::unique_ptr<Window> window;
 		/// Current size of the backbuffer.
-		IntVector2 backbufferSize{ IntVector2::ZERO };
+		Size _backbufferSize{ Size::Empty };
 		/// Current size of the active rendertarget.
-		IntVector2 renderTargetSize{ IntVector2::ZERO };
+		Size _renderTargetSize{ Size::Empty };
 		/// Bound vertex buffers.
 		VertexBuffer* vertexBuffers[MAX_VERTEX_STREAMS];
 		

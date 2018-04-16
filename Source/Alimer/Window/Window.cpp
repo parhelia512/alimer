@@ -21,9 +21,31 @@
 // THE SOFTWARE.
 //
 
-#include "Utils.h"
+#include "Window.h"
 
 namespace Alimer
 {
-	
+	Window::Window()
+		: _title("Alimer Window")
+		, _size(Size::Empty)
+		, savedPosition(IntVector2(M_MIN_INT, M_MIN_INT))
+		, mousePosition(IntVector2::ZERO)
+		, windowStyle(0)
+		, minimized(false)
+		, focus(false)
+		, resizable(false)
+		, fullscreen(false)
+		, inResize(false)
+		, mouseVisible(true)
+		, mouseVisibleInternal(true)
+	{
+		RegisterSubsystem(this);
+		PlatformInitialize();
+	}
+
+	Window::~Window()
+	{
+		Close();
+		RemoveSubsystem(this);
+	}
 }

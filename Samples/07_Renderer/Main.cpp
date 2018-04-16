@@ -57,7 +57,7 @@ public:
 
 		graphics->GetRenderWindow()->SetTitle("Renderer test");
 		graphics->GetRenderWindow()->SetMouseVisible(false);
-		if (!graphics->SetMode(IntVector2(800, 600), false, true))
+		if (!graphics->SetMode(Size(800, 600), false, true))
 			return;
 
 		renderer->SetupShadowMaps(1, 2048, FMT_D16);
@@ -153,7 +153,7 @@ public:
 				camera->Translate(Vector3::RIGHT * dt * moveSpeed);
 
 			// Update camera aspect ratio based on window size
-			camera->SetAspectRatio((float)graphics->Width() / (float)graphics->Height());
+			camera->SetAspectRatio((float)graphics->GetWidth() / (float)graphics->GetHeight());
 
 			{
 				ALIMER_PROFILE(RenderScene);

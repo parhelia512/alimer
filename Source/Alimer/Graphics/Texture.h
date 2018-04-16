@@ -24,6 +24,7 @@
 #pragma once
 
 #include "../Math/Color.h"
+#include "../Math/Size.h"
 #include "../Resource/Image.h"
 #include "../Graphics/GPUObject.h"
 #include "../Graphics/GraphicsDefs.h"
@@ -81,25 +82,25 @@ namespace Alimer
 		/// Define texture type and dimensions and set initial data. %ImageLevel structures only need the data pointer and row byte size filled. Return true on success.
 		bool Define(
 			TextureType type,
-			const IntVector2& size,
+			const Size& size,
 			ImageFormat format,
 			uint32_t numLevels,
 			TextureUsage usage = TextureUsage::ShaderRead,
 			const ImageLevel* initialData = 0);
 
 		/// Define sampling parameters. Return true on success.
-		bool DefineSampler(TextureFilterMode filter = FILTER_TRILINEAR, TextureAddressMode u = ADDRESS_WRAP, TextureAddressMode v = ADDRESS_WRAP, TextureAddressMode w = ADDRESS_WRAP, unsigned maxAnisotropy = 16, float minLod = -M_MAX_FLOAT, float maxLod = M_MAX_FLOAT, const Color& borderColor = Color::BLACK);
+		bool DefineSampler(TextureFilterMode filter = FILTER_TRILINEAR, TextureAddressMode u = ADDRESS_WRAP, TextureAddressMode v = ADDRESS_WRAP, TextureAddressMode w = ADDRESS_WRAP, uint32_t maxAnisotropy = 16, float minLod = -M_MAX_FLOAT, float maxLod = M_MAX_FLOAT, const Color& borderColor = Color::BLACK);
 		/// Set data for a mipmap level. Not supported for immutable textures. Return true on success.
 		bool SetData(uint32_t face, uint32_t level, IntRect rect, const ImageLevel& data);
 
 		/// Return texture type.
 		TextureType GetTextureType() const { return _type; }
 		/// Return dimensions.
-		IntVector2 GetSize() const { return IntVector2(_width, _height); }
+		Size GetSize() const { return _size; }
 		/// Return width.
-		uint32_t GetWidth() const { return _width; }
+		uint32_t GetWidth() const { return _size.width; }
 		/// Return height.
-		uint32_t GetHeight() const { return _height; }
+		uint32_t GetHeight() const { return _size.height; }
 		/// Return image format.
 		ImageFormat Format() const { return _format; }
 		/// Return whether uses a compressed format.
@@ -134,8 +135,7 @@ namespace Alimer
 		/// Texture usage mode.
 		TextureUsage _usage{ TextureUsage::ShaderRead };
 		/// Texture dimensions in pixels.
-		uint32_t _width{ 1 };
-		uint32_t _height{ 1 };
+		Size _size = Size::One;
 
 		/// Image format.
 		ImageFormat _format{ FMT_NONE };
@@ -145,17 +145,17 @@ namespace Alimer
 		std::vector<std::unique_ptr<Image>> _loadImages;
 
 		/// Texture filtering mode.
-		TextureFilterMode filter;
+		TextureFilterMode _filter;
 		/// Texture addressing modes for each coordinate axis.
-		TextureAddressMode addressModes[3];
+		TextureAddressMode _addressModes[3];
 		/// Maximum anisotropy.
-		uint32_t maxAnisotropy;
+		uint32_t _maxAnisotropy;
 		/// Minimum LOD.
-		float minLod;
+		float _minLod;
 		/// Maximum LOD.
-		float maxLod;
+		float _maxLod;
 		/// Border color. Only effective in border addressing mode.
-		Color borderColor;
+		Color _borderColor;
 
 #ifdef ALIMER_D3D11
 		/// D3D11 texture object.

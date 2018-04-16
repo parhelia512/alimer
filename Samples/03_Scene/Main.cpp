@@ -84,7 +84,7 @@ int main()
                 for (size_t i = 0; i < loadScene.NumChildren(); ++i)
                 {
                     Node* child = loadScene.Child(i);
-                    printf("Child name: %s layer: %d tag: %d\n", child->Name().CString(), (int)child->Layer(), (int)child->Tag());
+                    printf("Child name: %s layer: %d tag: %d\n", child->GetName().c_str(), (int)child->Layer(), (int)child->Tag());
                 }
             }
             else

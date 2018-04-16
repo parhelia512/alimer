@@ -1,4 +1,25 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #include "Frustum.h"
 #include "Polyhedron.h"
@@ -17,8 +38,8 @@ namespace Alimer
 	{
 	}
 
-	Polyhedron::Polyhedron(const Vector<Vector<Vector3> >& faces) :
-		faces(faces)
+	Polyhedron::Polyhedron(const std::vector<std::vector<Vector3> >& faces_)
+		: faces(faces_)
 	{
 	}
 
@@ -48,7 +69,7 @@ namespace Alimer
 		vertices[6] = Vector3(box.min.x, box.max.y, box.max.z);
 		vertices[7] = box.max;
 
-		faces.Resize(6);
+		faces.resize(6);
 		SetFace(0, vertices[3], vertices[7], vertices[5], vertices[1]);
 		SetFace(1, vertices[6], vertices[2], vertices[0], vertices[4]);
 		SetFace(2, vertices[6], vertices[7], vertices[3], vertices[2]);
@@ -61,7 +82,7 @@ namespace Alimer
 	{
 		const Vector3* vertices = frustum.vertices;
 
-		faces.Resize(6);
+		faces.resize(6);
 		SetFace(0, vertices[0], vertices[4], vertices[5], vertices[1]);
 		SetFace(1, vertices[7], vertices[3], vertices[2], vertices[6]);
 		SetFace(2, vertices[7], vertices[4], vertices[0], vertices[3]);
@@ -72,9 +93,9 @@ namespace Alimer
 
 	void Polyhedron::AddFace(const Vector3& v0, const Vector3& v1, const Vector3& v2)
 	{
-		faces.Resize(faces.Size() + 1);
-		Vector<Vector3>& face = faces[faces.Size() - 1];
-		face.Resize(3);
+		faces.resize(faces.size() + 1);
+		std::vector<Vector3>& face = faces[faces.size() - 1];
+		face.resize(3);
 		face[0] = v0;
 		face[1] = v1;
 		face[2] = v2;
@@ -82,33 +103,36 @@ namespace Alimer
 
 	void Polyhedron::AddFace(const Vector3& v0, const Vector3& v1, const Vector3& v2, const Vector3& v3)
 	{
-		faces.Resize(faces.Size() + 1);
-		Vector<Vector3>& face = faces[faces.Size() - 1];
-		face.Resize(4);
+		faces.resize(faces.size() + 1);
+		std::vector<Vector3>& face = faces[faces.size() - 1];
+		face.resize(4);
 		face[0] = v0;
 		face[1] = v1;
 		face[2] = v2;
 		face[3] = v3;
 	}
 
-	void Polyhedron::AddFace(const Vector<Vector3>& face)
+	void Polyhedron::AddFace(const std::vector<Vector3>& face)
 	{
-		faces.Push(face);
+		faces.push_back(face);
 	}
 
-	void Polyhedron::Clip(const Plane& plane, Vector<Vector3>& clippedVertices, Vector<Vector3>& outFace)
+	void Polyhedron::Clip(
+		const Plane& plane, 
+		std::vector<Vector3>& clippedVertices,
+		std::vector<Vector3>& outFace)
 	{
-		clippedVertices.Clear();
+		clippedVertices.clear();
 
-		for (size_t i = 0; i < faces.Size(); ++i)
+		for (size_t i = 0; i < faces.size(); ++i)
 		{
-			Vector<Vector3>& face = faces[i];
+			std::vector<Vector3>& face = faces[i];
 			Vector3 lastVertex;
 			float lastDistance = 0.0f;
 
-			outFace.Clear();
+			outFace.clear();
 
-			for (size_t j = 0; j < face.Size(); ++j)
+			for (size_t j = 0; j < face.size(); ++j)
 			{
 				float distance = plane.Distance(face[j]);
 				if (distance >= 0.0f)
@@ -117,11 +141,11 @@ namespace Alimer
 					{
 						float t = lastDistance / (lastDistance - distance);
 						Vector3 clippedVertex = lastVertex + t * (face[j] - lastVertex);
-						outFace.Push(clippedVertex);
-						clippedVertices.Push(clippedVertex);
+						outFace.push_back(clippedVertex);
+						clippedVertices.push_back(clippedVertex);
 					}
 
-					outFace.Push(face[j]);
+					outFace.push_back(face[j]);
 				}
 				else
 				{
@@ -129,8 +153,8 @@ namespace Alimer
 					{
 						float t = lastDistance / (lastDistance - distance);
 						Vector3 clippedVertex = lastVertex + t * (face[j] - lastVertex);
-						outFace.Push(clippedVertex);
-						clippedVertices.Push(clippedVertex);
+						outFace.push_back(clippedVertex);
+						clippedVertices.push_back(clippedVertex);
 					}
 				}
 
@@ -144,50 +168,50 @@ namespace Alimer
 			{
 				float t = lastDistance / (lastDistance - distance);
 				Vector3 clippedVertex = lastVertex + t * (face[0] - lastVertex);
-				outFace.Push(clippedVertex);
-				clippedVertices.Push(clippedVertex);
+				outFace.push_back(clippedVertex);
+				clippedVertices.push_back(clippedVertex);
 			}
 
 			// Do not keep faces which are less than triangles
-			if (outFace.Size() < 3)
-				outFace.Clear();
+			if (outFace.size() < 3)
+				outFace.clear();
 
 			face = outFace;
 		}
 
 		// Remove empty faces
-		for (size_t i = faces.Size() - 1; i < faces.Size(); --i)
+		for (size_t i = faces.size() - 1; i < faces.size(); --i)
 		{
-			if (faces[i].IsEmpty())
-				faces.Erase(i);
+			if (faces[i].empty())
+				faces.erase(faces.begin() + i);
 		}
 
 		// Create a new face from the clipped vertices. First remove duplicates
-		for (size_t i = 0; i < clippedVertices.Size(); ++i)
+		for (size_t i = 0; i < clippedVertices.size(); ++i)
 		{
-			for (size_t j = clippedVertices.Size() - 1; j > i; --j)
+			for (size_t j = clippedVertices.size() - 1; j > i; --j)
 			{
 				if (clippedVertices[j].Equals(clippedVertices[i]))
-					clippedVertices.Erase(j);
+					clippedVertices.erase(clippedVertices.begin() + j);
 			}
 		}
 
-		if (clippedVertices.Size() > 3)
+		if (clippedVertices.size() > 3)
 		{
-			outFace.Clear();
+			outFace.clear();
 
 			// Start with the first vertex
-			outFace.Push(clippedVertices.Front());
-			clippedVertices.Erase(0);
+			outFace.push_back(clippedVertices.front());
+			clippedVertices.erase(clippedVertices.begin());
 
-			while (!clippedVertices.IsEmpty())
+			while (!clippedVertices.empty())
 			{
 				// Then add the vertex which is closest to the last added
-				const Vector3& lastAdded = outFace.Back();
+				const Vector3& lastAdded = outFace.back();
 				float bestDistance = M_INFINITY;
 				size_t bestIndex = 0;
 
-				for (size_t i = 0; i < clippedVertices.Size(); ++i)
+				for (size_t i = 0; i < clippedVertices.size(); ++i)
 				{
 					float distance = (clippedVertices[i] - lastAdded).LengthSquared();
 					if (distance < bestDistance)
@@ -197,26 +221,26 @@ namespace Alimer
 					}
 				}
 
-				outFace.Push(clippedVertices[bestIndex]);
-				clippedVertices.Erase(bestIndex);
+				outFace.push_back(clippedVertices[bestIndex]);
+				clippedVertices.erase(clippedVertices.begin() + bestIndex);
 			}
 
-			faces.Push(outFace);
+			faces.push_back(outFace);
 		}
 	}
 
 	void Polyhedron::Clip(const Plane& plane)
 	{
-		Vector<Vector3> clippedVertices;
-		Vector<Vector3> outFace;
+		std::vector<Vector3> clippedVertices;
+		std::vector<Vector3> outFace;
 
 		Clip(plane, clippedVertices, outFace);
 	}
 
 	void Polyhedron::Clip(const Frustum& frustum)
 	{
-		Vector<Vector3> clippedVertices;
-		Vector<Vector3> outFace;
+		std::vector<Vector3> clippedVertices;
+		std::vector<Vector3> outFace;
 
 		for (size_t i = 0; i < NUM_FRUSTUM_PLANES; ++i)
 			Clip(frustum.planes[i], clippedVertices, outFace);
@@ -224,8 +248,8 @@ namespace Alimer
 
 	void Polyhedron::Clip(const BoundingBox& box)
 	{
-		Vector<Vector3> clippedVertices;
-		Vector<Vector3> outFace;
+		std::vector<Vector3> clippedVertices;
+		std::vector<Vector3> outFace;
 
 		Vector3 vertices[8];
 		vertices[0] = box.min;
@@ -247,25 +271,25 @@ namespace Alimer
 
 	void Polyhedron::Clear()
 	{
-		faces.Clear();
+		faces.clear();
 	}
 
 	void Polyhedron::Transform(const Matrix3& transform)
 	{
-		for (size_t i = 0; i < faces.Size(); ++i)
+		for (size_t i = 0; i < faces.size(); ++i)
 		{
-			Vector<Vector3>& face = faces[i];
-			for (size_t j = 0; j < face.Size(); ++j)
+			auto& face = faces[i];
+			for (size_t j = 0; j < face.size(); ++j)
 				face[j] = transform * face[j];
 		}
 	}
 
 	void Polyhedron::Transform(const Matrix3x4& transform)
 	{
-		for (size_t i = 0; i < faces.Size(); ++i)
+		for (size_t i = 0; i < faces.size(); ++i)
 		{
-			Vector<Vector3>& face = faces[i];
-			for (size_t j = 0; j < face.Size(); ++j)
+			auto& face = faces[i];
+			for (size_t j = 0; j < face.size(); ++j)
 				face[j] = transform * face[j];
 		}
 	}
@@ -273,15 +297,15 @@ namespace Alimer
 	Polyhedron Polyhedron::Transformed(const Matrix3& transform) const
 	{
 		Polyhedron ret;
-		ret.faces.Resize(faces.Size());
+		ret.faces.resize(faces.size());
 
-		for (size_t i = 0; i < faces.Size(); ++i)
+		for (size_t i = 0; i < faces.size(); ++i)
 		{
-			const Vector<Vector3>& face = faces[i];
-			Vector<Vector3>& newFace = ret.faces[i];
-			newFace.Resize(face.Size());
+			const auto& face = faces[i];
+			auto& newFace = ret.faces[i];
+			newFace.resize(face.size());
 
-			for (size_t j = 0; j < face.Size(); ++j)
+			for (size_t j = 0; j < face.size(); ++j)
 				newFace[j] = transform * face[j];
 		}
 
@@ -291,15 +315,15 @@ namespace Alimer
 	Polyhedron Polyhedron::Transformed(const Matrix3x4& transform) const
 	{
 		Polyhedron ret;
-		ret.faces.Resize(faces.Size());
+		ret.faces.resize(faces.size());
 
-		for (size_t i = 0; i < faces.Size(); ++i)
+		for (size_t i = 0; i < faces.size(); ++i)
 		{
-			const Vector<Vector3>& face = faces[i];
-			Vector<Vector3>& newFace = ret.faces[i];
-			newFace.Resize(face.Size());
+			const auto& face = faces[i];
+			auto& newFace = ret.faces[i];
+			newFace.resize(face.size());
 
-			for (size_t j = 0; j < face.Size(); ++j)
+			for (size_t j = 0; j < face.size(); ++j)
 				newFace[j] = transform * face[j];
 		}
 
@@ -308,8 +332,8 @@ namespace Alimer
 
 	void Polyhedron::SetFace(size_t index, const Vector3& v0, const Vector3& v1, const Vector3& v2)
 	{
-		Vector<Vector3>& face = faces[index];
-		face.Resize(3);
+		auto& face = faces[index];
+		face.resize(3);
 		face[0] = v0;
 		face[1] = v1;
 		face[2] = v2;
@@ -317,8 +341,8 @@ namespace Alimer
 
 	void Polyhedron::SetFace(size_t index, const Vector3& v0, const Vector3& v1, const Vector3& v2, const Vector3& v3)
 	{
-		Vector<Vector3>& face = faces[index];
-		face.Resize(4);
+		auto& face = faces[index];
+		face.resize(4);
 		face[0] = v0;
 		face[1] = v1;
 		face[2] = v2;

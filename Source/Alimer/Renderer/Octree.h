@@ -158,7 +158,7 @@ namespace Alimer
 				for (auto it = octantNodes.begin(); it != octantNodes.end(); ++it)
 				{
 					OctreeNode* node = *it;
-					if ((node->Flags() & nodeFlags) == nodeFlags && (node->LayerMask() & layerMask) &&
+					if ((node->GetFlags() & nodeFlags) == nodeFlags && (node->LayerMask() & layerMask) &&
 						volume.IsInsideFast(node->WorldBoundingBox()) != OUTSIDE)
 					{
 						result.push_back(node);
@@ -247,7 +247,7 @@ namespace Alimer
 		}
 
 		/// Queue of nodes to be reinserted.
-		std::vector<OctreeNode*> updateQueue;
+		std::vector<OctreeNode*> _updateQueue;
 		/// RaycastSingle initial coarse result.
 		std::vector<std::pair<OctreeNode*, float> > initialRes;
 		/// RaycastSingle final result.

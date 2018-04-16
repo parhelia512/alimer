@@ -43,7 +43,7 @@ public:
 		input = std::make_unique<Input>();
 		window = std::make_unique<Window>();
 		window->SetTitle("Window test");
-		window->SetSize(IntVector2(800, 600), false, true);
+		window->SetSize(Size(800, 600), false, true);
 		printf("Window opened\n");
 
 		SubscribeToEvent(window->closeRequestEvent, &WindowTest::HandleCloseRequest);
@@ -76,7 +76,7 @@ public:
 
 	void HandleResize(WindowResizeEvent& event)
 	{
-		printf("Window resized to %d %d\n", event.size.x, event.size.y);
+		printf("Window resized to %d %d\n", event.size.width, event.size.height);
 	}
 
 	void HandleGainFocus(Event& /* event */)

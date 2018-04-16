@@ -84,18 +84,18 @@ public:
 	{
 		RegisterFactory<TestSerializable>();
 		RegisterAttribute("intVariable", &TestSerializable::IntVariable, &TestSerializable::SetIntVariable);
-		RegisterRefAttribute("stringVariable", &TestSerializable::StringVariable, &TestSerializable::SetStringVariable);
+		RegisterRefAttribute("stringVariable", &TestSerializable::GetStringVariable, &TestSerializable::SetStringVariable);
 	}
 
 	void SetIntVariable(int newValue) { intVariable = newValue; }
 	int IntVariable() const { return intVariable; }
 
-	void SetStringVariable(const String& newValue) { stringVariable = newValue; }
-	const String& StringVariable() const { return stringVariable; }
+	void SetStringVariable(const std::string& newValue) { _stringVariable = newValue; }
+	const std::string& GetStringVariable() const { return _stringVariable; }
 
 private:
 	int intVariable;
-	String stringVariable;
+	std::string _stringVariable;
 };
 
 int main()
@@ -215,13 +215,13 @@ int main()
 		std::unique_ptr<TestSerializable> instance2(new TestSerializable());
 		ObjectResolver res;
 		instance2->LoadJSON(saveData, res);
-		printf("Loaded variables (JSON): int %d string: %s\n", instance2->IntVariable(), instance2->StringVariable().CString());
+		printf("Loaded variables (JSON): int %d string: %s\n", instance2->IntVariable(), instance2->GetStringVariable().c_str());
 		
 		std::unique_ptr<TestSerializable> instance3(new TestSerializable());
 		ObjectResolver res2;
 		binarySaveData.Seek(0);
 		instance3->Load(binarySaveData, res2);
-		printf("Loaded variables (binary): int %d string: %s\n", instance3->IntVariable(), instance3->StringVariable().CString());
+		printf("Loaded variables (binary): int %d string: %s\n", instance3->IntVariable(), instance3->GetStringVariable().c_str());
 	}
 
 	return 0;

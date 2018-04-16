@@ -24,7 +24,7 @@
 #include "../../Debug/Log.h"
 #include "../../Math/Math.h"
 #include "../Input.h"
-#include "Win32Window.h"
+#include "../Window.h"
 #include "../../PlatformIncl.h"
 #include <mutex>
 
@@ -63,26 +63,39 @@ namespace Alimer
 	static PFN_GetDpiForMonitor GetDpiForMonitor_;
 
 	std::once_flag functionsInitialized;
+	uint32_t _windowCount = 0; // Windows owned by the Engine
 
 	static LRESULT CALLBACK WndProc(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 	const WCHAR AppWndClass[] = L"AlimerWindow";
 
-	Window::Window()
-		: _title("Alimer Window")
-		, size(IntVector2::ZERO)
-		, savedPosition(IntVector2(M_MIN_INT, M_MIN_INT))
-		, mousePosition(IntVector2::ZERO)
-		, windowStyle(0)
-		, minimized(false)
-		, focus(false)
-		, resizable(false)
-		, fullscreen(false)
-		, inResize(false)
-		, mouseVisible(true)
-		, mouseVisibleInternal(true)
+	static inline void RegisterWndClass(HINSTANCE hInstance, HBRUSH backgroundBrush)
 	{
-		RegisterSubsystem(this);
+		// Register main class.
+		WNDCLASSEXW wc = {};
+		wc.cbSize = sizeof(WNDCLASSEX);
+		wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+		wc.lpfnWndProc = WndProc;
+		wc.cbClsExtra = 0;
+		wc.cbWndExtra = 0;
+		wc.hInstance = hInstance;
+		wc.hIcon = LoadIcon(hInstance, IDI_APPLICATION);
+		wc.hIconSm = nullptr;
+		wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+		wc.hbrBackground = backgroundBrush;
+		wc.lpszMenuName = nullptr;
+		wc.lpszClassName = AppWndClass;
+
+		if (!RegisterClassExW(&wc))
+		{
+			LOGERROR("[Win32] - Could not register window class");
+			return;
+		}
+	}
+
+	void Window::PlatformInitialize()
+	{
+		_instance = GetModuleHandleW(nullptr);
 
 		std::call_once(functionsInitialized, []()
 		{
@@ -122,12 +135,12 @@ namespace Alimer
 				}
 			}
 		});
-	}
 
-	Window::~Window()
-	{
-		Close();
-		RemoveSubsystem(this);
+		if (_windowCount == 0)
+		{
+			const HBRUSH backgroundBrush = (HBRUSH)GetStockObject(BLACK_BRUSH);
+			RegisterWndClass(_instance, backgroundBrush);
+		}
 	}
 
 	void Window::SetTitle(const std::string& newTitle)
@@ -143,11 +156,11 @@ namespace Alimer
 				return;
 			}
 
-			SetWindowTextW((HWND)_handle, titleBuffer);
+			SetWindowTextW(_handle, titleBuffer);
 		}
 	}
 
-	bool Window::SetSize(const IntVector2& size_, bool fullscreen_, bool resizable_)
+	bool Window::SetSize(const Size& size_, bool fullscreen_, bool resizable_)
 	{
 		inResize = true;
 		IntVector2 position = savedPosition;
@@ -171,37 +184,16 @@ namespace Alimer
 			windowStyle = WS_POPUP | WS_VISIBLE;
 			position = IntVector2::ZERO;
 			/// \todo Handle failure to set mode
-			SetDisplayMode(size_.x, size_.y);
+			SetDisplayMode(size_.width, size_.height);
 		}
 
 		DWORD dwExStyle = WS_EX_APPWINDOW;
 
-		RECT rect = { 0, 0, size_.x, size_.y };
+		RECT rect = { 0, 0, static_cast<LONG>(size_.width), static_cast<LONG>(size_.height) };
 		AdjustWindowRectEx(&rect, windowStyle, FALSE, dwExStyle);
 
 		if (!_handle)
 		{
-			HINSTANCE instance = GetModuleHandleW(nullptr);
-
-			WNDCLASSEXW wc = {};
-			wc.cbSize = sizeof(WNDCLASSEX);
-			wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-			wc.lpfnWndProc = WndProc;
-			wc.cbClsExtra = 0;
-			wc.cbWndExtra = 0;
-			wc.hInstance = instance;
-			wc.hIcon = LoadIcon(0, IDI_APPLICATION);
-			wc.hCursor = LoadCursor(0, IDC_ARROW);
-			wc.hbrBackground = static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
-			wc.lpszMenuName = nullptr;
-			wc.lpszClassName = AppWndClass;
-
-			if (!RegisterClassExW(&wc))
-			{
-				LOGERROR("Could not register window class");
-				return false;
-			}
-
 			// Create a window.
 			wchar_t titleBuffer[256] = L"";
 
@@ -222,7 +214,7 @@ namespace Alimer
 				rect.right - rect.left,
 				rect.bottom - rect.top,
 				0, 0,
-				instance,
+				_instance,
 				nullptr);
 
 			if (!_handle)
@@ -232,40 +224,42 @@ namespace Alimer
 				return false;
 			}
 
+			_windowCount++;
+
 			// Enable touch input if available
 			if (registerTouchWindow)
-				registerTouchWindow((HWND)_handle, TWF_FINETOUCH | TWF_WANTPALM);
+				registerTouchWindow(_handle, TWF_FINETOUCH | TWF_WANTPALM);
 
 			minimized = false;
 			focus = false;
 
-			SetWindowLongPtrW((HWND)_handle, GWLP_USERDATA, (LONG_PTR)this);
-			ShowWindow((HWND)_handle, SW_SHOW);
+			SetWindowLongPtrW(_handle, GWLP_USERDATA, (LONG_PTR)this);
+			ShowWindow(_handle, SW_SHOW);
 		}
 		else
 		{
-			SetWindowLongPtrW((HWND)_handle, GWL_STYLE, windowStyle);
+			SetWindowLongPtrW(_handle, GWL_STYLE, windowStyle);
 
 			if (!fullscreen_ && (savedPosition.x == M_MIN_INT || savedPosition.y == M_MIN_INT))
 			{
 				WINDOWPLACEMENT placement;
 				placement.length = sizeof(placement);
-				GetWindowPlacement((HWND)_handle, &placement);
+				GetWindowPlacement(_handle, &placement);
 				position = IntVector2(placement.rcNormalPosition.left, placement.rcNormalPosition.top);
 			}
 
-			SetWindowPos((HWND)_handle, NULL, position.x, position.y, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER);
-			ShowWindow((HWND)_handle, SW_SHOW);
+			SetWindowPos(_handle, nullptr, position.x, position.y, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER);
+			ShowWindow(_handle, SW_SHOW);
 		}
 
 		fullscreen = fullscreen_;
 		resizable = resizable_;
 		inResize = false;
 
-		IntVector2 newSize = ClientRectSize();
-		if (newSize != size)
+		Size newSize = GetClientRectSize();
+		if (newSize != _size)
 		{
-			size = newSize;
+			_size = newSize;
 			resizeEvent.size = newSize;
 			SendEvent(resizeEvent);
 		}
@@ -433,7 +427,9 @@ namespace Alimer
 				{
 					// If should be fullscreen, restore mode now
 					if (fullscreen)
-						SetDisplayMode(size.x, size.y);
+					{
+						SetDisplayMode(_size.width, _size.height);
+					}
 
 					SendEvent(restoreEvent);
 				}
@@ -441,10 +437,10 @@ namespace Alimer
 
 			if (!minimized && !inResize)
 			{
-				IntVector2 newSize = ClientRectSize();
-				if (newSize != size)
+				Size newSize = GetClientRectSize();
+				if (newSize != _size)
 				{
-					size = newSize;
+					_size = newSize;
 					resizeEvent.size = newSize;
 					SendEvent(resizeEvent);
 				}
@@ -490,9 +486,14 @@ namespace Alimer
 					input->OnMouseMove(newPosition, delta);
 					// Recenter in hidden mouse cursor mode to allow endless relative motion
 					if (!mouseVisibleInternal && delta != IntVector2::ZERO)
-						SetMousePosition(Size() / 2);
+					{
+						Size halfSize = GetSize() / 2;
+						SetMousePosition(IntVector2(halfSize.width, halfSize.height));
+					}
 					else
+					{
 						mousePosition = newPosition;
+					}
 				}
 				else
 					mousePosition = newPosition;
@@ -572,30 +573,30 @@ namespace Alimer
 		return handled;
 	}
 
-	IntVector2 Window::ClientRectSize() const
+	Size Window::GetClientRectSize() const
 	{
 		if (!_handle)
-			return IntVector2::ZERO;
+			return Size::Empty;
 
 		RECT rect;
 		GetClientRect((HWND)_handle, &rect);
-		return IntVector2(rect.right, rect.bottom);
+		return Size(rect.right, rect.bottom);
 	}
 
-	void Window::SetDisplayMode(int width, int height)
+	void Window::SetDisplayMode(uint32_t width, uint32_t height)
 	{
 		if (width && height)
 		{
-			DEVMODE screenMode;
-			screenMode.dmSize = sizeof screenMode;
+			DEVMODEW screenMode;
+			screenMode.dmSize = sizeof(DEVMODEW);
 			screenMode.dmPelsWidth = width;
 			screenMode.dmPelsHeight = height;
 			screenMode.dmBitsPerPel = 32;
 			screenMode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
-			ChangeDisplaySettings(&screenMode, CDS_FULLSCREEN);
+			ChangeDisplaySettingsW(&screenMode, CDS_FULLSCREEN);
 		}
 		else
-			ChangeDisplaySettings(nullptr, CDS_FULLSCREEN);
+			ChangeDisplaySettingsW(nullptr, CDS_FULLSCREEN);
 	}
 
 	void Window::UpdateMouseVisible()
@@ -622,14 +623,14 @@ namespace Alimer
 		{
 			RECT mouseRect;
 			POINT point;
-			IntVector2 windowSize = Size();
+			Size windowSize = GetSize();
 
 			point.x = point.y = 0;
 			ClientToScreen((HWND)_handle, &point);
 			mouseRect.left = point.x;
 			mouseRect.top = point.y;
-			mouseRect.right = point.x + windowSize.x;
-			mouseRect.bottom = point.y + windowSize.y;
+			mouseRect.right = point.x + windowSize.width;
+			mouseRect.bottom = point.y + windowSize.height;
 			ClipCursor(&mouseRect);
 		}
 	}
@@ -645,11 +646,11 @@ namespace Alimer
 
 	LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
-		Window* window = reinterpret_cast<Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+		Window* window = reinterpret_cast<Window*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 		bool handled = false;
 		// When the window is just opening and has not assigned the userdata yet, let the default procedure handle the messages
 		if (window)
 			handled = window->OnWindowMessage(msg, (unsigned)wParam, (unsigned)lParam);
-		return handled ? 0 : DefWindowProc(hwnd, msg, wParam, lParam);
+		return handled ? 0 : DefWindowProcW(hwnd, msg, wParam, lParam);
 	}
 }

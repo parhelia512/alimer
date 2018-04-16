@@ -21,41 +21,30 @@
 // THE SOFTWARE.
 //
 
-#include "../Base/String.h"
-#include "IntRect.h"
-
+#include "Size.h"
+#include "Base/String.h"
 #include <cstdio>
-#include <cstdlib>
 
 namespace Alimer
 {
-	const IntRect IntRect::ZERO(0, 0, 0, 0);
+	const Size Size::Empty(0, 0);
+	const Size Size::One(1, 1);
 
-	bool IntRect::FromString(const std::string& str)
-	{
-		return FromString(str.c_str());
-	}
+	const SizeF SizeF::Empty(0.0f, 0.0f);
+	const SizeF SizeF::One(1.0f, 1.0f);
 
-	bool IntRect::FromString(const char* str)
-	{
-		size_t elements = String::CountElements(str, ' ');
-		if (elements < 4)
-			return false;
-
-		char* ptr = (char*)str;
-		left = strtol(ptr, &ptr, 10);
-		top = strtol(ptr, &ptr, 10);
-		right = strtol(ptr, &ptr, 10);
-		bottom = strtol(ptr, &ptr, 10);
-
-		return true;
-	}
-
-	std::string IntRect::ToString() const
+	std::string Size::ToString() const
 	{
 		char tempBuffer[CONVERSION_BUFFER_LENGTH];
-		sprintf(tempBuffer, "%d %d %d %d", left, top, right, bottom);
+		sprintf(tempBuffer, "%d %d", width, height);
 		return std::string(tempBuffer);
 	}
 
+	
+	std::string SizeF::ToString() const
+	{
+		char tempBuffer[CONVERSION_BUFFER_LENGTH];
+		sprintf(tempBuffer, "%g %g", width, height);
+		return std::string(tempBuffer);
+	}
 }
