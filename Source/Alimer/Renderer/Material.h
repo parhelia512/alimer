@@ -36,7 +36,7 @@ namespace Alimer
 	class Texture;
 
 	/// Render pass, which defines render state and shaders. A material may define several of these.
-	class Pass : public RefCounted
+	class Pass : public std::enable_shared_from_this<Pass>
 	{
 	public:
 		/// Construct.
@@ -173,11 +173,11 @@ namespace Alimer
 
 	private:
 		/// Passes by index.
-		std::vector<SharedPtr<Pass> > passes;
+		std::vector<std::shared_ptr<Pass>> _passes;
 		/// Global shader defines.
-		std::string shaderDefines[MAX_SHADER_STAGES];
+		std::string _shaderDefines[MAX_SHADER_STAGES];
 		/// JSON data used for loading.
-		std::unique_ptr<JSONFile> loadJSON;
+		UniquePtr<JSONFile> _loadJSON;
 
 		/// Default material.
 		static SharedPtr<Material> defaultMaterial;
@@ -188,5 +188,4 @@ namespace Alimer
 		/// Next free pass index.
 		static uint8_t _nextPassIndex;
 	};
-
 }

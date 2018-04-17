@@ -55,48 +55,51 @@ namespace Alimer
 
 	bool Pass::LoadJSON(const json& source)
 	{
-		if (source["vs"].is_string())
+		if (source.count("vs"))
 			_shaderNames[SHADER_VS] = source["vs"].get<string>();
-		if (source["ps"].is_string())
+		if (source.count("ps"))
 			_shaderNames[SHADER_PS] = source["ps"].get<string>();
-		if (source["vsDefines"].is_string())
+		if (source.count("vsDefines"))
 			_shaderDefines[SHADER_VS] = source["vsDefines"].get<string>();
-		if (source["psDefines"].is_string())
+		if (source.count("psDefines"))
 			_shaderDefines[SHADER_PS] = source["psDefines"].get<string>();
 
-		if (source["depthFunc"].is_string())
+		if (source.count("depthFunc"))
 			depthFunc = (CompareFunc)str::ListIndex(source["depthFunc"].get<string>(), compareFuncNames, CMP_LESS_EQUAL);
-		if (source["depthWrite"].is_boolean())
+		if (source.count("depthWrite"))
 			depthWrite = source["depthWrite"].get<bool>();
-		if (source["depthClip"].is_boolean())
+		if (source.count("depthClip"))
 			depthClip = source["depthClip"].get<bool>();
-		if (source["alphaToCoverage"].is_boolean())
+		if (source.count("alphaToCoverage"))
 			alphaToCoverage = source["alphaToCoverage"].get<bool>();
-		if (source["colorWriteMask"].is_number())
+		if (source.count("colorWriteMask"))
 			colorWriteMask = source["colorWriteMask"].get<uint8_t>();
-		if (source["blendMode"].is_string())
+
+		if (source.count("blendMode"))
+		{
 			blendMode = blendModes[str::ListIndex(source["blendMode"].get<string>(), blendModeNames, BLEND_MODE_REPLACE)];
+		}
 		else
 		{
-			if (source["blendEnable"].is_boolean())
+			if (source.count("blendEnable"))
 				blendMode.blendEnable = source["blendEnable"].get<bool>();
-			if (source["srcBlend"].is_string())
+			if (source.count("srcBlend"))
 				blendMode.srcBlend = (BlendFactor)str::ListIndex(source["srcBlend"].get<string>(), blendFactorNames, BLEND_ONE);
-			if (source["destBlend"].is_string())
+			if (source.count("destBlend"))
 				blendMode.destBlend = (BlendFactor)str::ListIndex(source["destBlend"].get<string>(), blendFactorNames, BLEND_ONE);
-			if (source["blendOp"].is_string())
+			if (source.count("blendOp"))
 				blendMode.blendOp = (BlendOp)str::ListIndex(source["blendOp"].get<string>(), blendOpNames, BLEND_OP_ADD);
-			if (source["srcBlendAlpha"].is_string())
+			if (source.count("srcBlendAlpha"))
 				blendMode.srcBlendAlpha = (BlendFactor)str::ListIndex(source["srcBlendAlpha"].get<string>(), blendFactorNames, BLEND_ONE);
-			if (source["destBlendAlpha"].is_string())
+			if (source.count("destBlendAlpha"))
 				blendMode.destBlendAlpha = (BlendFactor)str::ListIndex(source["destBlendAlpha"].get<string>(), blendFactorNames, BLEND_ONE);
-			if (source["blendOpAlpha"].is_string())
+			if (source.count("blendOpAlpha"))
 				blendMode.blendOpAlpha = (BlendOp)str::ListIndex(source["blendOpAlpha"].get<string>(), blendOpNames, BLEND_OP_ADD);
 		}
 
-		if (source["fillMode"].is_string())
+		if (source.count("fillMode"))
 			fillMode = (FillMode)str::ListIndex(source["fillMode"].get<string>(), fillModeNames, FILL_SOLID);
-		if (source["cullMode"].is_string())
+		if (source.count("cullMode"))
 			cullMode = (CullMode)str::ListIndex(source["cullMode"].get<string>(), cullModeNames, CULL_BACK);
 
 		OnShadersChanged();
@@ -228,18 +231,18 @@ namespace Alimer
 	{
 		ALIMER_PROFILE(BeginLoadMaterial);
 
-		loadJSON = std::make_unique<JSONFile>();
-		if (!loadJSON->Load(source))
+		_loadJSON = std::make_unique<JSONFile>();
+		if (!_loadJSON->Load(source))
 			return false;
 
-		const json& root = loadJSON->GetRoot();
+		const json& root = _loadJSON->GetRoot();
 
-		shaderDefines[SHADER_VS].clear();
-		shaderDefines[SHADER_PS].clear();
-		if (root["vsDefines"].is_string())
-			shaderDefines[SHADER_VS] = root["vsDefines"].get<string>();
-		if (root["psDefines"].is_string())
-			shaderDefines[SHADER_PS] = root["psDefines"].get<string>();
+		_shaderDefines[SHADER_VS].clear();
+		_shaderDefines[SHADER_PS].clear();
+		if (root.count("vsDefines"))
+			_shaderDefines[SHADER_VS] = root["vsDefines"].get<string>();
+		if (root.count("psDefines"))
+			_shaderDefines[SHADER_PS] = root["psDefines"].get<string>();
 
 		return true;
 	}
@@ -248,10 +251,10 @@ namespace Alimer
 	{
 		ALIMER_PROFILE(EndLoadMaterial);
 
-		const json& root = loadJSON->GetRoot();
+		const json& root = _loadJSON->GetRoot();
 
-		passes.clear();
-		if (root["passes"].is_object())
+		_passes.clear();
+		if (root.count("passes") && root["passes"].is_object())
 		{
 			const json& jsonPasses = root["passes"];
 			for (auto it = jsonPasses.begin(); it != jsonPasses.end(); ++it)
@@ -262,14 +265,14 @@ namespace Alimer
 		}
 
 		constantBuffers[SHADER_VS].Reset();
-		if (root["vsConstantBuffer"].is_object())
+		if (root.count("vsConstantBuffer"))
 		{
 			constantBuffers[SHADER_VS] = new ConstantBuffer();
 			constantBuffers[SHADER_VS]->LoadJSON(root["vsConstantBuffer"]);
 		}
 
 		constantBuffers[SHADER_PS].Reset();
-		if (root["psConstantBuffer"].is_object())
+		if (root.count("psConstantBuffer"))
 		{
 			constantBuffers[SHADER_PS] = new ConstantBuffer();
 			constantBuffers[SHADER_PS]->LoadJSON(root["psConstantBuffer"]);
@@ -277,7 +280,8 @@ namespace Alimer
 
 		/// \todo Queue texture loads during BeginLoad()
 		ResetTextures();
-		if (root["textures"].is_object())
+		if (root.count("textures")
+			&& root["textures"].is_object())
 		{
 			ResourceCache* cache = Subsystem<ResourceCache>();
 			const json jsonTextures = root["textures"];
@@ -287,7 +291,7 @@ namespace Alimer
 			}
 		}
 
-		loadJSON.reset();
+		_loadJSON.reset();
 		return true;
 	}
 
@@ -297,17 +301,16 @@ namespace Alimer
 
 		json root = json::object();
 
-		if (shaderDefines[SHADER_VS].length())
-			root["vsDefines"] = shaderDefines[SHADER_VS];
-		if (shaderDefines[SHADER_PS].length())
-			root["psDefines"] = shaderDefines[SHADER_PS];
+		if (_shaderDefines[SHADER_VS].length())
+			root["vsDefines"] = _shaderDefines[SHADER_VS];
+		if (_shaderDefines[SHADER_PS].length())
+			root["psDefines"] = _shaderDefines[SHADER_PS];
 
-		if (passes.size())
+		if (_passes.size())
 		{
 			root["passes"].object();
-			for (auto it = passes.begin(); it != passes.end(); ++it)
+			for (auto pass : _passes)
 			{
-				Pass* pass = *it;
 				if (pass)
 					pass->SaveJSON(root["passes"][pass->GetName()]);
 			}
@@ -334,20 +337,20 @@ namespace Alimer
 	Pass* Material::CreatePass(const std::string& name)
 	{
 		const uint8_t index = GetPassIndex(name);
-		if (passes.size() <= index)
-			passes.resize(index + 1);
+		if (_passes.size() <= index)
+			_passes.resize(index + 1);
 
-		if (!passes[index])
-			passes[index] = new Pass(this, name);
+		if (!_passes[index])
+			_passes[index] = std::make_shared<Pass>(this, name);
 
-		return passes[index];
+		return _passes[index].get();
 	}
 
 	void Material::RemovePass(const std::string& name)
 	{
 		const uint8_t index = GetPassIndex(name, false);
-		if (index < passes.size())
-			passes[index].Reset();
+		if (index < _passes.size())
+			_passes[index].reset();
 	}
 
 	void Material::SetTexture(size_t index, Texture* texture)
@@ -372,12 +375,11 @@ namespace Alimer
 		const std::string& vsDefines,
 		const std::string& psDefines)
 	{
-		shaderDefines[SHADER_VS] = vsDefines;
-		shaderDefines[SHADER_PS] = psDefines;
+		_shaderDefines[SHADER_VS] = vsDefines;
+		_shaderDefines[SHADER_PS] = psDefines;
 
-		for (auto it = passes.begin(); it != passes.end(); ++it)
+		for (auto pass : _passes)
 		{
-			Pass* pass = *it;
 			if (pass)
 				pass->OnShadersChanged();
 		}
@@ -390,7 +392,7 @@ namespace Alimer
 
 	Pass* Material::GetPass(uint8_t index) const
 	{
-		return index < passes.size() ? passes[index].Get() : nullptr;
+		return index < _passes.size() ? _passes[index].get() : nullptr;
 	}
 
 	Texture* Material::GetTexture(size_t index) const
@@ -405,7 +407,7 @@ namespace Alimer
 
 	const std::string& Material::ShaderDefines(ShaderStage stage) const
 	{
-		return stage < MAX_SHADER_STAGES ? shaderDefines[stage] : str::EMPTY;
+		return stage < MAX_SHADER_STAGES ? _shaderDefines[stage] : str::EMPTY;
 	}
 
 	uint8_t Material::GetPassIndex(const std::string& name, bool createNew)
