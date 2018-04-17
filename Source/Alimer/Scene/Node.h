@@ -47,7 +47,7 @@ namespace Alimer
 	/// Base class for scene nodes.
 	class ALIMER_API Node : public Serializable
 	{
-		OBJECT(Node);
+		ALIMER_OBJECT(Node, Serializable);
 
 	public:
 		/// Construct.
@@ -104,11 +104,11 @@ namespace Alimer
 		/// Remove self immediately. As this will delete the node (if no other strong references exist) no operations on the node are permitted after calling this.
 		void RemoveSelf();
 		/// Create child node of the specified type, template version.
-		template <class T> T* CreateChild() { return static_cast<T*>(CreateChild(T::TypeStatic())); }
+		template <class T> T* CreateChild() { return static_cast<T*>(CreateChild(T::GetTypeStatic())); }
 		/// Create named child node of the specified type, template version.
-		template <class T> T* CreateChild(const std::string& childName) { return static_cast<T*>(CreateChild(T::TypeStatic(), childName)); }
+		template <class T> T* CreateChild(const std::string& childName) { return static_cast<T*>(CreateChild(T::GetTypeStatic(), childName)); }
 		/// Create named child node of the specified type, template version.
-		template <class T> T* CreateChild(const char* childName) { return static_cast<T*>(CreateChild(T::TypeStatic(), childName)); }
+		template <class T> T* CreateChild(const char* childName) { return static_cast<T*>(CreateChild(T::GetTypeStatic(), childName)); }
 
 		/// Return name.
 		const std::string& GetName() const { return _name; }
@@ -169,11 +169,11 @@ namespace Alimer
 		/// Find child nodes that match tag name.
 		void FindChildrenByTag(std::vector<Node*>& result, const char* tagName, bool recursive = false) const;
 		/// Return first child node of specified type, template version.
-		template <class T> T* FindChild(bool recursive = false) const { return static_cast<T*>(FindChild(T::TypeStatic(), recursive)); }
+		template <class T> T* FindChild(bool recursive = false) const { return static_cast<T*>(FindChild(T::GetTypeStatic(), recursive)); }
 		/// Return first child node that matches type and name, template version.
-		template <class T> T* FindChild(const std::string& childName, bool recursive = false) const { return static_cast<T*>(FindChild(T::TypeStatic(), childName, recursive)); }
+		template <class T> T* FindChild(const std::string& childName, bool recursive = false) const { return static_cast<T*>(FindChild(T::GetTypeStatic(), childName, recursive)); }
 		/// Return first child node that matches type and name, template version.
-		template <class T> T* FindChild(const char* childName, bool recursive = false) const { return static_cast<T*>(FindChild(T::TypeStatic(), childName, recursive)); }
+		template <class T> T* FindChild(const char* childName, bool recursive = false) const { return static_cast<T*>(FindChild(T::GetTypeStatic(), childName, recursive)); }
 		/// Find child nodes of specified type, template version.
 		template <class T> void FindChildren(std::vector<T*>& result, bool recursive = false) const { return FindChildren(reinterpret_cast<std::vector<T*>&>(result), recursive); }
 

@@ -34,7 +34,7 @@ namespace Alimer
 	/// JSON document. Contains a root JSON value and can be read/written to file as text.
 	class ALIMER_API JSONFile : public Resource
 	{
-		OBJECT(JSONFile);
+		ALIMER_OBJECT(JSONFile, Resource);
 
 	public:
 		/// Load from a stream as text. Return true on success. Will contain partial data on failure.

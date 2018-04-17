@@ -83,7 +83,7 @@ namespace Alimer
 	/// Logging subsystem.
 	class ALIMER_API Log : public Object
 	{
-		OBJECT(Log);
+		ALIMER_OBJECT(Log, Object);
 
 	public:
 		/// Construct and register subsystem.

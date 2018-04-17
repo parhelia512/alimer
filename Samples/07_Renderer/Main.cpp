@@ -36,7 +36,7 @@ using namespace Alimer;
 
 class RendererTest : public Object
 {
-	OBJECT(RendererTest);
+	ALIMER_OBJECT(RendererTest, Object);
 
 public:
 	void Run()

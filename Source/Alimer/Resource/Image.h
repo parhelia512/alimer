@@ -81,7 +81,7 @@ namespace Alimer
 	/// %Image resource.
 	class ALIMER_API Image : public Resource
 	{
-		OBJECT(Image);
+		ALIMER_OBJECT(Image, Resource);
 
 	public:
 		/// Construct.

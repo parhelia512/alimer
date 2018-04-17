@@ -50,7 +50,7 @@ namespace Alimer
 		// Copy base attributes from OctreeNode instead of GeometryNode, as the model attribute needs to be set first so that
 		// there is the correct amount of materials to assign
 		CopyBaseAttributes<StaticModel, OctreeNode>();
-		RegisterMixedRefAttribute("model", &StaticModel::ModelAttr, &StaticModel::SetModelAttr, ResourceRef(Model::TypeStatic()));
+		RegisterMixedRefAttribute("model", &StaticModel::ModelAttr, &StaticModel::SetModelAttr, ResourceRef(Model::GetTypeStatic()));
 		CopyBaseAttribute<StaticModel, GeometryNode>("materials");
 		RegisterAttribute("lodBias", &StaticModel::LodBias, &StaticModel::SetLodBias, 1.0f);
 	}
@@ -125,6 +125,6 @@ namespace Alimer
 
 	ResourceRef StaticModel::ModelAttr() const
 	{
-		return ResourceRef(Model::TypeStatic(), ResourceName(model.Get()));
+		return ResourceRef(Model::GetTypeStatic(), ResourceName(model.Get()));
 	}
 }

@@ -85,7 +85,7 @@ namespace Alimer
 	void Node::Save(Stream& dest)
 	{
 		// Write type and ID first, followed by attributes and child nodes
-		dest.WriteStringHash(Type());
+		dest.WriteStringHash(GetType());
 		dest.WriteUInt(GetId());
 		Serializable::Save(dest);
 		dest.WriteVLE(NumPersistentChildren());
@@ -123,7 +123,7 @@ namespace Alimer
 
 	void Node::SaveJSON(json& dest)
 	{
-		dest["type"] = TypeName();
+		dest["type"] = GetTypeName();
 		dest["id"] = GetId();
 		Serializable::SaveJSON(dest);
 
@@ -233,7 +233,7 @@ namespace Alimer
 		Node* child = dynamic_cast<Node*>(newObject.Get());
 		if (!child)
 		{
-			LOGERROR(newObject->TypeName() + " is not a Node subclass, could not add as a child");
+			LOGERROR(newObject->GetTypeName() + " is not a Node subclass, could not add as a child");
 			return nullptr;
 		}
 
@@ -410,8 +410,10 @@ namespace Alimer
 		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
-			if (child->Type() == childType)
+			if (child->GetType() == childType)
+			{
 				return child;
+			}
 			else if (recursive && child->_children.size())
 			{
 				Node* childResult = child->FindChild(childType, recursive);
@@ -433,8 +435,10 @@ namespace Alimer
 		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
-			if (child->Type() == childType && child->_name == childName)
+			if (child->GetType() == childType && child->_name == childName)
+			{
 				return child;
+			}
 			else if (recursive && child->_children.size())
 			{
 				Node* childResult = child->FindChild(childType, childName, recursive);
@@ -512,7 +516,7 @@ namespace Alimer
 		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
-			if (child->Type() == childType)
+			if (child->GetType() == childType)
 				result.push_back(child);
 			if (recursive && child->_children.size())
 				child->FindChildren(result, childType, recursive);

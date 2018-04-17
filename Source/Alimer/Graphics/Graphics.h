@@ -69,7 +69,7 @@ namespace Alimer
 	/// 3D graphics rendering context. Manages the rendering window and GPU objects.
 	class ALIMER_API Graphics : public Object
 	{
-		OBJECT(Graphics);
+		ALIMER_OBJECT(Graphics, Object);
 
 		friend class Buffer;
 
@@ -295,5 +295,4 @@ namespace Alimer
 
 	/// Register Graphics related object factories and attributes.
 	ALIMER_API void RegisterGraphicsLibrary();
-
 }

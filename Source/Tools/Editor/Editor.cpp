@@ -20,21 +20,11 @@
 // THE SOFTWARE.
 //
 
-#include "Application.h"
+#include "Editor.h"
 
 namespace Alimer
 {
-	Application::Application()
-	{
-		RegisterSubsystem(this);
-	}
-
-	Application::~Application()
-	{
-		RemoveSubsystem(this);
-	}
-
-	void Application::Run()
+	Editor::Editor()
 	{
 
 	}

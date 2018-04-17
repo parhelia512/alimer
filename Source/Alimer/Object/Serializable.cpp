@@ -132,7 +132,7 @@ namespace Alimer
 
 	const AttibuteVector* Serializable::GetAttributes() const
 	{
-		auto it = _classAttributes.find(Type());
+		auto it = _classAttributes.find(GetType());
 		return it != _classAttributes.end() ? &it->second : nullptr;
 	}
 

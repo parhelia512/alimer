@@ -146,7 +146,7 @@ namespace Alimer
 	/// %Input subsystem for reading keyboard/mouse/etc. input. Updated from OS window messages by the Window class.
 	class ALIMER_API Input : public Object
 	{
-		OBJECT(Input);
+		ALIMER_OBJECT(Input, Object);
 
 	public:
 		/// Construct and register subsystem.

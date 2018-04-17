@@ -104,31 +104,31 @@ namespace Alimer
 		/// Register a per-class attribute, template version. Should not be used for base class attributes unless the type is explicitly specified, as by default the attribute will be re-registered to the base class redundantly.
 		template <class T, class U> static void RegisterAttribute(const char* name, U(T::*getFunction)() const, void (T::*setFunction)(U), const U& defaultValue = U(), const char** enumNames = 0)
 		{
-			RegisterAttribute(T::TypeStatic(), std::make_shared<AttributeImpl<U>>(name, new AttributeAccessorImpl<T, U>(getFunction, setFunction), defaultValue, enumNames));
+			RegisterAttribute(T::GetTypeStatic(), std::make_shared<AttributeImpl<U>>(name, new AttributeAccessorImpl<T, U>(getFunction, setFunction), defaultValue, enumNames));
 		}
 
 		/// Register a per-class attribute with reference access, template version. Should not be used for base class attributes unless the type is explicitly specified, as by default the attribute will be re-registered to the base class redundantly.
 		template <class T, class U> static void RegisterRefAttribute(const char* name, const U& (T::*getFunction)() const, void (T::*setFunction)(const U&), const U& defaultValue = U(), const char** enumNames = 0)
 		{
-			RegisterAttribute(T::TypeStatic(), std::make_shared<AttributeImpl<U>>(name, new RefAttributeAccessorImpl<T, U>(getFunction, setFunction), defaultValue, enumNames));
+			RegisterAttribute(T::GetTypeStatic(), std::make_shared<AttributeImpl<U>>(name, new RefAttributeAccessorImpl<T, U>(getFunction, setFunction), defaultValue, enumNames));
 		}
 
 		/// Register a per-class attribute with mixed reference access, template version. Should not be used for base class attributes unless the type is explicitly specified, as by default the attribute will be re-registered to the base class redundantly.
 		template <class T, class U> static void RegisterMixedRefAttribute(const char* name, U(T::*getFunction)() const, void (T::*setFunction)(const U&), const U& defaultValue = U(), const char** enumNames = 0)
 		{
-			RegisterAttribute(T::TypeStatic(), std::make_shared<AttributeImpl<U>>(name, new MixedRefAttributeAccessorImpl<T, U>(getFunction, setFunction), defaultValue, enumNames));
+			RegisterAttribute(T::GetTypeStatic(), std::make_shared<AttributeImpl<U>>(name, new MixedRefAttributeAccessorImpl<T, U>(getFunction, setFunction), defaultValue, enumNames));
 		}
 
 		/// Copy all base class attributes, template version.
 		template <class T, class U> static void CopyBaseAttributes()
 		{
-			CopyBaseAttributes(T::TypeStatic(), U::TypeStatic());
+			CopyBaseAttributes(T::GetTypeStatic(), U::GetTypeStatic());
 		}
 
 		/// Copy one base class attribute, template version.
 		template <class T, class U> static void CopyBaseAttribute(const std::string& name)
 		{
-			CopyBaseAttribute(T::TypeStatic(), U::TypeStatic(), name);
+			CopyBaseAttribute(T::GetTypeStatic(), U::GetTypeStatic(), name);
 		}
 
 	private:

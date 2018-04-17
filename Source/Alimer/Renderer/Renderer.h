@@ -91,7 +91,7 @@ namespace Alimer
 	/// High-level rendering subsystem. Performs rendering of 3D scenes.
 	class ALIMER_API Renderer : public Object
 	{
-		OBJECT(Renderer);
+		ALIMER_OBJECT(Renderer, Object);
 
 	public:
 		/// Construct and register subsystem.
@@ -197,6 +197,5 @@ namespace Alimer
 
 	/// Register Renderer related object factories and attributes.
 	ALIMER_API void RegisterRendererLibrary();
-
 }
 

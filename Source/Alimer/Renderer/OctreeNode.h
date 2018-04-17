@@ -40,7 +40,7 @@ namespace Alimer
 	{
 		friend class Octree;
 
-		OBJECT(OctreeNode);
+		ALIMER_OBJECT(OctreeNode, SpatialNode);
 
 	public:
 		/// Construct.

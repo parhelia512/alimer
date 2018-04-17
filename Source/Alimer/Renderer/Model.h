@@ -86,7 +86,7 @@ namespace Alimer
 	/// 3D model resource.
 	class ALIMER_API Model : public Resource
 	{
-		OBJECT(Model);
+		ALIMER_OBJECT(Model, Resource);
 
 	public:
 		/// Construct.

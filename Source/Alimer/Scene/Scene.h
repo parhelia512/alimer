@@ -30,7 +30,7 @@ namespace Alimer
 	/// %Scene root node, which also represents the whole scene.
 	class ALIMER_API Scene : public Node
 	{
-		OBJECT(Scene);
+		ALIMER_OBJECT(Scene, Node);
 
 	public:
 		/// Construct.

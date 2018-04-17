@@ -86,7 +86,7 @@ namespace Alimer
 			return false;
 		}
 
-		resources[std::make_pair(resource->Type(), StringHash(resource->Name()))] = resource;
+		resources[std::make_pair(resource->GetType(), StringHash(resource->Name()))] = resource;
 		return true;
 	}
 
@@ -304,7 +304,7 @@ namespace Alimer
 
 		for (auto it = resources.begin(); it != resources.end(); ++it)
 		{
-			if (it->second->Type() == type)
+			if (it->second->GetType() == type)
 			{
 				result.push_back(it->second);
 			}

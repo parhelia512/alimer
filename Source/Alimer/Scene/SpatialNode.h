@@ -39,7 +39,7 @@ namespace Alimer
 	/// Base class for scene nodes with position in three-dimensional space.
 	class ALIMER_API SpatialNode : public Node
 	{
-		OBJECT(SpatialNode);
+		ALIMER_OBJECT(SpatialNode, Node);
 
 	public:
 		/// Construct.

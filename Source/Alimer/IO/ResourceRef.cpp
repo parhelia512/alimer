@@ -49,7 +49,7 @@ namespace Alimer
 
 	string ResourceRef::ToString() const
 	{
-		return Object::TypeNameFromType(type) + ";" + name;
+		return Object::GetTypeNameFromType(type) + ";" + name;
 	}
 
 	void ResourceRef::ToBinary(Stream& dest) const
@@ -89,7 +89,7 @@ namespace Alimer
 
 	string ResourceRefList::ToString() const
 	{
-		string ret(Object::TypeNameFromType(type));
+		string ret(Object::GetTypeNameFromType(type));
 		for (auto it = names.begin(); it != names.end(); ++it)
 		{
 			ret += ";";

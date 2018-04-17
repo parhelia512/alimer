@@ -35,7 +35,7 @@ namespace Alimer
 	/// %Resource cache subsystem. Loads resources on demand and stores them for later access.
 	class ALIMER_API ResourceCache : public Object
 	{
-		OBJECT(ResourceCache);
+		ALIMER_OBJECT(ResourceCache, Object);
 
 	public:
 		/// Construct and register subsystem.
@@ -66,7 +66,7 @@ namespace Alimer
 		/// Reload an existing resource. Return true on success.
 		bool ReloadResource(Resource* resource);
 		/// Load and return a resource, template version.
-		template <class T> T* LoadResource(const std::string& name) { return static_cast<T*>(LoadResource(T::TypeStatic(), name)); }
+		template <class T> T* LoadResource(const std::string& name) { return static_cast<T*>(LoadResource(T::GetTypeStatic(), name)); }
 
 		/// Return resources by type.
 		void ResourcesByType(std::vector<Resource*>& result, StringHash type) const;
@@ -81,7 +81,7 @@ namespace Alimer
 		template <class T> void ResourcesByType(std::vector<T*>& dest) const
 		{
 			std::vector<Resource*>& resources = reinterpret_cast<std::vector<Resource*>&>(dest);
-			StringHash type = T::TypeStatic();
+			StringHash type = T::GetTypeStatic();
 			ResourcesByType(resources, type);
 
 			// Perform conversion of the returned pointers

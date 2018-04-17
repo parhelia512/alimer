@@ -26,7 +26,7 @@ namespace Alimer
 	/// Dynamic light scene node.
 	class ALIMER_API Light : public OctreeNode
 	{
-		OBJECT(Light);
+		ALIMER_OBJECT(Light, OctreeNode);
 
 	public:
 		/// Construct.

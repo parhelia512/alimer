@@ -42,7 +42,7 @@ public:
 
 class TestEventSender : public Object
 {
-	OBJECT(TestEventSender);
+	ALIMER_OBJECT(TestEventSender, Object);
 
 public:
 	void SendTestEvent(int value)
@@ -56,7 +56,7 @@ public:
 
 class TestEventReceiver : public Object
 {
-	OBJECT(TestEventReceiver);
+	ALIMER_OBJECT(TestEventReceiver, Object);
 
 public:
 	void SubscribeToTestEvent(TestEventSender* sender)
@@ -72,7 +72,7 @@ public:
 
 class TestSerializable : public Serializable
 {
-	OBJECT(TestSerializable);
+	ALIMER_OBJECT(TestSerializable, Serializable);
 
 public:
 	TestSerializable() = default;
@@ -109,7 +109,7 @@ int main()
 		TestEventSender* sender = Object::Create<TestEventSender>();
 		TestEventReceiver* receiver1 = Object::Create<TestEventReceiver>();
 		TestEventReceiver* receiver2 = Object::Create<TestEventReceiver>();
-		printf("Type of sender is %s\n", sender->TypeName().c_str());
+		printf("Type of sender is %s\n", sender->GetTypeName().c_str());
 		receiver1->SubscribeToTestEvent(sender);
 		receiver2->SubscribeToTestEvent(sender);
 		sender->SendTestEvent(1);

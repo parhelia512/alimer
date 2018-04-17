@@ -20,22 +20,18 @@
 // THE SOFTWARE.
 //
 
-#include "Application.h"
+#pragma once
+
+#include "Alimer.h"
+using namespace std::placeholders;
 
 namespace Alimer
 {
-	Application::Application()
+	class Editor : public Application
 	{
-		RegisterSubsystem(this);
-	}
+		ALIMER_OBJECT(Editor, Application);
 
-	Application::~Application()
-	{
-		RemoveSubsystem(this);
-	}
-
-	void Application::Run()
-	{
-
-	}
+	public:
+		explicit Editor();
+	};
 }

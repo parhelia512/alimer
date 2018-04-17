@@ -87,7 +87,7 @@ namespace Alimer
 	/// Hierarchical performance profiler subsystem.
 	class ALIMER_API Profiler : public Object
 	{
-		OBJECT(Profiler);
+		ALIMER_OBJECT(Profiler, Object);
 
 	public:
 		/// Construct.

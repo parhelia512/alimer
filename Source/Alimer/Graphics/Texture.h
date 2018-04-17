@@ -63,7 +63,7 @@ namespace Alimer
 	/// GPU Texture.
 	class ALIMER_API Texture : public Resource, public GPUObject
 	{
-		OBJECT(Texture);
+		ALIMER_OBJECT(Texture, Resource);
 
 	public:
 		/// Construct.

@@ -33,7 +33,7 @@ namespace Alimer
 	/// %Shader resource. Defines either vertex or pixel shader source code, from which variations can be compiled by specifying defines.
 	class ALIMER_API Shader : public Resource
 	{
-		OBJECT(Shader);
+		ALIMER_OBJECT(Shader, Resource);
 
 	public:
 		/// Construct.
@@ -73,5 +73,4 @@ namespace Alimer
 		/// %Shader source code.
 		std::string _sourceCode;
 	};
-
 }

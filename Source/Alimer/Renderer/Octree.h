@@ -67,7 +67,7 @@ namespace Alimer
 	/// Acceleration structure for rendering. Should be created as a child of the scene root.
 	class ALIMER_API Octree : public Node
 	{
-		OBJECT(Octree);
+		ALIMER_OBJECT(Octree, Node);
 
 	public:
 		/// Construct.

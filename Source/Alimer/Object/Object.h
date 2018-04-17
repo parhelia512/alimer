@@ -63,14 +63,40 @@ namespace Alimer
 		const TypeInfo* _baseTypeInfo;
 	};
 
+#define ALIMER_OBJECT(typeName, baseTypeName) \
+    public: \
+        using ClassName = typeName; \
+        using Parent = baseTypeName; \
+        virtual Alimer::StringHash GetType() const override { return GetTypeInfoStatic()->GetType(); } \
+        virtual const std::string& GetTypeName() const override { return GetTypeInfoStatic()->GetTypeName(); } \
+        virtual const Alimer::TypeInfo* GetTypeInfo() const override { return GetTypeInfoStatic(); } \
+        static Alimer::StringHash GetTypeStatic() { return GetTypeInfoStatic()->GetType(); } \
+        static const std::string& GetTypeNameStatic() { return GetTypeInfoStatic()->GetTypeName(); } \
+        static const Alimer::TypeInfo* GetTypeInfoStatic() { static const Alimer::TypeInfo typeInfoStatic(#typeName, Parent::GetTypeInfoStatic()); return &typeInfoStatic; } \
+
 	/// Base class for objects with type identification and possibility to create through a factory.
 	class ALIMER_API Object : public RefCounted
 	{
 	public:
 		/// Return hash of the type name.
-		virtual StringHash Type() const = 0;
+		virtual StringHash GetType() const = 0;
 		/// Return type name.
-		virtual const std::string& TypeName() const = 0;
+		virtual const std::string& GetTypeName() const = 0;
+		/// Return type info.
+		virtual const TypeInfo* GetTypeInfo() const = 0;
+
+		/// Return type info static.
+		static const TypeInfo* GetTypeInfoStatic() { return nullptr; }
+		/// Check current instance is type of specified type.
+		bool IsInstanceOf(StringHash type) const;
+		/// Check current instance is type of specified type.
+		bool IsInstanceOf(const TypeInfo* typeInfo) const;
+		/// Check current instance is type of specified class.
+		template<typename T> bool IsInstanceOf() const { return IsInstanceOf(T::GetTypeInfoStatic()); }
+		/// Cast the object to specified most derived class.
+		template<typename T> T* Cast() { return IsInstanceOf<T>() ? static_cast<T*>(this) : nullptr; }
+		/// Cast the object to specified most derived class.
+		template<typename T> const T* Cast() const { return IsInstanceOf<T>() ? static_cast<const T*>(this) : nullptr; }
 
 		/// Subscribe to an event.
 		void SubscribeToEvent(Event& event, EventHandler* handler);
@@ -101,13 +127,13 @@ namespace Alimer
 		/// Create and return an object through a factory. The caller is assumed to take ownership of the object. Return null if no factory registered. 
 		static Object* Create(StringHash type);
 		/// Return a type name from hash, or empty if not known. Requires a registered object factory.
-		static const std::string& TypeNameFromType(StringHash type);
+		static const std::string& GetTypeNameFromType(StringHash type);
 		/// Return a subsystem, template version.
-		template <class T> static T* Subsystem() { return static_cast<T*>(Subsystem(T::TypeStatic())); }
+		template <class T> static T* Subsystem() { return static_cast<T*>(Subsystem(T::GetTypeStatic())); }
 		/// Register an object factory, template version.
 		template <class T> static void RegisterFactory() { RegisterFactory(new ObjectFactoryImpl<T>()); }
 		/// Create and return an object through a factory, template version.
-		template <class T> static T* Create() { return static_cast<T*>(Create(T::TypeStatic())); }
+		template <class T> static T* Create() { return static_cast<T*>(Create(T::GetTypeStatic())); }
 
 	private:
 		/// Registered subsystems.
@@ -127,9 +153,9 @@ namespace Alimer
 		virtual Object* Create() = 0;
 
 		/// Return type name hash of the objects created by this factory.
-		StringHash Type() const { return _type; }
+		StringHash GetType() const { return _type; }
 		/// Return type name of the objects created by this factory.
-		const std::string& TypeName() const { return _typeName; }
+		const std::string& GetTypeName() const { return _typeName; }
 
 	protected:
 		/// %Object type name hash.
@@ -145,23 +171,11 @@ namespace Alimer
 		/// Construct.
 		ObjectFactoryImpl()
 		{
-			_type = T::TypeStatic();
-			_typeName = T::TypeNameStatic();
+			_type = T::GetTypeStatic();
+			_typeName = T::GetTypeNameStatic();
 		}
 
 		/// Create and return an object of the specific type.
 		Object* Create() override { return new T(); }
 	};
-
 }
-
-#define OBJECT(typeName) \
-	private: \
-		static const Alimer::StringHash typeStatic; \
-		static const std::string typeNameStatic; \
-	public: \
-		Alimer::StringHash Type() const override { return TypeStatic(); } \
-		const std::string& TypeName() const override { return TypeNameStatic(); } \
-		static Alimer::StringHash TypeStatic() { static const Alimer::StringHash type(#typeName); return type; } \
-		static const std::string& TypeNameStatic() { static const std::string type(#typeName); return type; } \
-

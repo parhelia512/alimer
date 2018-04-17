@@ -73,6 +73,16 @@ namespace Alimer
 		event.Subscribe(handler);
 	}
 
+	bool Object::IsInstanceOf(StringHash type) const
+	{
+		return GetTypeInfo()->IsTypeOf(type);
+	}
+
+	bool Object::IsInstanceOf(const TypeInfo* typeInfo) const
+	{
+		return GetTypeInfo()->IsTypeOf(typeInfo);
+	}
+
 	void Object::UnsubscribeFromEvent(Event& event)
 	{
 		event.Unsubscribe(this);
@@ -93,7 +103,7 @@ namespace Alimer
 		if (!subsystem)
 			return;
 
-		subsystems[subsystem->Type()] = subsystem;
+		subsystems[subsystem->GetType()] = subsystem;
 	}
 
 	void Object::RemoveSubsystem(Object* subsystem)
@@ -101,7 +111,7 @@ namespace Alimer
 		if (!subsystem)
 			return;
 
-		auto it = subsystems.find(subsystem->Type());
+		auto it = subsystems.find(subsystem->GetType());
 		if (it != subsystems.end() && it->second == subsystem)
 			subsystems.erase(it);
 	}
@@ -122,7 +132,7 @@ namespace Alimer
 		if (!factory)
 			return;
 
-		factories[factory->Type()].reset(factory);
+		factories[factory->GetType()].reset(factory);
 	}
 
 	Object* Object::Create(StringHash type)
@@ -131,10 +141,10 @@ namespace Alimer
 		return it != factories.end() ? it->second->Create() : nullptr;
 	}
 
-	const string& Object::TypeNameFromType(StringHash type)
+	const string& Object::GetTypeNameFromType(StringHash type)
 	{
 		auto it = factories.find(type);
-		return it != factories.end() ? it->second->TypeName() : str::EMPTY;
+		return it != factories.end() ? it->second->GetTypeName() : str::EMPTY;
 	}
 
 }

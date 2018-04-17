@@ -20,6 +20,8 @@
 // THE SOFTWARE.
 //
 
+#include "Editor.h"
+
 #if defined(_WIN32) && !defined(ALIMER_WIN32_CONSOLE)
 #	include <windows.h>
 #	undef TRANSPARENT
@@ -35,5 +37,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 int main(int argc, char** argv)
 #endif
 {
+	auto app = std::make_shared<Alimer::Editor>();
+	app->Run();
 	return 0;
 }

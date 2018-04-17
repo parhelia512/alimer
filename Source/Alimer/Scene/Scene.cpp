@@ -85,7 +85,7 @@ namespace Alimer
 
 		StringHash ownType = source.ReadStringHash();
 		uint32_t ownId = source.ReadUInt();
-		if (ownType != TypeStatic())
+		if (ownType != GetTypeStatic())
 		{
 			LOGERROR("Mismatching type of scene root node in scene file");
 			return false;
@@ -108,7 +108,7 @@ namespace Alimer
 		StringHash ownType(source["type"].get<string>());
 		uint32_t ownId = source["id"].get<uint32_t>();
 
-		if (ownType != TypeStatic())
+		if (ownType != GetTypeStatic())
 		{
 			LOGERROR("Mismatching type of scene root node in scene file");
 			return false;

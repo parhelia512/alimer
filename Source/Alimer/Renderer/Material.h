@@ -117,7 +117,7 @@ namespace Alimer
 	/// %Material resource, which describes how to render 3D geometry and refers to textures. A material can contain several passes (for example normal rendering, and depth only.)
 	class Material : public Resource
 	{
-		OBJECT(Material);
+		ALIMER_OBJECT(Material, Resource);
 
 	public:
 		/// Construct.

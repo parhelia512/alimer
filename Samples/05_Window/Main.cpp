@@ -34,7 +34,7 @@ using namespace Alimer;
 
 class WindowTest : public Object
 {
-	OBJECT(WindowTest);
+	ALIMER_OBJECT(WindowTest, Object);
 
 public:
 	void Run()

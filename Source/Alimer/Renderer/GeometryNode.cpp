@@ -93,7 +93,7 @@ namespace Alimer
 		RegisterFactory<GeometryNode>();
 		CopyBaseAttributes<GeometryNode, OctreeNode>();
 		RegisterMixedRefAttribute("materials", &GeometryNode::MaterialsAttr, &GeometryNode::SetMaterialsAttr,
-			ResourceRefList(Material::TypeStatic()));
+			ResourceRefList(Material::GetTypeStatic()));
 	}
 
 	void GeometryNode::OnPrepareRender(unsigned frameNumber, Camera* camera)
@@ -187,7 +187,7 @@ namespace Alimer
 
 	ResourceRefList GeometryNode::MaterialsAttr() const
 	{
-		ResourceRefList ret(Material::TypeStatic());
+		ResourceRefList ret(Material::GetTypeStatic());
 
 		ret.names.resize(_batches.size());
 		for (size_t i = 0; i < _batches.size(); ++i)

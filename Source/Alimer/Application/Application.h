@@ -29,7 +29,7 @@ namespace Alimer
 	/// %Application subsystem for main loop and all modules and OS setup.
 	class ALIMER_API Application : public Object
 	{
-		OBJECT(Application);
+		ALIMER_OBJECT(Application, Object);
 
 	public:
 		/// Construct and register subsystem.
@@ -37,8 +37,8 @@ namespace Alimer
 		/// Destruct.
 		virtual ~Application();
 
+		void Run();
 	private:
-		
 	};
 
 }

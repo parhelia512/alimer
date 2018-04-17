@@ -34,7 +34,7 @@ using namespace Alimer;
 
 class GraphicsTest : public Object
 {
-	OBJECT(GraphicsTest);
+	ALIMER_OBJECT(GraphicsTest, Object);
 
 public:
 	void Run()

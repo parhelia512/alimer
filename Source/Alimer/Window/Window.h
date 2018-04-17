@@ -63,7 +63,7 @@ namespace Alimer
 	/// Operating system window, Win32 implementation.
 	class ALIMER_API Window : public Object
 	{
-		OBJECT(Window);
+		ALIMER_OBJECT(Window, Object);
 
 	public:
 		/// Construct and register subsystem. The window is not yet opened.

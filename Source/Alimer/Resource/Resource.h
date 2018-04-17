@@ -13,7 +13,7 @@ namespace Alimer
 	/// Base class for resources.
 	class ALIMER_API Resource : public Object
 	{
-		OBJECT(Resource);
+		ALIMER_OBJECT(Resource, Object);
 
 	public:
 		/// Load the resource data from a stream. May be executed outside the main thread, should not access GPU resources. Return true on success.
@@ -31,7 +31,7 @@ namespace Alimer
 		/// Return name of the resource.
 		const std::string& Name() const { return _name; }
 		/// Return name hash of the resource.
-		const StringHash& NameHash() const { return _nameHash; }
+		const StringHash& GetNameHash() const { return _nameHash; }
 
 	private:
 		/// Resource name.
@@ -49,7 +49,7 @@ namespace Alimer
 	/// Return type from a resource pointer, or default type if null.
 	inline StringHash ResourceType(Resource* resource, StringHash defaultType)
 	{
-		return resource ? resource->Type() : defaultType;
+		return resource ? resource->GetType() : defaultType;
 	}
 
 	/// Make a resource ref from a resource pointer.
@@ -71,7 +71,7 @@ namespace Alimer
 	/// Make a resource ref list from a vector of resource poitners.
 	template <class T> ResourceRefList MakeResourceRefList(const std::vector<T*>& resources)
 	{
-		return ResourceRefList(T::TypeStatic(), GetResourceNames(resources));
+		return ResourceRefList(T::GetTypeStatic(), GetResourceNames(resources));
 	}
 
 }
