@@ -22,7 +22,6 @@
 //
 
 #include "Alimer.h"
-#include "Debug/DebugNew.h"
 
 #ifdef _MSC_VER
 #include <crtdbg.h>
@@ -35,35 +34,35 @@ using namespace Alimer;
 
 int main()
 {
-    #ifdef _MSC_VER
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-    #endif
-    
-    RegisterResourceLibrary();
-    
-    Log log;
-    Profiler profiler;
-    ResourceCache cache;
-    
-    printf("Testing resource loading\n");
-    
-    Image* image = nullptr;
+#ifdef _MSC_VER
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
 
-    {
-        profiler.BeginFrame();
-        cache.AddResourceDir(GetExecutableDir() + "Data");
-        image = cache.LoadResource<Image>("Test.png");
-        profiler.EndFrame();
-    }
+	RegisterResourceLibrary();
 
-    if (image)
-    {
-        printf("Image loaded successfully, size %dx%d pixel byte size %d\n", image->GetWidth(), image->GetHeight(), image->GetPixelByteSize());
-        File saveFile("Test_Save.png", FILE_WRITE);
-        image->Save(saveFile);
-    }
+	Log log;
+	Profiler profiler;
+	ResourceCache cache;
 
-    LOGRAW(profiler.OutputResults(false, false, 16));
+	printf("Testing resource loading\n");
 
-    return 0;
+	Image* image = nullptr;
+
+	{
+		profiler.BeginFrame();
+		cache.AddResourceDir(GetExecutableDir() + "Data");
+		image = cache.LoadResource<Image>("Test.png");
+		profiler.EndFrame();
+	}
+
+	if (image)
+	{
+		printf("Image loaded successfully, size %dx%d pixel byte size %d\n", image->GetWidth(), image->GetHeight(), image->GetPixelByteSize());
+		File saveFile("Test_Save.png", FileMode::Write);
+		image->Save(saveFile);
+	}
+
+	LOGRAW(profiler.OutputResults(false, false, 16));
+
+	return 0;
 }

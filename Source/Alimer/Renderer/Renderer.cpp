@@ -79,7 +79,7 @@ namespace Alimer
 
 	inline bool CompareLights(Light* lhs, Light* rhs)
 	{
-		return lhs->Distance() < rhs->Distance();
+		return lhs->GetDistance() < rhs->GetDistance();
 	}
 
 	Renderer::Renderer()
@@ -125,7 +125,7 @@ namespace Alimer
 		return true;
 	}
 
-	bool Renderer::CollectObjects(Scene* scene_, Camera* camera_)
+	bool Renderer::CollectObjects(Scene* scene, Camera* camera_)
 	{
 		ALIMER_PROFILE(CollectObjects);
 
@@ -134,7 +134,7 @@ namespace Alimer
 			Initialize();
 
 		geometries.clear();
-		lights.clear();
+		_lights.clear();
 		_instanceTransforms.clear();
 		lightLists.clear();
 		lightPasses.clear();
@@ -144,10 +144,10 @@ namespace Alimer
 			it->Clear();
 		usedShadowViews = 0;
 
-		scene = scene_;
-		camera = camera_;
-		octree = scene ? scene->FindChild<Octree>() : nullptr;
-		if (!scene || !camera || !octree)
+		_scene = scene;
+		_camera = camera_;
+		_octree = scene ? _scene->FindChild<Octree>() : nullptr;
+		if (!_scene || !_camera || !_octree)
 			return false;
 
 		// Increment frame number. Never use 0, as that is the default for objects that have never been rendered
@@ -156,11 +156,11 @@ namespace Alimer
 			++_frameNumber;
 
 		// Reinsert moved objects to the octree
-		octree->Update();
+		_octree->Update();
 
-		frustum = camera->WorldFrustum();
-		viewMask = camera->ViewMask();
-		octree->FindNodes(frustum, this, &Renderer::CollectGeometriesAndLights);
+		_frustum = _camera->WorldFrustum();
+		_viewMask = _camera->ViewMask();
+		_octree->FindNodes(_frustum, this, &Renderer::CollectGeometriesAndLights);
 
 		return true;
 	}
@@ -173,10 +173,10 @@ namespace Alimer
 			// Sort lights by increasing distance. Directional lights will have distance 0 which ensure they have the first
 			// opportunity to allocate shadow maps
 			ALIMER_PROFILE(SortLights);
-			std::sort(lights.begin(), lights.end(), CompareLights);
+			std::sort(_lights.begin(), _lights.end(), CompareLights);
 		}
 
-		for (auto it = lights.begin(), end = lights.end(); it != end; ++it)
+		for (auto it = _lights.begin(), end = _lights.end(); it != end; ++it)
 		{
 			Light* light = *it;
 			unsigned lightMask = light->LightMask();
@@ -197,7 +197,7 @@ namespace Alimer
 				for (auto gIt = geometries.begin(), gEnd = geometries.end(); gIt != gEnd; ++gIt)
 				{
 					GeometryNode* node = *gIt;
-					if (node->LayerMask() & lightMask)
+					if (node->GetLayerMask() & lightMask)
 					{
 						AddLightToNode(node, light, lightList);
 						hasReceivers = true;
@@ -206,13 +206,13 @@ namespace Alimer
 				break;
 
 			case LIGHT_POINT:
-				octree->FindNodes(reinterpret_cast<std::vector<OctreeNode*>&>(litGeometries), light->WorldSphere(), NF_ENABLED |
+				_octree->FindNodes(reinterpret_cast<std::vector<OctreeNode*>&>(litGeometries), light->WorldSphere(), NF_ENABLED |
 					NF_GEOMETRY, lightMask);
 				for (auto gIt = litGeometries.begin(), gEnd = litGeometries.end(); gIt != gEnd; ++gIt)
 				{
 					GeometryNode* node = *gIt;
 					// Add light only to nodes which are actually inside the frustum this frame
-					if (node->LastFrameNumber() == _frameNumber)
+					if (node->GetLastFrameNumber() == _frameNumber)
 					{
 						AddLightToNode(node, light, lightList);
 						hasReceivers = true;
@@ -221,12 +221,12 @@ namespace Alimer
 				break;
 
 			case LIGHT_SPOT:
-				octree->FindNodes(reinterpret_cast<std::vector<OctreeNode*>&>(litGeometries), light->WorldFrustum(), NF_ENABLED |
+				_octree->FindNodes(reinterpret_cast<std::vector<OctreeNode*>&>(litGeometries), light->WorldFrustum(), NF_ENABLED |
 					NF_GEOMETRY, lightMask);
 				for (auto gIt = litGeometries.begin(), gEnd = litGeometries.end(); gIt != gEnd; ++gIt)
 				{
 					GeometryNode* node = *gIt;
-					if (node->LastFrameNumber() == _frameNumber)
+					if (node->GetLastFrameNumber() == _frameNumber)
 					{
 						AddLightToNode(node, light, lightList);
 						hasReceivers = true;
@@ -278,7 +278,7 @@ namespace Alimer
 
 			// Setup shadow cameras & find shadow casters
 			size_t startIndex = usedShadowViews;
-			light->SetupShadowViews(camera, shadowViews, usedShadowViews);
+			light->SetupShadowViews(_camera, shadowViews, usedShadowViews);
 			bool hasShadowBatches = false;
 
 			for (size_t i = startIndex; i < usedShadowViews; ++i)
@@ -288,7 +288,7 @@ namespace Alimer
 				BatchQueue& shadowQueue = view->shadowQueue;
 				shadowQueue.sort = SORT_STATE;
 				shadowQueue.lit = false;
-				shadowQueue.baseIndex = Material::PassIndex("shadow");
+				shadowQueue.baseIndex = Material::GetPassIndex("shadow");
 				shadowQueue.additiveIndex = 0;
 
 				switch (light->GetLightType())
@@ -297,7 +297,7 @@ namespace Alimer
 					// Directional light needs a new frustum query for each split, as the shadow cameras are typically far outside
 					// the main view
 					litGeometries.clear();
-					octree->FindNodes(reinterpret_cast<std::vector<OctreeNode*>&>(litGeometries),
+					_octree->FindNodes(reinterpret_cast<std::vector<OctreeNode*>&>(litGeometries),
 						shadowFrustum, NF_ENABLED | NF_GEOMETRY | NF_CASTSHADOWS, light->LightMask());
 					CollectShadowBatches(litGeometries, shadowQueue, shadowFrustum, false, false);
 					break;
@@ -306,8 +306,10 @@ namespace Alimer
 					// Check which lit geometries are shadow casters and inside each shadow frustum. First check whether the
 					// shadow frustum is inside the view at all
 					/// \todo Could use a frustum-frustum test for more accuracy
-					if (frustum.IsInsideFast(BoundingBox(shadowFrustum)))
+					if (_frustum.IsInsideFast(BoundingBox(shadowFrustum)))
+					{
 						CollectShadowBatches(litGeometries, shadowQueue, shadowFrustum, true, true);
+					}
 					break;
 
 				case LIGHT_SPOT:
@@ -391,7 +393,9 @@ namespace Alimer
 
 					auto lpIt = lightPasses.find(passKey);
 					if (lpIt != lightPasses.end())
+					{
 						list.lightPasses.push_back(&lpIt->second);
+					}
 					else
 					{
 						LightPass* newLightPass = &lightPasses[passKey];
@@ -429,9 +433,9 @@ namespace Alimer
 
 								if (light->GetLightType() == LIGHT_DIRECTIONAL)
 								{
-									float fadeStart = light->ShadowFadeStart() * light->MaxShadowDistance() / camera->FarClip();
-									float fadeRange = light->MaxShadowDistance() / camera->FarClip() - fadeStart;
-									newLightPass->dirShadowSplits = light->ShadowSplits() / camera->FarClip();
+									float fadeStart = light->ShadowFadeStart() * light->MaxShadowDistance() / _camera->FarClip();
+									float fadeRange = light->MaxShadowDistance() / _camera->FarClip() - fadeStart;
+									newLightPass->dirShadowSplits = light->ShadowSplits() / _camera->FarClip();
 									newLightPass->dirShadowFade = Vector4(fadeStart / fadeRange, 1.0f / fadeRange, 0.0f, 0.0f);
 								}
 								else if (light->GetLightType() == LIGHT_POINT)
@@ -459,13 +463,13 @@ namespace Alimer
 		for (size_t i = 0; i < passes.size(); ++i)
 		{
 			const PassDesc& srcPass = passes[i];
-			uint8_t baseIndex = Material::PassIndex(srcPass.name);
+			uint8_t baseIndex = Material::GetPassIndex(srcPass.name);
 			BatchQueue* batchQueue = &batchQueues[baseIndex];
 			currentQueues[i] = batchQueue;
 			batchQueue->sort = srcPass.sort;
 			batchQueue->lit = srcPass.lit;
 			batchQueue->baseIndex = baseIndex;
-			batchQueue->additiveIndex = srcPass.lit ? Material::PassIndex(srcPass.name + "add") : 0;
+			batchQueue->additiveIndex = srcPass.lit ? Material::GetPassIndex(srcPass.name + "add") : 0;
 		}
 
 		// Loop through geometry nodes
@@ -498,7 +502,7 @@ namespace Alimer
 					if (batchQueue.sort < SORT_BACK_TO_FRONT)
 						newBatch.CalculateSortKey();
 					else
-						newBatch.distance = node->Distance();
+						newBatch.distance = node->GetDistance();
 
 					batchQueue.batches.push_back(newBatch);
 
@@ -523,7 +527,7 @@ namespace Alimer
 							{
 								// In back-to-front mode base and additive batches must be mixed. Manipulate distance to make
 								// the additive batches render later
-								newBatch.distance = node->Distance() * 0.99999f;
+								newBatch.distance = node->GetDistance() * 0.99999f;
 								batchQueue.batches.push_back(newBatch);
 							}
 						}
@@ -585,10 +589,10 @@ namespace Alimer
 
 		for (size_t i = 0, count = passes.size(); i < count; ++i)
 		{
-			unsigned char passIndex = Material::PassIndex(passes[i].name);
+			uint8_t passIndex = Material::GetPassIndex(passes[i].name);
 			BatchQueue& batchQueue = batchQueues[passIndex];
-			RenderBatches(batchQueue.batches, camera, i == 0);
-			RenderBatches(batchQueue.additiveBatches, camera, false);
+			RenderBatches(batchQueue.batches, _camera, i == 0);
+			RenderBatches(batchQueue.additiveBatches, _camera, false);
 		}
 	}
 
@@ -596,10 +600,10 @@ namespace Alimer
 	{
 		ALIMER_PROFILE(RenderBatches);
 
-		uint8_t passIndex = Material::PassIndex(pass);
+		uint8_t passIndex = Material::GetPassIndex(pass);
 		BatchQueue& batchQueue = batchQueues[passIndex];
-		RenderBatches(batchQueue.batches, camera);
-		RenderBatches(batchQueue.additiveBatches, camera, false);
+		RenderBatches(batchQueue.batches, _camera);
+		RenderBatches(batchQueue.additiveBatches, _camera, false);
 	}
 
 	void Renderer::Initialize()
@@ -713,19 +717,19 @@ namespace Alimer
 			{
 				OctreeNode* node = *it;
 				uint16_t flags = node->GetFlags();
-				if ((flags & NF_ENABLED) && (flags & (NF_GEOMETRY | NF_LIGHT)) && (node->LayerMask() & viewMask))
+				if ((flags & NF_ENABLED) && (flags & (NF_GEOMETRY | NF_LIGHT)) && (node->GetLayerMask() & _viewMask))
 				{
 					if (flags & NF_GEOMETRY)
 					{
 						GeometryNode* geometry = static_cast<GeometryNode*>(node);
-						geometry->OnPrepareRender(_frameNumber, camera);
+						geometry->OnPrepareRender(_frameNumber, _camera);
 						geometries.push_back(geometry);
 					}
 					else
 					{
 						Light* light = static_cast<Light*>(node);
-						light->OnPrepareRender(_frameNumber, camera);
-						lights.push_back(light);
+						light->OnPrepareRender(_frameNumber, _camera);
+						_lights.push_back(light);
 					}
 				}
 			}
@@ -736,20 +740,22 @@ namespace Alimer
 			{
 				OctreeNode* node = *it;
 				uint16_t flags = node->GetFlags();
-				if ((flags & NF_ENABLED) && (flags & (NF_GEOMETRY | NF_LIGHT)) && (node->LayerMask() & viewMask) &&
-					frustum.IsInsideFast(node->WorldBoundingBox()))
+				if ((flags & NF_ENABLED)
+					&& (flags & (NF_GEOMETRY | NF_LIGHT))
+					&& (node->GetLayerMask() & _viewMask)
+					&& _frustum.IsInsideFast(node->WorldBoundingBox()))
 				{
 					if (flags & NF_GEOMETRY)
 					{
 						GeometryNode* geometry = static_cast<GeometryNode*>(node);
-						geometry->OnPrepareRender(_frameNumber, camera);
+						geometry->OnPrepareRender(_frameNumber, _camera);
 						geometries.push_back(geometry);
 					}
 					else
 					{
 						Light* light = static_cast<Light*>(node);
-						light->OnPrepareRender(_frameNumber, camera);
-						lights.push_back(light);
+						light->OnPrepareRender(_frameNumber, _camera);
+						_lights.push_back(light);
 					}
 				}
 			}
@@ -810,8 +816,10 @@ namespace Alimer
 				continue;
 
 			// Node was possibly not in the main view. Update geometry first in that case
-			if (node->LastFrameNumber() != _frameNumber)
-				node->OnPrepareRender(_frameNumber, camera);
+			if (node->GetLastFrameNumber() != _frameNumber)
+			{
+				node->OnPrepareRender(_frameNumber, _camera);
+			}
 
 			newBatch.type = node->GetGeometryType();
 			newBatch.worldMatrix = &node->WorldTransform();
@@ -875,7 +883,7 @@ namespace Alimer
 #endif
 			}
 			else
-				depthParameters.w = 1.0f / camera->FarClip();
+				depthParameters.w = 1.0f / _camera->FarClip();
 
 			vsFrameConstantBuffer->SetConstant(VS_FRAME_VIEW_MATRIX, viewMatrix);
 			vsFrameConstantBuffer->SetConstant(VS_FRAME_PROJECTION_MATRIX, projectionMatrix);
@@ -919,7 +927,9 @@ namespace Alimer
 
 				Pass* pass = batch.pass;
 				if (!pass->shadersLoaded)
+				{
 					LoadPassShaders(pass);
+				}
 
 				// Check that pass is legal
 				if (pass->shaders[SHADER_VS].Get() && pass->shaders[SHADER_PS].Get())
@@ -952,7 +962,7 @@ namespace Alimer
 					}
 
 					// Apply material render state
-					Material* material = pass->Parent();
+					Material* material = pass->GetParent();
 					if (material != lastMaterial)
 					{
 						for (size_t i = 0; i < MAX_MATERIAL_TEXTURE_UNITS; ++i)
@@ -1024,11 +1034,11 @@ namespace Alimer
 		ResourceCache* cache = Subsystem<ResourceCache>();
 		// Use different extensions for GLSL & HLSL shaders
 #ifdef ALIMER_OPENGL
-		pass->shaders[SHADER_VS] = cache->LoadResource<Shader>(pass->ShaderName(SHADER_VS) + ".vert");
-		pass->shaders[SHADER_PS] = cache->LoadResource<Shader>(pass->ShaderName(SHADER_PS) + ".frag");
+		pass->shaders[SHADER_VS] = cache->LoadResource<Shader>(pass->GetShaderName(SHADER_VS) + ".vert");
+		pass->shaders[SHADER_PS] = cache->LoadResource<Shader>(pass->GetShaderName(SHADER_PS) + ".frag");
 #else
-		pass->shaders[SHADER_VS] = cache->LoadResource<Shader>(pass->ShaderName(SHADER_VS) + ".vs");
-		pass->shaders[SHADER_PS] = cache->LoadResource<Shader>(pass->ShaderName(SHADER_PS) + ".ps");
+		pass->shaders[SHADER_VS] = cache->LoadResource<Shader>(pass->GetShaderName(SHADER_VS) + ".vs");
+		pass->shaders[SHADER_PS] = cache->LoadResource<Shader>(pass->GetShaderName(SHADER_PS) + ".ps");
 #endif
 
 		pass->shadersLoaded = true;

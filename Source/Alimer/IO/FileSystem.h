@@ -24,12 +24,10 @@
 #pragma once
 
 #include "../AlimerConfig.h"
-#include <vector>
-#include <string>
+#include "../Base/StdHeaders.h"
 
 namespace Alimer
 {
-
 	/// Return files.
 	static const unsigned SCAN_FILES = 0x1;
 	/// Return directories.
@@ -48,11 +46,11 @@ namespace Alimer
 	/// Delete a file. Return true on success.
 	ALIMER_API bool DeleteFile(const std::string& fileName);
 	/// Return the absolute current working directory.
-	ALIMER_API std::string CurrentDir();
+	ALIMER_API std::string GetCurrentDir();
 	/// Return the file's last modified time as seconds since epoch, or 0 if can not be accessed.
-	ALIMER_API unsigned LastModifiedTime(const std::string& fileName);
+	ALIMER_API uint32_t GetLastModifiedTime(const std::string& fileName);
 	/// Set the file's last modified time as seconds since epoch. Return true on success.
-	ALIMER_API bool SetLastModifiedTime(const std::string& fileName, unsigned newTime);
+	ALIMER_API bool SetLastModifiedTime(const std::string& fileName, uint32_t newTime);
 	/// Check if a file exists.
 	ALIMER_API bool FileExists(const std::string& fileName);
 	/// Check if a directory exists.
@@ -78,7 +76,7 @@ namespace Alimer
 	/// Remove the slash from the end of a path if exists and convert to normalized format (use slashes.)
 	ALIMER_API std::string RemoveTrailingSlash(const std::string& pathName);
 	/// Return the parent path, or the path itself if not available.
-	ALIMER_API std::string ParentPath(const std::string& pathName);
+	ALIMER_API std::string GetParentPath(const std::string& pathName);
 	/// Convert a path to normalized (internal) format which uses slashes.
 	ALIMER_API std::string NormalizePath(const std::string& pathName);
 	/// Convert a path to the format required by the operating system.

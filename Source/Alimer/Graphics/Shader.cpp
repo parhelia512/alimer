@@ -28,7 +28,7 @@
 #include "../IO/FileSystem.h"
 #include "Shader.h"
 #include "ShaderVariation.h"
-#include <algorithm>
+using namespace std;
 
 namespace Alimer
 {
@@ -92,12 +92,13 @@ namespace Alimer
 
 		while (!source.IsEof())
 		{
-			std::string line = source.ReadLine();
+			string line = source.ReadLine();
 
 			if (str::StartsWith(line, "#include"))
 			{
-				std::string includeFileName = GetPath(source.GetName()) + str::Trim(str::Replace(line.substr(9), "\"", ""));
-				std::unique_ptr<Stream> includeStream = cache->OpenResource(includeFileName);
+				string trimString = str::Trim(str::Replace(line.substr(9), "\"", ""));
+				string includeFileName = GetPath(source.GetName()) + trimString;
+				UniquePtr<Stream> includeStream = cache->OpenResource(includeFileName);
 				if (!includeStream)
 					return false;
 

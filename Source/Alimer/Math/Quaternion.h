@@ -97,7 +97,7 @@ namespace Alimer
 		}
 
 		/// Construct by parsing a string.
-		Quaternion(const String& str)
+		Quaternion(const std::string& str)
 		{
 			FromString(str);
 		}
@@ -185,7 +185,7 @@ namespace Alimer
 		/// Define from a direction to look in and an up direction. Return true on success, or false if would result in a NaN, in which case the current value remains.
 		bool FromLookRotation(const Vector3& direction, const Vector3& up = Vector3::UP);
 		/// Parse from a string. Return true on success.
-		bool FromString(const String& str);
+		bool FromString(const std::string& str);
 		/// Parse from a C string. Return true on success.
 		bool FromString(const char* str);
 
@@ -256,9 +256,8 @@ namespace Alimer
 		/// Return float data.
 		const float* Data() const { return &w; }
 		/// Return as string.
-		String ToString() const;
+		std::string ToString() const;
 
-		
 		/// X coordinate.
 		float x;
 		/// Y coordinate.

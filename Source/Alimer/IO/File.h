@@ -27,13 +27,12 @@
 
 namespace Alimer
 {
-
-	/// %File open mode.
-	enum FileMode
+	/// File open mode.
+	enum class FileMode : uint32_t
 	{
-		FILE_READ = 0,
-		FILE_WRITE,
-		FILE_READWRITE
+		Read = 0,
+		Write = 1,
+		ReadWrite = 2
 	};
 
 	class PackageFile;
@@ -43,9 +42,9 @@ namespace Alimer
 	{
 	public:
 		/// Construct.
-		File();
+		File() = default;
 		/// Construct and open a file.
-		File(const std::string& fileName, FileMode fileMode = FILE_READ);
+		File(const std::string& fileName, FileMode mode = FileMode::Read);
 		/// Destruct. Close the file if open.
 		~File();
 
@@ -61,31 +60,31 @@ namespace Alimer
 		bool IsWritable() const override;
 
 		/// Open a file. Return true on success.
-		bool Open(const std::string& fileName, FileMode fileMode = FILE_READ);
+		bool Open(const std::string& fileName, FileMode mode = FileMode::Read);
 		/// Close the file.
 		void Close();
 		/// Flush any buffered output to the file.
 		void Flush();
 
 		/// Return the open mode.
-		FileMode Mode() const { return mode; }
+		FileMode GetMode() const { return _mode; }
 		/// Return whether is open.
 		bool IsOpen() const;
 		/// Return the file handle.
-		void* Handle() const { return handle; }
+		void* GetHandle() const { return _handle; }
 
 		using Stream::Read;
 		using Stream::Write;
 
 	private:
 		/// Open mode.
-		FileMode mode;
+		FileMode _mode{ FileMode::Read };
 		/// File handle.
-		void* handle;
+		void* _handle = nullptr;
 		/// Synchronization needed before read -flag.
-		bool readSyncNeeded;
+		bool _readSyncNeeded{};
 		/// Synchronization needed before write -flag.
-		bool writeSyncNeeded;
+		bool _writeSyncNeeded{};
 	};
 
 }

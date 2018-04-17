@@ -21,7 +21,6 @@
 // THE SOFTWARE.
 //
 
-#include "../IO/JSONValue.h"
 #include "../IO/ObjectRef.h"
 #include "../IO/Stream.h"
 #include "ObjectResolver.h"
@@ -72,22 +71,22 @@ namespace Alimer
 		if (!attributes)
 			return;
 
-		dest.WriteVLE(attributes->size());
+		dest.WriteVLE(static_cast<uint32_t>(attributes->size()));
 		for (auto it = attributes->begin(); it != attributes->end(); ++it)
 		{
 			const shared_ptr<Attribute> attr = *it;
-			dest.Write<uint8_t>((uint8_t)attr->GetType());
+			dest.WriteUByte((uint8_t)attr->GetType());
 			attr->ToBinary(this, dest);
 		}
 	}
 
-	void Serializable::LoadJSON(const JSONValue& source, ObjectResolver& resolver)
+	void Serializable::LoadJSON(const json& source, ObjectResolver& resolver)
 	{
 		const auto* attributes = GetAttributes();
-		if (!attributes || !source.IsObject() || !source.Size())
+		if (!attributes || !source.is_object() || !source.size())
 			return;
 
-		const JSONObject& object = source.GetObject();
+		const json& object = source;
 
 		for (auto it = attributes->begin(); it != attributes->end(); ++it)
 		{
@@ -97,14 +96,14 @@ namespace Alimer
 			{
 				// Store object refs to the resolver instead of immediately setting
 				if (attr->GetType() != ATTR_OBJECTREF)
-					attr->FromJSON(this, jsonIt->second);
+					attr->FromJSON(this, jsonIt.value());
 				else
-					resolver.StoreObjectRef(this, attr, ObjectRef((unsigned)jsonIt->second.GetNumber()));
+					resolver.StoreObjectRef(this, attr, ObjectRef(jsonIt.value().get<uint32_t>()));
 			}
 		}
 	}
 
-	void Serializable::SaveJSON(JSONValue& dest)
+	void Serializable::SaveJSON(json& dest)
 	{
 		const auto* attributes = GetAttributes();
 		if (!attributes)
@@ -137,9 +136,9 @@ namespace Alimer
 		return it != _classAttributes.end() ? &it->second : nullptr;
 	}
 
-	std::shared_ptr<Attribute> Serializable::FindAttribute(const String& name) const
+	std::shared_ptr<Attribute> Serializable::FindAttribute(const std::string& name) const
 	{
-		return FindAttribute(name.CString());
+		return FindAttribute(name.c_str());
 	}
 
 	std::shared_ptr<Attribute> Serializable::FindAttribute(const char* name) const

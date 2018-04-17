@@ -33,7 +33,7 @@ namespace Alimer
 		{
 			sortKey = ((((uint64_t)pass->GetShaderHash() * type) & 0xffff) << 48) |
 				((((uint64_t)lights) & 0xffff) << 32) |
-				((((uint64_t)pass->Parent()) & 0xffff) << 16) |
+				((((uint64_t)pass->GetParent()) & 0xffff) << 16) |
 				(((uint64_t)geometry) & 0xffff);
 		}
 
@@ -51,7 +51,7 @@ namespace Alimer
 			/// Non-instanced use world matrix.
 			const Matrix3x4* worldMatrix;
 			/// Instanced mode start index.
-			size_t instanceStart;
+			uint32_t instanceStart;
 		};
 
 		union
@@ -61,7 +61,7 @@ namespace Alimer
 			/// Distance for sorting.
 			float distance;
 			/// Instanced mode instance count.
-			size_t instanceCount;
+			uint32_t instanceCount;
 		};
 	};
 

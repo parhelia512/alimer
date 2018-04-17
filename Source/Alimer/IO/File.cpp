@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 //
 
+#include "../Base/Utils.h"
 #include "File.h"
 #include "FileSystem.h"
 
@@ -52,19 +53,8 @@ namespace Alimer
 	};
 #endif
 
-	File::File() :
-		mode(FILE_READ),
-		handle(nullptr),
-		readSyncNeeded(false),
-		writeSyncNeeded(false)
-	{
-	}
 
-	File::File(const string& fileName, FileMode mode) :
-		mode(FILE_READ),
-		handle(nullptr),
-		readSyncNeeded(false),
-		writeSyncNeeded(false)
+	File::File(const string& fileName, FileMode mode)
 	{
 		Open(fileName, mode);
 	}
@@ -74,7 +64,7 @@ namespace Alimer
 		Close();
 	}
 
-	bool File::Open(const string& fileName, FileMode fileMode)
+	bool File::Open(const string& fileName, FileMode mode)
 	{
 		Close();
 
@@ -82,39 +72,39 @@ namespace Alimer
 			return false;
 
 #ifdef _WIN32
-		handle = _wfopen(WideNativePath(fileName).c_str(), openModes[fileMode]);
+		_handle = _wfopen(WideNativePath(fileName).c_str(), openModes[ecast(mode)]);
 #else
-		handle = fopen(NativePath(fileName).CString(), openModes[fileMode]);
+		_handle = fopen(NativePath(fileName).CString(), openModes[ecast(mode)]);
 #endif
 
 		// If file did not exist in readwrite mode, retry with write-update mode
-		if (mode == FILE_READWRITE && !handle)
+		if (mode == FileMode::ReadWrite && !_handle)
 		{
 #ifdef _WIN32
-			handle = _wfopen(WideNativePath(fileName).c_str(), openModes[fileMode + 1]);
+			_handle = _wfopen(WideNativePath(fileName).c_str(), openModes[ecast(mode) + 1]);
 #else
-			handle = fopen(NativePath(fileName).c_str(), openModes[fileMode + 1]);
+			_handle = fopen(NativePath(fileName).c_str(), openModes[ecast(mode) + 1]);
 #endif
 		}
 
-		if (!handle)
+		if (!_handle)
 			return false;
 
 		_name = fileName;
-		mode = fileMode;
+		_mode = mode;
 		_position = 0;
-		readSyncNeeded = false;
-		writeSyncNeeded = false;
+		_readSyncNeeded = false;
+		_writeSyncNeeded = false;
 
-		fseek((FILE*)handle, 0, SEEK_END);
-		_size = ftell((FILE*)handle);
-		fseek((FILE*)handle, 0, SEEK_SET);
+		fseek((FILE*)_handle, 0, SEEK_END);
+		_size = ftell((FILE*)_handle);
+		fseek((FILE*)_handle, 0, SEEK_SET);
 		return true;
 	}
 
 	size_t File::Read(void* dest, size_t numBytes)
 	{
-		if (!handle || mode == FILE_WRITE)
+		if (!_handle || _mode == FileMode::Write)
 			return 0;
 
 		if (numBytes + _position > _size)
@@ -123,64 +113,64 @@ namespace Alimer
 			return 0;
 
 		// Need to reassign the position due to internal buffering when transitioning from writing to reading
-		if (readSyncNeeded)
+		if (_readSyncNeeded)
 		{
-			fseek((FILE*)handle, (long)_position, SEEK_SET);
-			readSyncNeeded = false;
+			fseek((FILE*)_handle, (long)_position, SEEK_SET);
+			_readSyncNeeded = false;
 		}
 
-		size_t ret = fread(dest, numBytes, 1, (FILE*)handle);
+		size_t ret = fread(dest, numBytes, 1, (FILE*)_handle);
 		if (ret != 1)
 		{
 			// If error, return to the position where the read began
-			fseek((FILE*)handle, (long)_position, SEEK_SET);
+			fseek((FILE*)_handle, (long)_position, SEEK_SET);
 			return 0;
 		}
 
-		writeSyncNeeded = true;
+		_writeSyncNeeded = true;
 		_position += numBytes;
 		return numBytes;
 	}
 
 	size_t File::Seek(size_t newPosition)
 	{
-		if (!handle)
+		if (!_handle)
 			return 0;
 
 		// Allow sparse seeks if writing
-		if (mode == FILE_READ && newPosition > _size)
+		if (_mode == FileMode::Read && newPosition > _size)
 			newPosition = _size;
 
-		fseek((FILE*)handle, (long)newPosition, SEEK_SET);
+		fseek((FILE*)_handle, (long)newPosition, SEEK_SET);
 		_position = newPosition;
-		readSyncNeeded = false;
-		writeSyncNeeded = false;
+		_readSyncNeeded = false;
+		_writeSyncNeeded = false;
 		return _position;
 	}
 
 	size_t File::Write(const void* data, size_t numBytes)
 	{
-		if (!handle || mode == FILE_READ)
+		if (!_handle || _mode == FileMode::Read)
 			return 0;
 
 		if (!numBytes)
 			return 0;
 
 		// Need to reassign the position due to internal buffering when transitioning from reading to writing
-		if (writeSyncNeeded)
+		if (_writeSyncNeeded)
 		{
-			fseek((FILE*)handle, (long)_position, SEEK_SET);
-			writeSyncNeeded = false;
+			fseek((FILE*)_handle, (long)_position, SEEK_SET);
+			_writeSyncNeeded = false;
 		}
 
-		if (fwrite(data, numBytes, 1, (FILE*)handle) != 1)
+		if (fwrite(data, numBytes, 1, (FILE*)_handle) != 1)
 		{
 			// If error, return to the position where the write began
-			fseek((FILE*)handle, (long)_position, SEEK_SET);
+			fseek((FILE*)_handle, (long)_position, SEEK_SET);
 			return 0;
 		}
 
-		readSyncNeeded = true;
+		_readSyncNeeded = true;
 		_position += numBytes;
 		if (_position > _size)
 			_size = _position;
@@ -190,20 +180,20 @@ namespace Alimer
 
 	bool File::IsReadable() const
 	{
-		return handle != 0 && mode != FILE_WRITE;
+		return _handle != nullptr && _mode != FileMode::Write;
 	}
 
 	bool File::IsWritable() const
 	{
-		return handle != 0 && mode != FILE_READ;
+		return _handle != nullptr && _mode != FileMode::Read;
 	}
 
 	void File::Close()
 	{
-		if (handle)
+		if (_handle)
 		{
-			fclose((FILE*)handle);
-			handle = 0;
+			fclose((FILE*)_handle);
+			_handle = nullptr;
 			_position = 0;
 			_size = 0;
 		}
@@ -211,13 +201,12 @@ namespace Alimer
 
 	void File::Flush()
 	{
-		if (handle)
-			fflush((FILE*)handle);
+		if (_handle)
+			fflush((FILE*)_handle);
 	}
 
 	bool File::IsOpen() const
 	{
-		return handle != 0;
+		return _handle != nullptr;
 	}
-
 }

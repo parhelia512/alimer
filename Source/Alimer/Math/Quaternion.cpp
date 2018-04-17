@@ -173,14 +173,14 @@ namespace Alimer
 	}
 
 
-	bool Quaternion::FromString(const String& str)
+	bool Quaternion::FromString(const std::string& str)
 	{
-		return FromString(str.CString());
+		return FromString(str.c_str());
 	}
 
 	bool Quaternion::FromString(const char* str)
 	{
-		size_t elements = String::CountElements(str, ' ');
+		size_t elements = str::CountElements(str, ' ');
 		if (elements < 3)
 			return false;
 
@@ -309,11 +309,10 @@ namespace Alimer
 		return result;
 	}
 
-	String Quaternion::ToString() const
+	std::string Quaternion::ToString() const
 	{
 		char tempBuffer[CONVERSION_BUFFER_LENGTH];
 		sprintf(tempBuffer, "%g %g %g %g", w, x, y, z);
-		return String(tempBuffer);
+		return std::string(tempBuffer);
 	}
-
 }

@@ -23,7 +23,6 @@
 
 #include "../Math/Math.h"
 #include "Stream.h"
-#include "JSONValue.h"
 #include "ObjectRef.h"
 #include "ResourceRef.h"
 
@@ -195,6 +194,11 @@ namespace Alimer
 		return ret;
 	}
 
+	StringHash Stream::ReadStringHash()
+	{
+		return StringHash(ReadUInt());
+	}
+
 	std::vector<uint8_t> Stream::ReadBuffer()
 	{
 		std::vector<uint8_t> ret(ReadVLE());
@@ -213,25 +217,20 @@ namespace Alimer
 		return Quaternion(data);
 	}
 
+	nlohmann::json Stream::ReadJSON()
+	{
+		auto buffer = ReadBuffer();
+		return nlohmann::json::from_ubjson(buffer);
+	}
+
 	template<> bool Stream::Read<bool>()
 	{
 		return ReadUByte() != 0;
 	}
 
-	template<> String Stream::Read<String>()
+	template<> std::string Stream::Read<std::string>()
 	{
-		String ret;
-
-		while (!IsEof())
-		{
-			char c = ReadByte();
-			if (!c)
-				break;
-			else
-				ret += c;
-		}
-
-		return ret;
+		return ReadString();
 	}
 
 	template<> StringHash Stream::Read<StringHash>()
@@ -260,18 +259,86 @@ namespace Alimer
 		return ret;
 	}
 
-	template<> JSONValue Stream::Read<JSONValue>()
+	template<> nlohmann::json Stream::Read<nlohmann::json>()
 	{
-		JSONValue ret;
-		ret.FromBinary(*this);
-		return ret;
+		return ReadJSON();
+	}
+
+	void Stream::WriteByte(int8_t value)
+	{
+		Write(&value, sizeof value);
+	}
+
+	void Stream::WriteShort(int16_t value)
+	{
+		Write(&value, sizeof value);
+	}
+
+	void Stream::WriteInt(int32_t value)
+	{
+		Write(&value, sizeof value);
+	}
+
+	void Stream::WriteInt64(int64_t value)
+	{
+		Write(&value, sizeof value);
+	}
+
+	void Stream::WriteUByte(uint8_t value)
+	{
+		Write(&value, sizeof value);
+	}
+
+	void Stream::WriteUShort(uint16_t value)
+	{
+		Write(&value, sizeof value);
+	}
+
+	void Stream::WriteUInt(uint32_t value)
+	{
+		Write(&value, sizeof value);
+	}
+
+	void Stream::WriteUInt64(uint64_t value)
+	{
+		Write(&value, sizeof value);
+	}
+
+	void Stream::WriteBool(bool value)
+	{
+		WriteUByte((uint8_t)(value ? 1 : 0));
+	}
+
+	void Stream::WriteFloat(float value)
+	{
+		Write(&value, sizeof value) ;
+	}
+
+	void Stream::WriteDouble(double value)
+	{
+		Write(&value, sizeof value);
+	}
+
+	void Stream::WriteString(const String& value)
+	{
+		const char* chars = value.c_str();
+		// Count length to the first zero, because ReadString() does the same
+		size_t length = strlen(chars);
+		Write(chars, length + 1);
+	}
+
+	void Stream::WriteStringHash(const StringHash& value)
+	{
+		return WriteUInt(value.Value());
 	}
 
 	void Stream::WriteFileID(const std::string& value)
 	{
 		Write(value.c_str(), Min((int)value.length(), 4));
 		for (size_t i = value.length(); i < 4; ++i)
-			Write(' ');
+		{
+			WriteByte(' ');
+		}
 	}
 
 	void Stream::WriteBuffer(const std::vector<uint8_t>& value)
@@ -289,7 +356,7 @@ namespace Alimer
 
 		if (value < 0x80)
 		{
-			Write((uint8_t)value);
+			WriteUByte((uint8_t)value);
 		}
 		else if (value < 0x4000)
 		{
@@ -317,44 +384,63 @@ namespace Alimer
 	void Stream::WriteLine(const std::string& value)
 	{
 		Write(value.c_str(), value.length());
-		Write('\r');
-		Write('\n');
+		WriteUByte('\r');
+		WriteUByte('\n');
+	}
+
+	void Stream::Write(const ResourceRef& value)
+	{
+		value.ToBinary(*this);
+	}
+
+	void Stream::Write(const ResourceRefList& value)
+	{
+		value.ToBinary(*this);
+	}
+
+	void Stream::Write(const ObjectRef& value)
+	{
+		WriteUInt(value.id);
+	}
+
+	void Stream::Write(const nlohmann::json& value)
+	{
+		std::vector<std::uint8_t> v_ubjson = nlohmann::json::to_ubjson(value);
+		WriteBuffer(v_ubjson);
 	}
 
 	template<> void Stream::Write<bool>(const bool& value)
 	{
-		Write<unsigned char>(value ? 1 : 0);
+		WriteBool(value);
 	}
 
-	template<> void Stream::Write<String>(const String& value)
+	template<> void Stream::Write<std::string>(const std::string& value)
 	{
-		// Write content and null terminator
-		Write(value.CString(), value.Length() + 1);
+		WriteString(value);
 	}
 
 	template<> void Stream::Write<StringHash>(const StringHash& value)
 	{
-		Write(value.Value());
+		WriteStringHash(value);
 	}
 
 	template<> void Stream::Write<ResourceRef>(const ResourceRef& value)
 	{
-		value.ToBinary(*this);
+		Write(value);
 	}
 
 	template<> void Stream::Write<ResourceRefList>(const ResourceRefList& value)
 	{
-		value.ToBinary(*this);
+		Write(value);
 	}
 
 	template<> void Stream::Write<ObjectRef>(const ObjectRef& value)
 	{
-		Write(value.id);
+		Write(value);
 	}
 
-	template<> void Stream::Write<JSONValue>(const JSONValue& value)
+	template<> void Stream::Write<nlohmann::json>(const nlohmann::json& value)
 	{
-		value.ToBinary(*this);
+		Write(value);
 	}
-
 }

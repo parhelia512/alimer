@@ -22,7 +22,6 @@
 //
 
 #include "Alimer.h"
-#include "Debug/DebugNew.h"
 
 #ifdef _MSC_VER
 #include <crtdbg.h>

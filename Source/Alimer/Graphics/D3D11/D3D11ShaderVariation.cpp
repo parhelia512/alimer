@@ -26,20 +26,134 @@
 #include "../Shader.h"
 #include "../Graphics.h"
 #include "D3D11ShaderVariation.h"
+#include "D3D11Graphics.h"
 #include "../VertexBuffer.h"
 
-#include <d3d11.h>
-#include <d3dcompiler.h>
+using namespace Microsoft::WRL;
 
 namespace Alimer
 {
+#if ALIMER_PLATFORM_WINDOWS && !ALIMER_PLATFORM_UWP
+	struct D3DCompiler
+	{
+		const wchar_t* fileName;
+		const GUID  IID_ID3D11ShaderReflection;
+	};
+
+	static const D3DCompiler s_d3dcompiler[] =
+	{
+		// BK - the only different method in interface is GetRequiresFlags at the end
+		//      of IID_ID3D11ShaderReflection47 (which is not used anyway).
+		{ L"D3DCompiler_47.dll",{ 0x8d536ca1, 0x0cca, 0x4956,{ 0xa8, 0x37, 0x78, 0x69, 0x63, 0x75, 0x55, 0x84 } } },
+		{ L"D3DCompiler_46.dll",{ 0x0a233719, 0x3960, 0x4578,{ 0x9d, 0x7c, 0x20, 0x3b, 0x8b, 0x1d, 0x9c, 0xc1 } } },
+		{ L"D3DCompiler_45.dll",{ 0x0a233719, 0x3960, 0x4578,{ 0x9d, 0x7c, 0x20, 0x3b, 0x8b, 0x1d, 0x9c, 0xc1 } } },
+		{ L"D3DCompiler_44.dll",{ 0x0a233719, 0x3960, 0x4578,{ 0x9d, 0x7c, 0x20, 0x3b, 0x8b, 0x1d, 0x9c, 0xc1 } } },
+		{ L"D3DCompiler_43.dll",{ 0x0a233719, 0x3960, 0x4578,{ 0x9d, 0x7c, 0x20, 0x3b, 0x8b, 0x1d, 0x9c, 0xc1 } } },
+	};
+
+	typedef HRESULT(WINAPI* PFN_D3D_COMPILE)(_In_reads_bytes_(SrcDataSize) LPCVOID pSrcData
+		, _In_ SIZE_T SrcDataSize
+		, _In_opt_ LPCSTR pSourceName
+		, _In_reads_opt_(_Inexpressible_(pDefines->Name != NULL)) CONST D3D_SHADER_MACRO* pDefines
+		, _In_opt_ ID3DInclude* pInclude
+		, _In_opt_ LPCSTR pEntrypoint
+		, _In_ LPCSTR pTarget
+		, _In_ UINT Flags1
+		, _In_ UINT Flags2
+		, _Out_ ID3DBlob** ppCode
+		, _Always_(_Outptr_opt_result_maybenull_) ID3DBlob** ppErrorMsgs
+		);
+
+	typedef HRESULT(WINAPI* PFN_D3D_DISASSEMBLE)(_In_reads_bytes_(SrcDataSize) LPCVOID pSrcData
+		, _In_ SIZE_T SrcDataSize
+		, _In_ UINT Flags
+		, _In_opt_ LPCSTR szComments
+		, _Out_ ID3DBlob** ppDisassembly
+		);
+
+	typedef HRESULT(WINAPI* PFN_D3D_REFLECT)(_In_reads_bytes_(SrcDataSize) LPCVOID pSrcData
+		, _In_ SIZE_T SrcDataSize
+		, _In_ REFIID pInterface
+		, _Out_ void** ppReflector
+		);
+
+	typedef HRESULT(WINAPI* PFN_D3D_STRIP_SHADER)(_In_reads_bytes_(BytecodeLength) LPCVOID pShaderBytecode
+		, _In_ SIZE_T BytecodeLength
+		, _In_ UINT uStripFlags
+		, _Out_ ID3DBlob** ppStrippedBlob
+		);
+
+	PFN_D3D_COMPILE      D3DCompile;
+	PFN_D3D_DISASSEMBLE  D3DDisassemble;
+	PFN_D3D_REFLECT      D3DReflect;
+	PFN_D3D_STRIP_SHADER D3DStripShader;
+
+	static const D3DCompiler* s_compiler;
+	static HMODULE s_d3dCompilerModule = nullptr;
+
+	struct CompilerInitializer
+	{
+		CompilerInitializer()
+		{
+			for (uint32_t ii = 0; ii < ARRAYSIZE(s_d3dcompiler); ++ii)
+			{
+				const D3DCompiler* compiler = &s_d3dcompiler[ii];
+				s_d3dCompilerModule = ::LoadLibraryW(compiler->fileName);
+				if (s_d3dCompilerModule == nullptr)
+				{
+					continue;
+				}
+
+				D3DCompile = (PFN_D3D_COMPILE)::GetProcAddress(s_d3dCompilerModule, "D3DCompile");
+				D3DDisassemble = (PFN_D3D_DISASSEMBLE)::GetProcAddress(s_d3dCompilerModule, "D3DDisassemble");
+				D3DReflect = (PFN_D3D_REFLECT)::GetProcAddress(s_d3dCompilerModule, "D3DReflect");
+				D3DStripShader = (PFN_D3D_STRIP_SHADER)::GetProcAddress(s_d3dCompilerModule, "D3DStripShader");
+
+				if (D3DCompile == nullptr
+					|| D3DDisassemble == nullptr
+					|| D3DReflect == nullptr
+					|| D3DStripShader == nullptr)
+				{
+					::FreeLibrary(s_d3dCompilerModule);
+					continue;
+				}
+
+				s_compiler = compiler;
+				break;
+			}
+
+			LOGERROR("Unable to open D3DCompiler_*.dll shader compiler.");
+		}
+
+		~CompilerInitializer()
+		{
+			if (s_d3dCompilerModule) {
+				::FreeLibrary(s_d3dCompilerModule);
+				s_d3dCompilerModule = nullptr;
+			}
+		}
+	};
+
+	CompilerInitializer __compilerInitializer__;
+#endif
+
 	unsigned InspectInputSignature(ID3DBlob* d3dBlob)
 	{
-		ID3D11ShaderReflection* reflection = nullptr;
 		D3D11_SHADER_DESC shaderDesc;
 		unsigned elementHash = 0;
 
-		D3DReflect(d3dBlob->GetBufferPointer(), d3dBlob->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&reflection);
+#if ALIMER_PLATFORM_WINDOWS && !ALIMER_PLATFORM_UWP
+		const GUID reflectGuid = s_compiler->IID_ID3D11ShaderReflection;
+#else
+		const GUID reflectGuid = IID_ID3D11ShaderReflection;
+#endif
+
+		ComPtr<ID3D11ShaderReflection> reflection;
+		D3DReflect(
+			d3dBlob->GetBufferPointer(), 
+			d3dBlob->GetBufferSize(), 
+			reflectGuid,
+			IID_PPV_ARGS_Helper(&reflection));
 		if (!reflection)
 		{
 			LOGERROR("Failed to reflect vertex shader's input signature");
@@ -62,7 +176,6 @@ namespace Alimer
 			}
 		}
 
-		reflection->Release();
 		return elementHash;
 	}
 
@@ -183,7 +296,7 @@ namespace Alimer
 			errorBlob = nullptr;
 		}
 
-		ID3D11Device* d3dDevice = (ID3D11Device*)graphics->D3DDevice();
+		ID3D11Device1* d3dDevice = static_cast<D3D11Graphics*>( graphics.Get())->GetD3DDevice();
 		ID3DBlob* d3dBlob = (ID3DBlob*)blob;
 
 #ifdef SHOW_DISASSEMBLY

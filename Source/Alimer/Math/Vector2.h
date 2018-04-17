@@ -28,9 +28,6 @@
 
 namespace Alimer
 {
-
-	class String;
-
 	/// Two-dimensional vector.
 	class ALIMER_API Vector2
 	{
@@ -67,7 +64,7 @@ namespace Alimer
 		}
 
 		/// Construct by parsing a string.
-		Vector2(const String& str)
+		Vector2(const std::string& str)
 		{
 			FromString(str);
 		}
@@ -148,7 +145,7 @@ namespace Alimer
 		}
 
 		/// Parse from a string. Return true on success.
-		bool FromString(const String& str);
+		bool FromString(const std::string& str);
 		/// Parse from a C string. Return true on success.
 		bool FromString(const char* str);
 
@@ -204,7 +201,7 @@ namespace Alimer
 		/// Return float data.
 		const float* Data() const { return &x; }
 		/// Return as string.
-		String ToString() const;
+		std::string ToString() const;
 
 		/// Zero vector.
 		static const Vector2 ZERO;

@@ -27,16 +27,16 @@
 #include "../Resource/JSONFile.h"
 #include "Scene.h"
 
-#include <algorithm>
+using namespace std;
 
 namespace Alimer
 {
 	static std::vector<SharedPtr<Node> > noChildren;
 
-	Node::Node() 
-		: flags(NF_ENABLED)
-		, layer(LAYER_DEFAULT)
-		, tag(TAG_NONE)
+	Node::Node()
+		: _flags(NF_ENABLED)
+		, _layer(LAYER_DEFAULT)
+		, _tag(TAG_NONE)
 	{
 	}
 
@@ -44,8 +44,8 @@ namespace Alimer
 	{
 		RemoveAllChildren();
 		// At the time of destruction the node should not have a parent, or be in a scene
-		assert(!parent);
-		assert(!scene);
+		assert(!_parent);
+		assert(!_scene);
 	}
 
 	void Node::RegisterObject()
@@ -54,8 +54,8 @@ namespace Alimer
 		RegisterRefAttribute("name", &Node::GetName, &Node::SetName);
 		RegisterAttribute("enabled", &Node::IsEnabled, &Node::SetEnabled, true);
 		RegisterAttribute("temporary", &Node::IsTemporary, &Node::SetTemporary, false);
-		RegisterAttribute("layer", &Node::Layer, &Node::SetLayer, LAYER_DEFAULT);
-		RegisterAttribute("tag", &Node::Tag, &Node::SetTag, TAG_NONE);
+		RegisterAttribute("layer", &Node::GetLayer, &Node::SetLayer, LAYER_DEFAULT);
+		RegisterAttribute("tag", &Node::GetTag, &Node::SetTag, TAG_NONE);
 	}
 
 	void Node::Load(Stream& source, ObjectResolver& resolver)
@@ -85,8 +85,8 @@ namespace Alimer
 	void Node::Save(Stream& dest)
 	{
 		// Write type and ID first, followed by attributes and child nodes
-		dest.Write(Type());
-		dest.Write(GetId());
+		dest.WriteStringHash(Type());
+		dest.WriteUInt(GetId());
 		Serializable::Save(dest);
 		dest.WriteVLE(NumPersistentChildren());
 
@@ -98,19 +98,19 @@ namespace Alimer
 		}
 	}
 
-	void Node::LoadJSON(const JSONValue& source, ObjectResolver& resolver)
+	void Node::LoadJSON(const json& source, ObjectResolver& resolver)
 	{
 		// Type and id has been read by the parent
 		Serializable::LoadJSON(source, resolver);
 
-		const JSONArray& children = source["children"].GetArray();
+		const json& children = source["children"];
 		if (children.size())
 		{
 			for (auto it = children.begin(); it != children.end(); ++it)
 			{
-				const JSONValue& childJSON = *it;
-				StringHash childType(childJSON["type"].GetString());
-				unsigned childId = (unsigned)childJSON["id"].GetNumber();
+				const json& childJSON = *it;
+				StringHash childType(childJSON["type"].get<string>());
+				uint32_t childId = childJSON["id"].get<uint32_t>();
 				Node* child = CreateChild(childType);
 				if (child)
 				{
@@ -121,7 +121,7 @@ namespace Alimer
 		}
 	}
 
-	void Node::SaveJSON(JSONValue& dest)
+	void Node::SaveJSON(json& dest)
 	{
 		dest["type"] = TypeName();
 		dest["id"] = GetId();
@@ -129,15 +129,15 @@ namespace Alimer
 
 		if (NumPersistentChildren())
 		{
-			dest["children"].SetEmptyArray();
+			dest["children"] = json::array();
 			for (auto it = _children.begin(); it != _children.end(); ++it)
 			{
 				Node* child = *it;
 				if (!child->IsTemporary())
 				{
-					JSONValue childJSON;
+					json childJSON;
 					child->SaveJSON(childJSON);
-					dest["children"].Push(childJSON);
+					dest["children"].push_back(childJSON);
 				}
 			}
 		}
@@ -146,7 +146,7 @@ namespace Alimer
 	bool Node::SaveJSON(Stream& dest)
 	{
 		JSONFile json;
-		SaveJSON(json.Root());
+		SaveJSON(json.GetRoot());
 		return json.Save(dest);
 	}
 
@@ -157,39 +157,39 @@ namespace Alimer
 
 	void Node::SetLayer(uint8_t newLayer)
 	{
-		if (layer < 32)
-			layer = newLayer;
+		if (_layer < 32)
+			_layer = newLayer;
 		else
 			LOGERROR("Can not set layer 32 or higher");
 	}
 
 	void Node::SetLayerName(const std::string& newLayerName)
 	{
-		if (!scene)
+		if (!_scene)
 			return;
 
-		const auto& layers = scene->Layers();
+		const auto& layers = _scene->Layers();
 		auto it = layers.find(newLayerName);
 		if (it != layers.end())
-			layer = it->second;
+			_layer = it->second;
 		else
 			LOGERROR("Layer " + newLayerName + " not defined in the scene");
 	}
 
 	void Node::SetTag(uint8_t newTag)
 	{
-		tag = newTag;
+		_tag = newTag;
 	}
 
 	void Node::SetTagName(const std::string& newTagName)
 	{
-		if (!scene)
+		if (!_scene)
 			return;
 
-		const auto& tags = scene->Tags();
+		const auto& tags = _scene->Tags();
 		auto it = tags.find(newTagName);
 		if (it != tags.end())
-			tag = it->second;
+			_tag = it->second;
 		else
 			LOGERROR("Tag " + newTagName + " not defined in the scene");
 	}
@@ -241,12 +241,7 @@ namespace Alimer
 		return child;
 	}
 
-	Node* Node::CreateChild(StringHash childType, const String& childName)
-	{
-		return CreateChild(childType, childName.CString());
-	}
-
-	Node* Node::CreateChild(StringHash childType, const char* childName)
+	Node* Node::CreateChild(StringHash childType, const string& childName)
 	{
 		Node* child = CreateChild(childType);
 		if (child)
@@ -257,7 +252,7 @@ namespace Alimer
 	void Node::AddChild(Node* child)
 	{
 		// Check for illegal or redundant parent assignment
-		if (!child || child->parent == this)
+		if (!child || child->_parent == this)
 			return;
 
 		if (child == this)
@@ -267,7 +262,7 @@ namespace Alimer
 		}
 
 		// Check for possible cyclic parent assignment
-		Node* current = parent;
+		Node* current = _parent;
 		while (current)
 		{
 			if (current == child)
@@ -275,10 +270,10 @@ namespace Alimer
 				LOGERROR("Attempted cyclic node parenting");
 				return;
 			}
-			current = current->parent;
+			current = current->_parent;
 		}
 
-		Node* oldParent = child->parent;
+		Node* oldParent = child->_parent;
 		if (oldParent)
 		{
 			auto it = std::find(oldParent->_children.begin(), oldParent->_children.end(), child);
@@ -287,15 +282,15 @@ namespace Alimer
 		}
 
 		_children.push_back(child);
-		child->parent = this;
+		child->_parent = this;
 		child->OnParentSet(this, oldParent);
-		if (scene)
-			scene->AddNode(child);
+		if (_scene)
+			_scene->AddNode(child);
 	}
 
 	void Node::RemoveChild(Node* child)
 	{
-		if (!child || child->parent != this)
+		if (!child || child->_parent != this)
 			return;
 
 		for (size_t i = 0; i < _children.size(); ++i)
@@ -315,10 +310,10 @@ namespace Alimer
 
 		Node* child = _children[index];
 		// Detach from both the parent and the scene (removes id assignment)
-		child->parent = nullptr;
+		child->_parent = nullptr;
 		child->OnParentSet(this, nullptr);
-		if (scene)
-			scene->RemoveNode(child);
+		if (_scene)
+			_scene->RemoveNode(child);
 		_children.erase(_children.begin() + index);
 	}
 
@@ -327,10 +322,10 @@ namespace Alimer
 		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
-			child->parent = nullptr;
+			child->_parent = nullptr;
 			child->OnParentSet(this, nullptr);
-			if (scene)
-				scene->RemoveNode(child);
+			if (_scene)
+				_scene->RemoveNode(child);
 			it->Reset();
 		}
 
@@ -339,28 +334,28 @@ namespace Alimer
 
 	void Node::RemoveSelf()
 	{
-		if (parent)
-			parent->RemoveChild(this);
+		if (_parent)
+			_parent->RemoveChild(this);
 		else
 			delete this;
 	}
 
-	const String& Node::LayerName() const
+	const string& Node::GetLayerName() const
 	{
-		if (!scene)
-			return String::EMPTY;
+		if (!_scene)
+			return str::EMPTY;
 
-		const auto& layerNames = scene->LayerNames();
-		return layer < layerNames.size() ? layerNames[layer] : String::EMPTY;
+		const auto& layerNames = _scene->LayerNames();
+		return _layer < layerNames.size() ? layerNames[_layer] : str::EMPTY;
 	}
 
-	const String& Node::TagName() const
+	const string& Node::GetTagName() const
 	{
-		if (!scene)
-			return String::EMPTY;
+		if (!_scene)
+			return str::EMPTY;
 
-		const auto& tagNames = scene->TagNames();
-		return tag < tagNames.size() ? tagNames[layer] : String::EMPTY;
+		const auto& tagNames = _scene->TagNames();
+		return _tag < tagNames.size() ? tagNames[_layer] : str::EMPTY;
 	}
 
 	uint32_t Node::NumPersistentChildren() const
@@ -387,9 +382,9 @@ namespace Alimer
 		}
 	}
 
-	Node* Node::FindChild(const String& childName, bool recursive) const
+	Node* Node::FindChild(const string& childName, bool recursive) const
 	{
-		return FindChild(childName.CString(), recursive);
+		return FindChild(childName.c_str(), recursive);
 	}
 
 	Node* Node::FindChild(const char* childName, bool recursive) const
@@ -428,9 +423,9 @@ namespace Alimer
 		return nullptr;
 	}
 
-	Node* Node::FindChild(StringHash childType, const String& childName, bool recursive) const
+	Node* Node::FindChild(StringHash childType, const string& childName, bool recursive) const
 	{
-		return FindChild(childType, childName.CString(), recursive);
+		return FindChild(childType, childName.c_str(), recursive);
 	}
 
 	Node* Node::FindChild(StringHash childType, const char* childName, bool recursive) const
@@ -451,12 +446,12 @@ namespace Alimer
 		return nullptr;
 	}
 
-	Node* Node::FindChildByLayer(unsigned layerMask, bool recursive) const
+	Node* Node::FindChildByLayer(uint32_t layerMask, bool recursive) const
 	{
 		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
-			if (child->LayerMask() && layerMask)
+			if (child->GetLayerMask() && layerMask)
 				return child;
 			else if (recursive && child->_children.size())
 			{
@@ -474,8 +469,10 @@ namespace Alimer
 		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
-			if (child->tag == tag_)
+			if (child->_tag == tag_)
+			{
 				return child;
+			}
 			else if (recursive && child->_children.size())
 			{
 				Node* childResult = child->FindChildByTag(tag_, recursive);
@@ -487,9 +484,9 @@ namespace Alimer
 		return nullptr;
 	}
 
-	Node* Node::FindChildByTag(const String& tagName, bool recursive) const
+	Node* Node::FindChildByTag(const string& tagName, bool recursive) const
 	{
-		return FindChildByTag(tagName.CString(), recursive);
+		return FindChildByTag(tagName.c_str(), recursive);
 	}
 
 	Node* Node::FindChildByTag(const char* tagName, bool recursive) const
@@ -497,7 +494,7 @@ namespace Alimer
 		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
-			if (!String::Compare(child->TagName().CString(), tagName))
+			if (!str::Compare(child->GetTagName().c_str(), tagName))
 				return child;
 			else if (recursive && child->_children.size())
 			{
@@ -522,33 +519,33 @@ namespace Alimer
 		}
 	}
 
-	void Node::FindChildrenByLayer(std::vector<Node*>& result, unsigned layerMask, bool recursive) const
+	void Node::FindChildrenByLayer(std::vector<Node*>& result, uint32_t layerMask, bool recursive) const
 	{
 		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
-			if (child->LayerMask() & layerMask)
+			if (child->GetLayerMask() & layerMask)
 				result.push_back(child);
 			if (recursive && child->_children.size())
 				child->FindChildrenByLayer(result, layerMask, recursive);
 		}
 	}
 
-	void Node::FindChildrenByTag(std::vector<Node*>& result, unsigned char tag_, bool recursive) const
+	void Node::FindChildrenByTag(std::vector<Node*>& result, uint8_t tag_, bool recursive) const
 	{
 		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
-			if (child->tag == tag_)
+			if (child->_tag == tag_)
 				result.push_back(child);
 			if (recursive && child->_children.size())
 				child->FindChildrenByTag(result, tag_, recursive);
 		}
 	}
 
-	void Node::FindChildrenByTag(std::vector<Node*>& result, const String& tagName, bool recursive) const
+	void Node::FindChildrenByTag(std::vector<Node*>& result, const string& tagName, bool recursive) const
 	{
-		FindChildrenByTag(result, tagName.CString(), recursive);
+		FindChildrenByTag(result, tagName.c_str(), recursive);
 	}
 
 	void Node::FindChildrenByTag(std::vector<Node*>& result, const char* tagName, bool recursive) const
@@ -556,7 +553,7 @@ namespace Alimer
 		for (auto it = _children.begin(); it != _children.end(); ++it)
 		{
 			Node* child = *it;
-			if (!String::Compare(child->TagName().CString(), tagName))
+			if (!str::Compare(child->GetTagName().c_str(), tagName))
 				result.push_back(child);
 			if (recursive && child->_children.size())
 				child->FindChildrenByTag(result, tagName, recursive);
@@ -565,9 +562,9 @@ namespace Alimer
 
 	void Node::SetScene(Scene* newScene)
 	{
-		Scene* oldScene = scene;
-		scene = newScene;
-		OnSceneSet(scene, oldScene);
+		Scene* oldScene = _scene;
+		_scene = newScene;
+		OnSceneSet(_scene, oldScene);
 	}
 
 	void Node::SetId(uint32_t newId)

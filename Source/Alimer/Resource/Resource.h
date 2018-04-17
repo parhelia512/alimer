@@ -43,7 +43,7 @@ namespace Alimer
 	/// Return name from a resource pointer.
 	inline const std::string& ResourceName(Resource* resource)
 	{
-		return resource ? resource->Name() : "";
+		return resource ? resource->Name() : str::EMPTY;
 	}
 
 	/// Return type from a resource pointer, or default type if null.

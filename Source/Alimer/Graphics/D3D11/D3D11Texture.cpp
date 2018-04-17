@@ -23,10 +23,8 @@
 
 #include "../../Debug/Log.h"
 #include "../../Debug/Profiler.h"
-#include "../Graphics.h"
+#include "D3D11Graphics.h"
 #include "../Texture.h"
-
-#include <d3d11.h>
 
 namespace Alimer
 {
@@ -208,7 +206,7 @@ namespace Alimer
 
 		if (graphics && graphics->IsInitialized())
 		{
-			ID3D11Device* d3dDevice = (ID3D11Device*)graphics->D3DDevice();
+			ID3D11Device1* d3dDevice = static_cast<D3D11Graphics*>(graphics.Get())->GetD3DDevice();
 
 			D3D11_TEXTURE2D_DESC textureDesc = {};
 			textureDesc.Width = size.width;
@@ -369,8 +367,8 @@ namespace Alimer
 			samplerDesc.MaxLOD = maxLod;
 			memcpy(&samplerDesc.BorderColor, borderColor.Data(), 4 * sizeof(float));
 
-			ID3D11Device* d3dDevice = (ID3D11Device*)graphics->D3DDevice();
-			d3dDevice->CreateSamplerState(&samplerDesc, (ID3D11SamplerState**)&_sampler);
+			ID3D11Device1* d3dDevice = static_cast<D3D11Graphics*>(graphics.Get())->GetD3DDevice();
+			d3dDevice->CreateSamplerState(&samplerDesc, &_sampler);
 
 			if (!_sampler)
 			{
@@ -422,7 +420,7 @@ namespace Alimer
 				rect.bottom &= 0xfffffffc;
 			}
 
-			ID3D11DeviceContext* d3dDeviceContext = (ID3D11DeviceContext*)graphics->D3DDeviceContext();
+			ID3D11DeviceContext* d3dDeviceContext = static_cast<D3D11Graphics*>(graphics.Get())->GetD3DDeviceContext();
 			uint32_t subResource = D3D11CalcSubresource(
 				level, 
 				face, 

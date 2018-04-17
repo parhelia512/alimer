@@ -96,7 +96,7 @@ namespace Alimer
 				{
 					// Begin new instanced batch
 					start->type = GEOM_INSTANCED;
-					size_t instanceStart = instanceTransforms.size();
+					uint32_t instanceStart = static_cast<uint32_t>(instanceTransforms.size());
 					instanceTransforms.push_back(*start->worldMatrix);
 					instanceTransforms.push_back(*current->worldMatrix);
 					start->instanceStart = instanceStart; // Overwrites non-instance world matrix

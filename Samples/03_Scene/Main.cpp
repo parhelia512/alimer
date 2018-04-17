@@ -22,7 +22,6 @@
 //
 
 #include "Alimer.h"
-#include "Debug/DebugNew.h"
 
 #ifdef _MSC_VER
 #	include <crtdbg.h>
@@ -39,12 +38,7 @@ int main()
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     #endif
     
-    printf("Size of Node: %d\n", sizeof(Node));
-    printf("Size of Scene: %d\n", sizeof(Scene));
-    printf("Size of SpatialNode: %d\n", sizeof(SpatialNode));
-    
     RegisterSceneLibrary();
-
     printf("\nTesting scene serialization\n");
     
     Log log;
@@ -59,32 +53,32 @@ int main()
         scene.DefineTag(1, "TestTag");
         for (size_t i = 0; i < 10; ++i)
         {
-            SpatialNode* node = scene.CreateChild<SpatialNode>("Child" + String(i));
+            SpatialNode* node = scene.CreateChild<SpatialNode>("Child" + std::to_string(i));
             node->SetPosition(Vector3(Random(-100.0f, 100.0f), Random(-100.0f, 100.0f), Random(-100.0f, 100.0f)));
             node->SetLayerName("TestLayer");
             node->SetTagName("TestTag");
         }
 
         {
-            File binaryFile("Scene.bin", FILE_WRITE);
+            File binaryFile("Scene.bin", FileMode::Write);
             scene.Save(binaryFile);
         }
 
         {
-            File jsonFile("Scene.json", FILE_WRITE);
+            File jsonFile("Scene.json", FileMode::Write);
             scene.SaveJSON(jsonFile);
         }
 
         {
-            File loadFile("Scene.bin", FILE_READ);
+            File loadFile("Scene.bin", FileMode::Read);
             Scene loadScene;
             if (loadScene.Load(loadFile))
             {
                 printf("Scene loaded successfully from binary data\n");
                 for (size_t i = 0; i < loadScene.NumChildren(); ++i)
                 {
-                    Node* child = loadScene.Child(i);
-                    printf("Child name: %s layer: %d tag: %d\n", child->GetName().c_str(), (int)child->Layer(), (int)child->Tag());
+                    Node* child = loadScene.GetChild(i);
+                    printf("Child name: %s layer: %d tag: %d\n", child->GetName().c_str(), child->GetLayer(), child->GetTag());
                 }
             }
             else

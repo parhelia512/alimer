@@ -25,14 +25,43 @@
 
 #include "../Base/StringHash.h"
 #include "Event.h"
-#include <string>
-#include <vector>
-#include <map>
 
 namespace Alimer
 {
 	class ObjectFactory;
 	template <class T> class ObjectFactoryImpl;
+
+	/// Type info.
+	class ALIMER_API TypeInfo final
+	{
+	public:
+		/// Construct.
+		TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo);
+		/// Destruct.
+		~TypeInfo() = default;
+
+		/// Check current type is type of specified type.
+		bool IsTypeOf(StringHash type) const;
+		/// Check current type is type of specified type.
+		bool IsTypeOf(const TypeInfo* typeInfo) const;
+		/// Check current type is type of specified class type.
+		template<typename T> bool IsTypeOf() const { return IsTypeOf(T::GetTypeInfoStatic()); }
+
+		/// Return type.
+		StringHash GetType() const { return _type; }
+		/// Return type name.
+		const String& GetTypeName() const { return _typeName; }
+		/// Return base type info.
+		const TypeInfo* GetBaseTypeInfo() const { return _baseTypeInfo; }
+
+	private:
+		/// Type.
+		StringHash _type;
+		/// Type name.
+		String _typeName;
+		/// Base class type info.
+		const TypeInfo* _baseTypeInfo;
+	};
 
 	/// Base class for objects with type identification and possibility to create through a factory.
 	class ALIMER_API Object : public RefCounted

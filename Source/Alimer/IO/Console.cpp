@@ -171,12 +171,7 @@ namespace Alimer
 						DWORD charsWritten;
 						WriteConsoleW(output, &out, 1, &charsWritten, 0);
 
-						// AppendUTF8
-						char temp[7];
-						char* dest = temp;
-						String::EncodeUTF8(dest, c);
-						*dest = 0;
-						currentLine.append(temp);
+						str::AppendUTF8(currentLine, c);
 					}
 				}
 			}

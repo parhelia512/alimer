@@ -22,7 +22,6 @@
 //
 
 #include "Alimer.h"
-#include "Debug/DebugNew.h"
 
 #ifdef _MSC_VER
 #include <crtdbg.h>
@@ -69,8 +68,6 @@ int main()
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     #endif
     
-    printf("Size of String: %zd\n", sizeof(String));
-    printf("Size of Vector: %zd\n", sizeof(Vector<int>));
     printf("Size of RefCounted: %zd\n", sizeof(RefCounted));
 
     {
@@ -91,42 +88,5 @@ int main()
         printf("Number of weak refs: %d expired: %d\n", ptr1.WeakRefs(), ptr1.IsExpired());
     }
     
-    {
-        printf("\nTesting Vector\n");
-        HiresTimer t;
-        Vector<int> vec;
-        SetRandomSeed(0);
-        for (size_t i = 0; i < NUM_ITEMS; ++i)
-            vec.Push(Rand());
-        int sum = 0;
-        int count = 0;
-        for (auto it = vec.Begin(); it != vec.End(); ++it)
-        {
-            sum += *it;
-            ++count;
-        }
-        int usec = (int)t.ElapsedUSec();
-        printf("Size: %zd capacity: %zd\n", vec.Size(), vec.Capacity());
-        printf("Counted vector items %d, sum: %d\n", count, sum);
-        printf("Processing took %d usec\n", usec);
-    }
-    
-    {
-        printf("\nTesting String\n");
-        HiresTimer t;
-        String test;
-        for (size_t i = 0; i < NUM_ITEMS/4; ++i)
-            test += "Test";
-        String test2;
-        test2.AppendWithFormat("Size: %d capacity: %d\n", test.Length(), test.Capacity());
-        printf(test2.CString());
-        test2 = test2.ToUpper();
-        printf(test2.CString());
-        test2.Replace("SIZE:", "LENGTH:");
-        printf(test2.CString());
-        int usec = (int)t.ElapsedUSec();
-        printf("Processing took %d usec\n", usec);
-    }
-
     return 0;
 }

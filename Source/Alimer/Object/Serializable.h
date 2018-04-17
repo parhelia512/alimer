@@ -40,9 +40,10 @@ namespace Alimer
 		/// Save to binary stream.
 		virtual void Save(Stream& dest);
 		/// Load from JSON data. Optionally store object ref attributes to be resolved later.
-		virtual void LoadJSON(const JSONValue& source, ObjectResolver& resolver);
+		virtual void LoadJSON(const json& source, ObjectResolver& resolver);
 		/// Save as JSON data.
-		virtual void SaveJSON(JSONValue& dest);
+		virtual void SaveJSON(json& dest);
+
 		/// Return id for referring to the object in serialization.
 		virtual uint32_t GetId() const { return 0; }
 
@@ -87,7 +88,7 @@ namespace Alimer
 		/// Return the attribute descriptions. Default implementation uses per-class registration.
 		virtual const AttibuteVector* GetAttributes() const;
 		/// Return an attribute description by name, or null if does not exist.
-		std::shared_ptr<Attribute> FindAttribute(const String& name) const;
+		std::shared_ptr<Attribute> FindAttribute(const std::string& name) const;
 		/// Return an attribute description by name, or null if does not exist.
 		std::shared_ptr<Attribute> FindAttribute(const char* name) const;
 

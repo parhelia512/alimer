@@ -24,7 +24,6 @@
 #pragma once
 
 #include "../Base/StringHash.h"
-#include "../Base/Vector.h"
 
 namespace Alimer
 {

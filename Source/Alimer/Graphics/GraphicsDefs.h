@@ -311,7 +311,7 @@ namespace Alimer
 		}
 
 		/// Construct with type, name and optional number of elements.
-		Constant(ElementType type_, const String& name_, uint32_t numElements_ = 1)
+		Constant(ElementType type_, const std::string& name_, uint32_t numElements_ = 1)
 			: type(type_)
 			, name(name_)
 			, numElements(numElements_)
@@ -329,7 +329,7 @@ namespace Alimer
 		/// Data type of constant.
 		ElementType type;
 		/// Name of constant.
-		String name;
+		std::string name;
 		/// Number of elements. Default 1.
 		uint32_t numElements;
 		/// Element size. Filled by ConstantBuffer.

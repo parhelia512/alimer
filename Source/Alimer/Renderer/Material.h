@@ -30,7 +30,6 @@ namespace Alimer
 {
 	class ConstantBuffer;
 	class JSONFile;
-	class JSONValue;
 	class Material;
 	class Shader;
 	class ShaderVariation;
@@ -46,9 +45,9 @@ namespace Alimer
 		~Pass();
 
 		/// Load from JSON data. Return true on success.
-		bool LoadJSON(const JSONValue& source);
+		bool LoadJSON(const json& source);
 		/// Save to JSON data. Return true on success.
-		bool SaveJSON(JSONValue& dest);
+		bool SaveJSON(json& dest);
 		/// Set a predefined blend mode.
 		void SetBlendMode(BlendMode mode);
 		/// Set shader names and defines.
@@ -62,13 +61,13 @@ namespace Alimer
 		void Reset();
 
 		/// Return parent material resource.
-		Material* Parent() const;
+		Material* GetParent() const;
 		/// Return pass name.
 		const std::string& GetName() const { return _name; }
 		/// Return shader name by stage.
-		const std::string& ShaderName(ShaderStage stage) const { return shaderNames[stage]; }
+		const std::string& GetShaderName(ShaderStage stage) const { return _shaderNames[stage]; }
 		/// Return shader defines by stage.
-		const String& ShaderDefines(ShaderStage stage) const { return shaderDefines[stage]; }
+		const std::string& GetShaderDefines(ShaderStage stage) const { return _shaderDefines[stage]; }
 		/// Return combined shader defines from the material and pass by stage.
 		const std::string& CombinedShaderDefines(ShaderStage stage) const { return _combinedShaderDefines[stage]; }
 		/// Return shader hash value for state sorting.
@@ -102,13 +101,13 @@ namespace Alimer
 
 	private:
 		/// Parent material resource.
-		WeakPtr<Material> parent;
+		WeakPtr<Material> _parent;
 		/// Pass name.
 		std::string _name;
 		/// Shader names.
-		std::string shaderNames[MAX_SHADER_STAGES];
+		std::string _shaderNames[MAX_SHADER_STAGES];
 		/// Shader defines.
-		std::string shaderDefines[MAX_SHADER_STAGES];
+		std::string _shaderDefines[MAX_SHADER_STAGES];
 		/// Combined shader defines from both the pass and material. Filled by Renderer.
 		std::string _combinedShaderDefines[MAX_SHADER_STAGES];
 		/// Shader hash calculated from names and defines.
@@ -124,7 +123,7 @@ namespace Alimer
 		/// Construct.
 		Material();
 		/// Destruct.
-		~Material();
+		~Material() override;
 
 		/// Register object factory.
 		static void RegisterObject();
@@ -161,11 +160,11 @@ namespace Alimer
 		const std::string& ShaderDefines(ShaderStage stage) const;
 
 		/// Return pass index from name. By default reserve a new index if the name was not known.
-		static uint8_t PassIndex(const std::string& name, bool createNew = true);
+		static uint8_t GetPassIndex(const std::string& name, bool createNew = true);
 		/// Return pass name by index.
-		static const String& PassName(uint8_t index);
+		static const std::string& GetPassName(uint8_t index);
 		/// Return a default opaque untextured material.
-		static Material* DefaultMaterial();
+		static Material* GetDefaultMaterial();
 
 		/// Material textures.
 		SharedPtr<Texture> textures[MAX_MATERIAL_TEXTURE_UNITS];

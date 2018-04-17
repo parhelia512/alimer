@@ -24,12 +24,11 @@
 #pragma once
 
 #include "../Graphics/Buffer.h"
-
+#include <json/json.hpp>
+using json = nlohmann::json;
 
 namespace Alimer
 {
-	class JSONValue;
-
 	/// GPU buffer for shader constant data.
 	class ALIMER_API ConstantBuffer final : public Buffer
 	{
@@ -40,9 +39,9 @@ namespace Alimer
 		~ConstantBuffer() override;
 
 		/// Load from JSON data. Return true on success.
-		bool LoadJSON(const JSONValue& source);
+		bool LoadJSON(const json& source);
 		/// Save as JSON data.
-		void SaveJSON(JSONValue& dest);
+		void SaveJSON(json& dest);
 		/// Define the constants being used and create the GPU-side buffer. Return true on success.
 		bool Define(const std::vector<Constant>& srcConstants, bool hostVisible);
 		/// Define the constants being used and create the GPU-side buffer. Return true on success.

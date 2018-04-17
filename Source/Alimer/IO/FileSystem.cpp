@@ -21,7 +21,6 @@
 // THE SOFTWARE.
 //
 
-#include "../Base/Vector.h"
 #include "File.h"
 #include "FileSystem.h"
 
@@ -32,6 +31,7 @@
 
 #ifdef _WIN32
 #	undef DeleteFile
+#	undef CopyFile
 #	include <Windows.h>
 #	include <sys/types.h>
 #	include <sys/utime.h>
@@ -60,26 +60,20 @@ namespace Alimer
 
 		return true;
 	}
-#endif
 
 	bool CreateDir(const string& pathName)
 	{
-#ifdef _WIN32
-		bool success = (CreateDirectoryW(WideNativePath(RemoveTrailingSlash(pathName)).c_str(), 0) == TRUE) ||
-			(GetLastError() == ERROR_ALREADY_EXISTS);
-#else
 		bool success = mkdir(NativePath(RemoveTrailingSlash(pathName)).c_str(), S_IRWXU) == 0 || errno == EEXIST;
-#endif
-
 		return success;
 	}
+#endif
 
 	bool CopyFile(const string& srcFileName, const string& destFileName)
 	{
-		File srcFile(srcFileName, FILE_READ);
+		File srcFile(srcFileName, FileMode::Read);
 		if (!srcFile.IsOpen())
 			return false;
-		File destFile(destFileName, FILE_WRITE);
+		File destFile(destFileName, FileMode::Write);
 		if (!destFile.IsOpen())
 			return false;
 
@@ -92,41 +86,27 @@ namespace Alimer
 		return bytesRead == fileSize && bytesWritten == fileSize;
 	}
 
+#ifndef _WIN32
 	bool RenameFile(const string& srcFileName, const string& destFileName)
 	{
-#ifdef _WIN32
-		return MoveFileW(WideNativePath(srcFileName).c_str(), WideNativePath(destFileName).c_str()) != 0;
-#else
 		return rename(NativePath(srcFileName).c_str(), NativePath(destFileName).c_str()) == 0;
-#endif
 	}
 
 	bool DeleteFile(const string& fileName)
 	{
-#ifdef _WIN32
-		return DeleteFileW(WideNativePath(fileName).c_str()) != 0;
-#else
 		return remove(NativePath(fileName).c_str()) == 0;
-#endif
 	}
 
-	string CurrentDir()
+	string GetCurrentDir()
 	{
-#ifdef _WIN32
-		wchar_t path[MAX_PATH];
-		path[0] = 0;
-		GetCurrentDirectoryW(MAX_PATH, path);
-		wstring wPath(path);
-		return AddTrailingSlash(string(wPath.begin(), wPath.end()));
-#else
 		char path[MAX_PATH];
 		path[0] = 0;
 		getcwd(path, MAX_PATH);
 		return AddTrailingSlash(string(path));
-#endif
 	}
+#endif
 
-	unsigned LastModifiedTime(const string& fileName)
+	uint32_t GetLastModifiedTime(const string& fileName)
 	{
 		if (fileName.empty())
 			return 0;
@@ -146,7 +126,7 @@ namespace Alimer
 #endif
 	}
 
-	bool SetLastModifiedTime(const string& fileName, unsigned newTime)
+	bool SetLastModifiedTime(const string& fileName, uint32_t newTime)
 	{
 		if (fileName.empty())
 			return false;
@@ -379,8 +359,7 @@ namespace Alimer
 
 	string AddTrailingSlash(const string& pathName)
 	{
-		string ret = str::Trim(pathName);
-		str::Replace(ret, "\\", "/");
+		string ret = str::Replace(str::Trim(pathName), "\\", "/");
 		if (!ret.empty() && ret.back() != '/')
 			ret += '/';
 		return ret;
@@ -388,14 +367,13 @@ namespace Alimer
 
 	string RemoveTrailingSlash(const string& pathName)
 	{
-		string ret = str::Trim(pathName);
-		str::Replace(ret, "\\", "/");
+		string ret = str::Replace(str::Trim(pathName), "\\", "/");
 		if (!ret.empty() && ret.back() == '/')
 			ret.resize(ret.length() - 1);
 		return ret;
 	}
 
-	string ParentPath(const string& path)
+	string GetParentPath(const string& path)
 	{
 		size_t pos = RemoveTrailingSlash(path).find_last_of('/');
 		if (pos != string::npos)
@@ -406,16 +384,14 @@ namespace Alimer
 
 	string NormalizePath(const string& pathName)
 	{
-		string result = pathName;
-		str::Replace(result, "\\", "/");
+		string result = str::Replace(pathName, "\\", "/");
 		return result;
 	}
 
 	std::string NativePath(const std::string& pathName)
 	{
 #ifdef _WIN32
-		string result = pathName;
-		str::Replace(result, "/", "\\");
+		string result = str::Replace(pathName, "/", "\\");
 		return result;
 #else
 		return pathName;
@@ -425,8 +401,7 @@ namespace Alimer
 	wstring WideNativePath(const string& pathName)
 	{
 #ifdef _WIN32
-		string result = pathName;
-		str::Replace(result, "/", "\\");
+		string result = str::Replace(pathName, "/", "\\");
 		return wstring(result.begin(), result.end());
 #else
 		return wstring(pathName.begin(), pathName.end());

@@ -136,6 +136,23 @@ if (NOT ALIMER_DISABLE_D3D12)
 	endif ()
 endif ()
 
+# Configuration presets
+set(ALIMER_PRESET None CACHE STRING "Select configuration preset: None | Developer | Release")
+string(TOUPPER "${ALIMER_PRESET}" ALIMER_PRESET)
+
+if ("${ALIMER_PRESET}" STREQUAL "DEVELOPER")
+    set (ALIMER_DEVELOPER ON)
+    set (ALIMER_RELEASE OFF)
+elseif ("${ALIMER_PRESET}" STREQUAL "RELEASE")
+    set (ALIMER_DEVELOPER OFF)
+    set (ALIMER_RELEASE ON)
+else ()
+    set (ALIMER_DEVELOPER ${ALIMER_ENABLE_ALL})
+    set (ALIMER_RELEASE ${ALIMER_ENABLE_ALL})
+endif ()
+
+set (ALIMER_TOOLS_DEFAULT ${ALIMER_DEVELOPER})
+
 cmake_dependent_option (ALIMER_STATIC_RUNTIME "Use static C/C++ runtime library with MSVC" FALSE "MSVC" FALSE)
 option (ALIMER_LOGGING "Enable logging" ${ALIMER_LOGGING_DEFAULT})
 option (ALIMER_PROFILING "Enable performance profiling" ${ALIMER_PROFILING_DEFAULT})
@@ -144,11 +161,11 @@ option (ALIMER_SIMD "Enable SIMD (SSE, NEON) instructions" ${ALIMER_SIMD_DEFAULT
 option (ALIMER_D3D11 "Enable D3D11 backend" ${ALIMER_D3D11_DEFAULT})
 option (ALIMER_D3D12 "Enable D3D12 backend" ${ALIMER_D3D12_DEFAULT})
 cmake_dependent_option (ALIMER_OPENGL "Use OpenGL instead of Direct3D11 on Windows" FALSE "WIN32" TRUE)
+option(ALIMER_PACKAGING "Package resources" ${ALIMER_RELEASE})
 
 # Tools
-set (ALIMER_BUILD_TOOLS OFF CACHE BOOL "Build asset pipeline and tools.")
 if (ANDROID OR WEB OR IOS)
     set (ALIMER_TOOLS OFF)
 else ()
-    option(ALIMER_TOOLS "Tools enabled" ${ALIMER_BUILD_TOOLS})
+    option(ALIMER_TOOLS "Tools enabled" ${ALIMER_TOOLS_DEFAULT})
 endif ()

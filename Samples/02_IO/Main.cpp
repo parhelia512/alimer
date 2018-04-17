@@ -23,7 +23,6 @@
 
 #include "Alimer.h"
 #include "Object/ObjectResolver.h"
-#include "Debug/DebugNew.h"
 
 #ifdef _MSC_VER
 #include <crtdbg.h>
@@ -31,7 +30,8 @@
 
 #include <cstdio>
 #include <cstdlib>
-
+#include <json/json.hpp>
+using json = nlohmann::json;
 using namespace Alimer;
 
 class TestEvent : public Event
@@ -43,27 +43,27 @@ public:
 class TestEventSender : public Object
 {
 	OBJECT(TestEventSender);
-	
+
 public:
 	void SendTestEvent(int value)
 	{
 		testEvent.data = value;
 		SendEvent(testEvent);
 	}
-	
+
 	TestEvent testEvent;
 };
 
 class TestEventReceiver : public Object
 {
 	OBJECT(TestEventReceiver);
-	
+
 public:
 	void SubscribeToTestEvent(TestEventSender* sender)
 	{
 		SubscribeToEvent(sender->testEvent, &TestEventReceiver::HandleTestEvent);
 	}
-	
+
 	void HandleTestEvent(TestEvent& event)
 	{
 		printf("Receiver %08x got TestEvent from %08x with data %d\n", *(int*)this, *(int*)event.Sender(), event.data);
@@ -75,10 +75,7 @@ class TestSerializable : public Serializable
 	OBJECT(TestSerializable);
 
 public:
-	TestSerializable() :
-		intVariable(0)
-	{
-	}
+	TestSerializable() = default;
 
 	static void RegisterObject()
 	{
@@ -87,33 +84,28 @@ public:
 		RegisterRefAttribute("stringVariable", &TestSerializable::GetStringVariable, &TestSerializable::SetStringVariable);
 	}
 
-	void SetIntVariable(int newValue) { intVariable = newValue; }
-	int IntVariable() const { return intVariable; }
+	void SetIntVariable(int newValue) { _intVariable = newValue; }
+	int IntVariable() const { return _intVariable; }
 
-	void SetStringVariable(const std::string& newValue) { _stringVariable = newValue; }
-	const std::string& GetStringVariable() const { return _stringVariable; }
+	void SetStringVariable(const String& newValue) { _stringVariable = newValue; }
+	const String& GetStringVariable() const { return _stringVariable; }
 
 private:
-	int intVariable;
-	std::string _stringVariable;
+	int _intVariable{};
+	String _stringVariable;
 };
 
 int main()
 {
-	#ifdef _MSC_VER
+#ifdef _MSC_VER
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	#endif
-
-	printf("Size of Event: %d\n", sizeof(Event));
-	printf("Size of File: %d\n", sizeof(File));
-	printf("Size of JSONValue: %d\n", sizeof(JSONValue));
-	printf("Size of Serializable: %d\n", sizeof(Serializable));
+#endif
 
 	{
 		printf("\nTesting objects & events\n");
 		Object::RegisterFactory<TestEventSender>();
 		Object::RegisterFactory<TestEventReceiver>();
-		
+
 		TestEventSender* sender = Object::Create<TestEventSender>();
 		TestEventReceiver* receiver1 = Object::Create<TestEventReceiver>();
 		TestEventReceiver* receiver2 = Object::Create<TestEventReceiver>();
@@ -126,19 +118,19 @@ int main()
 		delete receiver1;
 		delete sender;
 	}
-	
+
 	{
 		printf("\nTesting logging and profiling\n");
 		Log log;
 		Profiler profiler;
-		
+
 		profiler.BeginFrame();
-		
+
 		{
 			ALIMER_PROFILE(OpenLog);
 			log.Open("02_IO.log");
 		}
-		
+
 		{
 			ALIMER_PROFILE(WriteMessages);
 			LOGDEBUG("Debug message");
@@ -146,34 +138,36 @@ int main()
 			LOGERROR("Error message");
 			LOGINFOF("Formatted message: %d", 100);
 		}
-		
+
 		profiler.EndFrame();
-		
+
 		printf("%s\n", profiler.OutputResults().c_str());
 	}
-	
+
 	{
-		printf("\nTesting JSONValue\n");
-		JSONValue org;
+		printf("\nTesting json\n");
+
+		json org;
 		org["name"] = "S.C.E.P.T.R.E";
 		org["longName"] = "Sectarian Chosen Elite Privileged To Rule & Exterminate";
 		org["isEvil"] = true;
 		org["members"] = 218;
-		org["honor"] = JSONValue();
-		JSONValue officers;
-		officers.Push("Ahriman");
-		officers.Push("Lilith");
-		officers.Push("Suhrim");
+		org["honor"].object();
+
+		json officers;
+		officers.push_back("Ahriman");
+		officers.push_back("Lilith");
+		officers.push_back("Suhrim");
 		org["officers"] = officers;
-		org["allies"].SetEmptyArray();
-		org["sightings"].SetEmptyObject();
-		
-		std::string jsonString = org.ToString();
+		org["allies"].array();
+		org["sightings"].array();
+
+		std::string jsonString = org.dump(4);
 		printf("%s\n", jsonString.c_str());
-		printf("JSON text size: %d\n", jsonString.length());
-		
-		JSONValue parsed;
-		if (parsed.FromString(jsonString))
+		printf("JSON text size: %zd\n", jsonString.length());
+
+		json parsed = json::parse(jsonString);
+		if (parsed.is_object())
 		{
 			printf("JSON parse successful\n");
 			if (parsed == org)
@@ -183,12 +177,12 @@ int main()
 		}
 		else
 			printf("Failed to parse JSON from text\n");
-		
+
 		VectorBuffer buffer;
 		buffer.Write(org);
-		printf("JSON binary size: %d\n", buffer.Size());
+		printf("JSON binary size: %zd\n", buffer.Size());
 		buffer.Seek(0);
-		JSONValue binaryParsed = buffer.Read<JSONValue>();
+		json binaryParsed = buffer.Read<json>();
 		if (binaryParsed == org)
 			printf("Binary parsed data equals original\n");
 		else
@@ -204,19 +198,19 @@ int main()
 		instance->SetIntVariable(100);
 		instance->SetStringVariable("Test!");
 
-		JSONValue saveData;
+		nlohmann::json saveData;
 		instance->SaveJSON(saveData);
-		printf("Object JSON data: %s\n", saveData.ToString().c_str());
+		printf("Object JSON data: %s\n", saveData.dump(4).c_str());
 
 		VectorBuffer binarySaveData;
 		instance->Save(binarySaveData);
-		printf("Object binary data size: %d\n", binarySaveData.Size());
+		printf("Object binary data size: %zd\n", binarySaveData.Size());
 
 		std::unique_ptr<TestSerializable> instance2(new TestSerializable());
 		ObjectResolver res;
 		instance2->LoadJSON(saveData, res);
 		printf("Loaded variables (JSON): int %d string: %s\n", instance2->IntVariable(), instance2->GetStringVariable().c_str());
-		
+
 		std::unique_ptr<TestSerializable> instance3(new TestSerializable());
 		ObjectResolver res2;
 		binarySaveData.Seek(0);

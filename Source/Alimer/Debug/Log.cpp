@@ -75,7 +75,7 @@ namespace Alimer
 		}
 
 		_logFile = std::make_unique<File>();
-		if (_logFile->Open(fileName, FILE_WRITE))
+		if (_logFile->Open(fileName, FileMode::Write))
 		{
 			LOGINFO("Opened log file " + fileName);
 		}

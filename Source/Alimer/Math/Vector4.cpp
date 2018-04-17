@@ -32,14 +32,14 @@ namespace Alimer
 	const Vector4 Vector4::ZERO(0.0f, 0.0f, 0.0f, 0.0f);
 	const Vector4 Vector4::ONE(1.0f, 1.0f, 1.0f, 1.0f);
 
-	bool Vector4::FromString(const String& str)
+	bool Vector4::FromString(const std::string& str)
 	{
-		return FromString(str.CString());
+		return FromString(str.c_str());
 	}
 
 	bool Vector4::FromString(const char* str)
 	{
-		size_t elements = String::CountElements(str, ' ');
+		size_t elements = str::CountElements(str, ' ');
 		if (elements < 4)
 			return false;
 
@@ -52,11 +52,10 @@ namespace Alimer
 		return true;
 	}
 
-	String Vector4::ToString() const
+	std::string Vector4::ToString() const
 	{
 		char tempBuffer[CONVERSION_BUFFER_LENGTH];
 		sprintf(tempBuffer, "%g %g %g %g", x, y, z, w);
-		return String(tempBuffer);
+		return std::string(tempBuffer);
 	}
-
 }

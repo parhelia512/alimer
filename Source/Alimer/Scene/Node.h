@@ -63,9 +63,9 @@ namespace Alimer
 		/// Save to binary stream.
 		void Save(Stream& dest) override;
 		/// Load from JSON data. Store node references to be resolved later.
-		void LoadJSON(const JSONValue& source, ObjectResolver& resolver) override;
+		void LoadJSON(const json& source, ObjectResolver& resolver) override;
 		/// Save as JSON data.
-		void SaveJSON(JSONValue& dest) override;
+		void SaveJSON(json& dest) override;
 		/// Return unique id within the scene, or 0 if not in a scene.
 		uint32_t GetId() const override { return _id; }
 
@@ -92,9 +92,7 @@ namespace Alimer
 		/// Create child node of specified type. A registered object factory for the type is required.
 		Node* CreateChild(StringHash childType);
 		/// Create named child node of specified type.
-		Node* CreateChild(StringHash childType, const String& childName);
-		/// Create named child node of specified type.
-		Node* CreateChild(StringHash childType, const char* childName);
+		Node* CreateChild(StringHash childType, const std::string& childName);
 		/// Add node as a child. Same as calling SetParent for the child node.
 		void AddChild(Node* child);
 		/// Remove child node. Will delete it if there are no other strong references to it.
@@ -108,48 +106,48 @@ namespace Alimer
 		/// Create child node of the specified type, template version.
 		template <class T> T* CreateChild() { return static_cast<T*>(CreateChild(T::TypeStatic())); }
 		/// Create named child node of the specified type, template version.
-		template <class T> T* CreateChild(const String& childName) { return static_cast<T*>(CreateChild(T::TypeStatic(), childName)); }
+		template <class T> T* CreateChild(const std::string& childName) { return static_cast<T*>(CreateChild(T::TypeStatic(), childName)); }
 		/// Create named child node of the specified type, template version.
 		template <class T> T* CreateChild(const char* childName) { return static_cast<T*>(CreateChild(T::TypeStatic(), childName)); }
 
 		/// Return name.
 		const std::string& GetName() const { return _name; }
 		/// Return layer.
-		uint8_t Layer() const { return layer; }
+		uint8_t GetLayer() const { return _layer; }
 		/// Return layer name, or empty if not registered in the scene root.
-		const String& LayerName() const;
+		const std::string& GetLayerName() const;
 		/// Return bitmask corresponding to layer.
-		uint32_t LayerMask() const { return 1 << layer; }
+		uint32_t GetLayerMask() const { return 1 << _layer; }
 		/// Return tag.
-		uint8_t Tag() const { return tag; }
+		uint8_t GetTag() const { return _tag; }
 		/// Return tag name, or empty if not registered in the scene root.
-		const String& TagName() const;
+		const std::string& GetTagName() const;
 		/// Return enabled status.
 		bool IsEnabled() const { return TestFlag(NF_ENABLED); }
 		/// Return whether is temporary.
 		bool IsTemporary() const { return TestFlag(NF_TEMPORARY); }
 		/// Return parent node.
-		Node* Parent() const { return parent; }
+		Node* GetParent() const { return _parent; }
 		/// Return the scene that the node belongs to.
-		Scene* ParentScene() const { return scene; }
+		Scene* GetParentScene() const { return _scene; }
 		/// Return number of immediate child nodes.
 		uint32_t NumChildren() const { return static_cast<uint32_t>(_children.size()); }
 		/// Return number of immediate child nodes that are not temporary.
 		uint32_t NumPersistentChildren() const;
 		/// Return immediate child node by index.
-		Node* Child(size_t index) const { return index < _children.size() ? _children[index].Get() : nullptr; }
+		Node* GetChild(size_t index) const { return index < _children.size() ? _children[index].Get() : nullptr; }
 		/// Return all immediate child nodes.
-		const std::vector<SharedPtr<Node> >& Children() const { return _children; }
+		const std::vector<SharedPtr<Node> >& GetChildren() const { return _children; }
 		/// Return child nodes recursively.
 		void AllChildren(std::vector<Node*>& result) const;
 		/// Return first child node that matches name.
-		Node* FindChild(const String& childName, bool recursive = false) const;
+		Node* FindChild(const std::string& childName, bool recursive = false) const;
 		/// Return first child node that matches name.
 		Node* FindChild(const char* childName, bool recursive = false) const;
 		/// Return first child node of specified type.
 		Node* FindChild(StringHash childType, bool recursive = false) const;
 		/// Return first child node that matches type and name.
-		Node* FindChild(StringHash childType, const String& childName, bool recursive = false) const;
+		Node* FindChild(StringHash childType, const std::string& childName, bool recursive = false) const;
 		/// Return first child node that matches type and name.
 		Node* FindChild(StringHash childType, const char* childName, bool recursive = false) const;
 		/// Return first child node that matches layer mask.
@@ -157,34 +155,34 @@ namespace Alimer
 		/// Return first child node that matches tag.
 		Node* FindChildByTag(unsigned char tag, bool recursive = false) const;
 		/// Return first child node that matches tag name.
-		Node* FindChildByTag(const String& tagName, bool recursive = false) const;
+		Node* FindChildByTag(const std::string& tagName, bool recursive = false) const;
 		/// Return first child node that matches tag name.
 		Node* FindChildByTag(const char* tagName, bool recursive = false) const;
 		/// Find child nodes of specified type.
 		void FindChildren(std::vector<Node*>& result, StringHash childType, bool recursive = false) const;
 		/// Find child nodes that match layer mask.
-		void FindChildrenByLayer(std::vector<Node*>& result, unsigned layerMask, bool recursive = false) const;
+		void FindChildrenByLayer(std::vector<Node*>& result, uint32_t layerMask, bool recursive = false) const;
 		/// Find child nodes that match tag.
-		void FindChildrenByTag(std::vector<Node*>& result, unsigned char tag, bool recursive = false) const;
+		void FindChildrenByTag(std::vector<Node*>& result, uint8_t tag, bool recursive = false) const;
 		/// Find child nodes that match tag name.
-		void FindChildrenByTag(std::vector<Node*>& result, const String& tagName, bool recursive = false) const;
+		void FindChildrenByTag(std::vector<Node*>& result, const std::string& tagName, bool recursive = false) const;
 		/// Find child nodes that match tag name.
 		void FindChildrenByTag(std::vector<Node*>& result, const char* tagName, bool recursive = false) const;
 		/// Return first child node of specified type, template version.
 		template <class T> T* FindChild(bool recursive = false) const { return static_cast<T*>(FindChild(T::TypeStatic(), recursive)); }
 		/// Return first child node that matches type and name, template version.
-		template <class T> T* FindChild(const String& childName, bool recursive = false) const { return static_cast<T*>(FindChild(T::TypeStatic(), childName, recursive)); }
+		template <class T> T* FindChild(const std::string& childName, bool recursive = false) const { return static_cast<T*>(FindChild(T::TypeStatic(), childName, recursive)); }
 		/// Return first child node that matches type and name, template version.
 		template <class T> T* FindChild(const char* childName, bool recursive = false) const { return static_cast<T*>(FindChild(T::TypeStatic(), childName, recursive)); }
 		/// Find child nodes of specified type, template version.
 		template <class T> void FindChildren(std::vector<T*>& result, bool recursive = false) const { return FindChildren(reinterpret_cast<std::vector<T*>&>(result), recursive); }
 
 		/// Set bit flag. Called internally.
-		void SetFlag(uint16_t bit, bool set) const { if (set) flags |= bit; else flags &= ~bit; }
+		void SetFlag(uint16_t bit, bool set) const { if (set) _flags |= bit; else _flags &= ~bit; }
 		/// Test bit flag. Called internally.
-		bool TestFlag(uint16_t bit) const { return (flags & bit) != 0; }
+		bool TestFlag(uint16_t bit) const { return (_flags & bit) != 0; }
 		/// Return bit flags. Used internally eg. by octree queries.
-		uint16_t GetFlags() const { return flags; }
+		uint16_t GetFlags() const { return _flags; }
 		/// Assign node to a new scene. Called internally.
 		void SetScene(Scene* newScene);
 		/// Assign new id. Called internally.
@@ -203,9 +201,9 @@ namespace Alimer
 
 	private:
 		/// Parent node.
-		Node* parent = nullptr;
+		Node* _parent = nullptr;
 		/// Parent scene.
-		Scene* scene = nullptr;
+		Scene* _scene = nullptr;
 		/// Child nodes.
 		std::vector<SharedPtr<Node> > _children;
 		/// Id within the scene.
@@ -213,11 +211,11 @@ namespace Alimer
 		/// %Node name.
 		std::string _name;
 		/// %Node flags. Used to hold several boolean values (some subclass-specific) to reduce memory use.
-		mutable uint16_t flags;
+		mutable uint16_t _flags;
 		/// Layer number.
-		uint8_t layer;
+		uint8_t _layer;
 		/// Tag number.
-		uint8_t tag;
+		uint8_t _tag;
 	};
 
 }

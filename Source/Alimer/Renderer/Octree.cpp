@@ -93,7 +93,7 @@ namespace Alimer
 				// Do nothing if still fits the current octant
 				const BoundingBox& box = node->WorldBoundingBox();
 				Vector3 boxSize = box.Size();
-				Octant* oldOctant = node->octant;
+				Octant* oldOctant = node->_octant;
 				if (oldOctant && oldOctant->cullingBox.IsInside(box) == INSIDE && oldOctant->FitBoundingBox(box, boxSize))
 					continue;
 
@@ -148,10 +148,12 @@ namespace Alimer
 	void Octree::RemoveNode(OctreeNode* node)
 	{
 		assert(node);
-		RemoveNode(node, node->octant);
+		RemoveNode(node, node->_octant);
 		if (node->TestFlag(NF_OCTREE_UPDATE_QUEUED))
+		{
 			CancelUpdate(node);
-		node->octant = nullptr;
+		}
+		node->_octant = nullptr;
 	}
 
 	void Octree::QueueUpdate(OctreeNode* node)
@@ -242,7 +244,7 @@ namespace Alimer
 	void Octree::AddNode(OctreeNode* node, Octant* octant)
 	{
 		octant->nodes.push_back(node);
-		node->octant = octant;
+		node->_octant = octant;
 
 		// Increment the node count in the whole parent branch
 		while (octant)
@@ -311,10 +313,10 @@ namespace Alimer
 	{
 		for (OctreeNode* node : octant->nodes)
 		{
-			node->octant = nullptr;
+			node->_octant = nullptr;
 			node->SetFlag(NF_OCTREE_UPDATE_QUEUED, false);
 			if (deletingOctree)
-				node->octree = nullptr;
+				node->_octant = nullptr;
 		}
 		octant->nodes.clear();
 		octant->numNodes = 0;
@@ -348,7 +350,7 @@ namespace Alimer
 		const std::vector<OctreeNode*>& octantNodes = octant->nodes;
 		for (auto* node : octantNodes)
 		{
-			if ((node->GetFlags() & nodeFlags) == nodeFlags && (node->LayerMask() & layerMask))
+			if ((node->GetFlags() & nodeFlags) == nodeFlags && (node->GetLayerMask() & layerMask))
 				result.push_back(node);
 		}
 
@@ -369,7 +371,7 @@ namespace Alimer
 		const std::vector<OctreeNode*>& octantNodes = octant->nodes;
 		for (auto* node : octantNodes)
 		{
-			if ((node->GetFlags() & nodeFlags) == nodeFlags && (node->LayerMask() & layerMask))
+			if ((node->GetFlags() & nodeFlags) == nodeFlags && (node->GetLayerMask() & layerMask))
 				node->OnRaycast(result, ray, maxDistance);
 		}
 
@@ -390,7 +392,7 @@ namespace Alimer
 		const std::vector<OctreeNode*>& octantNodes = octant->nodes;
 		for (OctreeNode* node : octantNodes)
 		{
-			if ((node->GetFlags() & nodeFlags) == nodeFlags && (node->LayerMask() & layerMask))
+			if ((node->GetFlags() & nodeFlags) == nodeFlags && (node->GetLayerMask() & layerMask))
 			{
 				float distance = ray.HitDistance(node->WorldBoundingBox());
 				if (distance < maxDistance)

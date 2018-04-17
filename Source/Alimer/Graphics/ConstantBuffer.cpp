@@ -23,7 +23,6 @@
 
 #include "../Debug/Log.h"
 #include "../Debug/Profiler.h"
-#include "../IO/JSONValue.h"
 #include "../Object/Attribute.h"
 #include "../Math/Color.h"
 #include "../Math/Matrix3.h"
@@ -57,30 +56,30 @@ namespace Alimer
 		Release();
 	}
 
-	bool ConstantBuffer::LoadJSON(const JSONValue& source)
+	bool ConstantBuffer::LoadJSON(const json& source)
 	{
 		bool hostVisible = true;
-		if (source.Contains("hostVisible"))
-			hostVisible = source["hostVisible"].GetBool();
+		if (source["hostVisible"].is_boolean())
+			hostVisible = source["hostVisible"].get<bool>();
 
 		std::vector<Constant> constants;
 
-		const JSONValue& jsonConstants = source["constants"];
-		for (size_t i = 0; i < jsonConstants.Size(); ++i)
+		const json& jsonConstants = source["constants"];
+		for (size_t i = 0; i < jsonConstants.size(); ++i)
 		{
-			const JSONValue& jsonConstant = jsonConstants[i];
-			const string& type = jsonConstant["type"].GetStdString();
+			const json& jsonConstant = jsonConstants[i];
+			const string& type = jsonConstant["type"].get<string>();
 
 			Constant newConstant;
-			newConstant.name = jsonConstant["name"].GetString();
+			newConstant.name = jsonConstant["name"].get<string>();
 			newConstant.type = (ElementType)str::ListIndex(type, elementTypeNames, MAX_ELEMENT_TYPES);
 			if (newConstant.type == MAX_ELEMENT_TYPES)
 			{
 				LOGERRORF("Unknown element type %s in constant buffer JSON", type.c_str());
 				break;
 			}
-			if (jsonConstant.Contains("numElements"))
-				newConstant.numElements = (int)jsonConstant["numElements"].GetNumber();
+			if (jsonConstant["numElements"].is_number())
+				newConstant.numElements = jsonConstant["numElements"].get<uint32_t>();
 
 			constants.push_back(newConstant);
 		}
@@ -88,14 +87,14 @@ namespace Alimer
 		if (!Define(constants, hostVisible))
 			return false;
 
-		for (uint32_t i = 0; i < constants.size() && i < jsonConstants.Size(); ++i)
+		for (uint32_t i = 0; i < constants.size() && i < jsonConstants.size(); ++i)
 		{
-			const JSONValue& value = jsonConstants[i]["value"];
+			const json& value = jsonConstants[i]["value"];
 			AttributeType attrType = elementToAttribute[constants[i].type];
 
-			if (value.IsArray())
+			if (value.is_array())
 			{
-				for (uint32_t j = 0; j < value.Size(); ++j)
+				for (uint32_t j = 0; j < value.size(); ++j)
 				{
 					Attribute::FromJSON(attrType, const_cast<void*>(GetConstantValue(i, j)), value[j]);
 				}
@@ -109,18 +108,18 @@ namespace Alimer
 		return true;
 	}
 
-	void ConstantBuffer::SaveJSON(JSONValue& dest)
+	void ConstantBuffer::SaveJSON(json& dest)
 	{
-		dest.SetEmptyObject();
+		dest.object();
 		dest["usage"] = resourceUsageNames[ecast(_resourceUsage)];
-		dest["constants"].SetEmptyArray();
+		dest["constants"].array();
 
 		for (uint32_t i = 0; i < _constants.size(); ++i)
 		{
 			const Constant& constant = _constants[i];
 			AttributeType attrType = elementToAttribute[constant.type];
 
-			JSONValue jsonConstant;
+			json jsonConstant = json::object();
 			jsonConstant["name"] = constant.name;
 			jsonConstant["type"] = elementTypeNames[constant.type];
 			if (constant.numElements != 1)
@@ -132,12 +131,12 @@ namespace Alimer
 			}
 			else
 			{
-				jsonConstant["value"].Resize(constant.numElements);
+				jsonConstant["value"] = json::array();
 				for (uint32_t j = 0; j < constant.numElements; ++j)
 					Attribute::ToJSON(attrType, jsonConstant["value"][j], GetConstantValue(i, j));
 			}
 
-			dest["constants"].Push(jsonConstant);
+			dest["constants"].push_back(jsonConstant);
 		}
 	}
 

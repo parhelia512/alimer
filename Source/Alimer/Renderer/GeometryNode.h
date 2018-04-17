@@ -34,7 +34,7 @@ namespace Alimer
 		/// Draw using the Graphics subsystem. The constant buffers are not applied automatically, rather they must have been applied beforehand.
 		void Draw(Graphics* graphics);
 		/// Draw an instance range. A separate instance data vertex buffer must be bound.
-		void DrawInstanced(Graphics* graphics, size_t start, size_t count);
+		void DrawInstanced(Graphics* graphics, uint32_t start, uint32_t count);
 
 		/// %Geometry vertex buffer.
 		SharedPtr<VertexBuffer> vertexBuffer;
@@ -45,9 +45,9 @@ namespace Alimer
 		/// %Geometry's primitive type.
 		PrimitiveType primitiveType;
 		/// Draw range start. Specifies index start if index buffer defined, vertex start otherwise.
-		size_t drawStart;
+		uint32_t drawStart;
 		/// Draw range count. Specifies number of indices if index buffer defined, number of vertices otherwise.
-		size_t drawCount;
+		uint32_t drawCount;
 		/// LOD transition distance.
 		float lodDistance;
 	};

@@ -68,7 +68,7 @@ namespace Alimer
 		else
 			resourceDirs.push_back(fixedPath);
 
-		LOGINFO("Added resource path " + fixedPath);
+		LOGINFOF("Added resource path '%s'", fixedPath.c_str());
 		return true;
 	}
 
@@ -340,8 +340,8 @@ namespace Alimer
 	{
 		// Sanitate unsupported constructs from the resource name
 		string name = NormalizePath(nameIn);
-		str::Replace(name, "../", "");
-		str::Replace(name, "./", "");
+		name = str::Replace(name, "../", "");
+		name = str::Replace(name, "./", "");
 
 		// If the path refers to one of the resource directories, normalize the resource name
 		if (resourceDirs.size())
@@ -371,10 +371,12 @@ namespace Alimer
 		// Convert path to absolute
 		string fixedPath = AddTrailingSlash(nameIn);
 		if (!IsAbsolutePath(fixedPath))
-			fixedPath = CurrentDir() + fixedPath;
+		{
+			fixedPath = GetCurrentDir() + fixedPath;
+		}
 
 		// Sanitate away /./ construct
-		str::Replace(fixedPath, "/./", "/");
+		fixedPath = str::Replace(fixedPath, "/./", "/");
 
 		return str::Trim(fixedPath);
 	}

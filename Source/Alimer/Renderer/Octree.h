@@ -158,7 +158,7 @@ namespace Alimer
 				for (auto it = octantNodes.begin(); it != octantNodes.end(); ++it)
 				{
 					OctreeNode* node = *it;
-					if ((node->GetFlags() & nodeFlags) == nodeFlags && (node->LayerMask() & layerMask) &&
+					if ((node->GetFlags() & nodeFlags) == nodeFlags && (node->GetLayerMask() & layerMask) &&
 						volume.IsInsideFast(node->WorldBoundingBox()) != OUTSIDE)
 					{
 						result.push_back(node);

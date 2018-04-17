@@ -56,8 +56,7 @@ namespace Alimer
 
 	wstring ToWinNativePath(const string& pathName)
 	{
-		string result = pathName;
-		str::Replace(result, "/", "\\");
+		string result = str::Replace(pathName, "/", "\\");
 		return ToWide(result);
 	}
 
@@ -69,6 +68,14 @@ namespace Alimer
 		}
 
 		return true;
+	}
+
+	string GetCurrentDir()
+	{
+		wchar_t path[MAX_PATH];
+		path[0] = 0;
+		GetCurrentDirectoryW(MAX_PATH, path);
+		return AddTrailingSlash(ToMultibyte(path));
 	}
 
 	bool FileExists(const string& fileName)
@@ -100,8 +107,26 @@ namespace Alimer
 		string result = GetPath(ToMultibyte(exeName));
 
 		// Sanitate /./ construct away
-		str::Replace(result, "/./", "/");
+		result = str::Replace(result, "/./", "/");
 		return result;
+	}
+
+	bool CreateDir(const string& pathName)
+	{
+		bool success = (CreateDirectoryW(WideNativePath(RemoveTrailingSlash(pathName)).c_str(), 0) == TRUE) ||
+			(GetLastError() == ERROR_ALREADY_EXISTS);
+
+		return success;
+	}
+
+	bool RenameFile(const string& srcFileName, const string& destFileName)
+	{
+		return MoveFileW(WideNativePath(srcFileName).c_str(), WideNativePath(destFileName).c_str()) != 0;
+	}
+
+	bool DeleteFile(const string& fileName)
+	{
+		return DeleteFileW(WideNativePath(fileName).c_str()) != 0;
 	}
 }
 

@@ -38,7 +38,7 @@ namespace Alimer
 
 	bool IntRect::FromString(const char* str)
 	{
-		size_t elements = String::CountElements(str, ' ');
+		size_t elements = str::CountElements(str, ' ');
 		if (elements < 4)
 			return false;
 

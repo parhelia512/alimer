@@ -21,7 +21,6 @@
 // THE SOFTWARE.
 //
 
-#include "../Base/Vector.h"
 #include "MemoryBuffer.h"
 
 namespace Alimer

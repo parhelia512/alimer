@@ -25,7 +25,6 @@
 
 #include "../Resource/Resource.h"
 #include "GraphicsDefs.h"
-#include <unordered_map>
 
 namespace Alimer
 {
@@ -68,7 +67,7 @@ namespace Alimer
 		bool ProcessIncludes(std::string& code, Stream& source);
 
 		/// %Shader variations.
-		std::unordered_map<StringHash, SharedPtr<ShaderVariation> > _variations;
+		UnorderedMap<StringHash, SharedPtr<ShaderVariation> > _variations;
 		/// %Shader stage.
 		ShaderStage _stage{ SHADER_VS };
 		/// %Shader source code.

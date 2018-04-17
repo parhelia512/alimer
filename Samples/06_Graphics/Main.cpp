@@ -22,7 +22,6 @@
 //
 
 #include "Alimer.h"
-#include "Debug/DebugNew.h"
 
 #ifdef _MSC_VER
 #include <crtdbg.h>
@@ -45,6 +44,7 @@ public:
 
 		cache = std::make_unique<ResourceCache>();
 		cache->AddResourceDir(GetExecutableDir() + "Data");
+		cache->AddResourceDir(GetParentPath(GetExecutableDir()) + "Data");
 
 		log = std::make_unique<Log>();
 		input = std::make_unique<Input>();
@@ -172,9 +172,12 @@ public:
 		{
 			input->Update();
 			if (input->IsKeyPress('F'))
-				graphics->SetFullscreen(!graphics->IsFullscreen());
+			{
+				graphics->SetFullscreen(!graphics->GetRenderWindow()->IsFullscreen());
+			}
+
 			if (input->IsKeyPress('M'))
-				graphics->SetMultisample(graphics->Multisample() > 1 ? 1 : 4);
+				graphics->SetMultisample(graphics->GetMultisample() > 1 ? 1 : 4);
 			if (input->IsKeyPress(27))
 				graphics.reset();
 

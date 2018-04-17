@@ -1,12 +1,31 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #include "../Debug/Log.h"
 #include "../Math/Ray.h"
 #include "Light.h"
 #include "Octree.h"
 #include "Renderer.h"
-
-#include "../Debug/DebugNew.h"
 
 namespace Alimer
 {
@@ -69,20 +88,20 @@ namespace Alimer
 
 	void Light::OnPrepareRender(unsigned frameNumber, Camera* camera)
 	{
-		lastFrameNumber = frameNumber;
+		_lastFrameNumber = frameNumber;
 
 		switch (lightType)
 		{
 		case LIGHT_DIRECTIONAL:
-			distance = 0.0f;
+			_distance = 0.0f;
 			break;
 
 		case LIGHT_POINT:
-			distance = WorldFrustum().Distance(camera->WorldPosition());
+			_distance = WorldFrustum().Distance(camera->WorldPosition());
 			break;
 
 		case LIGHT_SPOT:
-			distance = WorldSphere().Distance(camera->WorldPosition());
+			_distance = WorldSphere().Distance(camera->WorldPosition());
 			break;
 		}
 	}
@@ -292,7 +311,7 @@ namespace Alimer
 	}
 
 	void Light::SetupShadowViews(
-		Camera* mainCamera, 
+		Camera* mainCamera,
 		std::vector<std::unique_ptr<ShadowView>>& shadowViews,
 		size_t& useIndex)
 	{
@@ -479,19 +498,19 @@ namespace Alimer
 		{
 		case LIGHT_DIRECTIONAL:
 			// Directional light always sets humongous bounding box not affected by transform
-			worldBoundingBox.Define(-M_MAX_FLOAT, M_MAX_FLOAT);
+			_worldBoundingBox.Define(-M_MAX_FLOAT, M_MAX_FLOAT);
 			break;
 
 		case LIGHT_POINT:
 		{
 			const Vector3& center = WorldPosition();
 			Vector3 edge(range, range, range);
-			worldBoundingBox.Define(center - edge, center + edge);
+			_worldBoundingBox.Define(center - edge, center + edge);
 		}
 		break;
 
 		case LIGHT_SPOT:
-			worldBoundingBox.Define(WorldFrustum());
+			_worldBoundingBox.Define(WorldFrustum());
 			break;
 		}
 

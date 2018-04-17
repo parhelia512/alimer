@@ -116,7 +116,7 @@ namespace Alimer
 		}
 
 		ProfilerBlock* newBlock = new ProfilerBlock(this, name_);
-		_children.push_back(std::unique_ptr<ProfilerBlock>(newBlock));
+		_children.push_back(UniquePtr<ProfilerBlock>(newBlock));
 
 		return newBlock;
 	}

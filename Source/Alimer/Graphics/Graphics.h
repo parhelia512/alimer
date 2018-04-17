@@ -29,10 +29,6 @@
 #include "../Graphics/GraphicsDefs.h"
 #include <mutex>
 
-#ifdef ALIMER_D3D11
-struct ID3D11InputLayout;
-#endif
-
 namespace Alimer
 {
 	struct GraphicsImpl;
@@ -53,7 +49,7 @@ namespace Alimer
 	class TextureHandle;
 
 	using InputLayoutDesc = std::pair<uint64_t, uint32_t>;
-	using InputLayoutMap = std::map<InputLayoutDesc, ID3D11InputLayout*>;
+	
 	using StateObjectMap = std::map<uint64_t, void*>;
 
 	/// Screen mode set event.
@@ -108,7 +104,7 @@ namespace Alimer
 		~Graphics();
 
 		/// Set graphics mode. Create the window and rendering context if not created yet. Return true on success.
-		bool SetMode(const Size& size, bool fullscreen = false, bool resizable = false, int multisample = 1);
+		virtual bool SetMode(const Size& size, bool fullscreen = false, bool resizable = false, uint32_t multisample = 1) = 0;
 		/// Set fullscreen mode on/off while retaining previous resolution. The initial graphics mode must have been set first. Return true on success.
 		bool SetFullscreen(bool enable);
 		/// Set new multisample level while retaining previous resolution. The initial graphics mode must have been set first. Return true on success.
@@ -116,23 +112,23 @@ namespace Alimer
 		/// Set vertical sync on/off.
 		void SetVSync(bool enable);
 		/// Present the contents of the backbuffer.
-		void Present();
+		virtual void Present() = 0;
 		/// Set the color rendertarget and depth stencil buffer.
 		void SetRenderTarget(Texture* renderTarget, Texture* stencilBuffer);
 		/// Set multiple color rendertargets and the depth stencil buffer.
-		void SetRenderTargets(const std::vector<Texture*>& renderTargets, Texture* stencilBuffer);
+		virtual void SetRenderTargets(const std::vector<Texture*>& renderTargets, Texture* stencilBuffer) = 0;
 		/// Set the viewport rectangle. On window resize the viewport will automatically revert to the entire backbuffer.
-		void SetViewport(const IntRect& viewport);
+		virtual void SetViewport(const IntRect& viewport) = 0;
 		/// Bind a vertex buffer.
-		void SetVertexBuffer(uint32_t index, VertexBuffer* buffer);
+		virtual void SetVertexBuffer(uint32_t index, VertexBuffer* buffer) = 0;
 		/// Bind an index buffer.
 		void SetIndexBuffer(IndexBuffer* buffer);
 		/// Bind a constant buffer.
-		void SetConstantBuffer(ShaderStage stage, uint32_t index, ConstantBuffer* buffer);
+		virtual void SetConstantBuffer(ShaderStage stage, uint32_t index, ConstantBuffer* buffer) = 0;
 		/// Bind a texture.
-		void SetTexture(size_t index, Texture* texture);
+		virtual void SetTexture(size_t index, Texture* texture) = 0;
 		/// Bind vertex and pixel shaders.
-		void SetShaders(ShaderVariation* vs, ShaderVariation* ps);
+		virtual void SetShaders(ShaderVariation* vs, ShaderVariation* ps) = 0;
 		/// Set color write and blending related state using an arbitrary blend mode.
 		void SetColorState(const BlendModeDesc& blendMode, bool alphaToCoverage = false, unsigned char colorWriteMask = COLORMASK_ALL);
 		/// Set color write and blending related state using a predefined blend mode.
@@ -142,7 +138,7 @@ namespace Alimer
 		/// Set rasterizer related state.
 		void SetRasterizerState(CullMode cullMode, FillMode fillMode);
 		/// Set scissor test.
-		void SetScissorTest(bool scissorEnable, const IntRect& scissorRect = IntRect::ZERO);
+		virtual void SetScissorTest(bool scissorEnable, const IntRect& scissorRect = IntRect::ZERO) = 0;
 		/// Set stencil test.
 		void SetStencilTest(bool stencilEnable, const StencilTestDesc& stencilTest = StencilTestDesc(), unsigned char stencilRef = 0);
 		/// Reset rendertarget and depth stencil buffer to the backbuffer.
@@ -156,15 +152,15 @@ namespace Alimer
 		/// Reset all bound textures.
 		void ResetTextures();
 		/// Clear the current rendertarget. This is not affected by the defined viewport, but will always clear the whole target.
-		void Clear(ClearFlags clearFlags, const Color& clearColor = Color::BLACK, float clearDepth = 1.0f, unsigned char clearStencil = 0);
+		virtual void Clear(ClearFlags clearFlags, const Color& clearColor = Color::BLACK, float clearDepth = 1.0f, uint8_t clearStencil = 0) = 0;
 		/// Draw non-indexed geometry.
-		void Draw(PrimitiveType type, size_t vertexStart, size_t vertexCount);
+		virtual void Draw(PrimitiveType type, uint32_t vertexStart, uint32_t vertexCount) = 0;
 		/// Draw indexed geometry.
-		void DrawIndexed(PrimitiveType type, size_t indexStart, size_t indexCount, size_t vertexStart);
+		virtual void DrawIndexed(PrimitiveType type, uint32_t indexStart, uint32_t indexCount, uint32_t vertexStart) = 0;
 		/// Draw instanced non-indexed geometry.
-		void DrawInstanced(PrimitiveType type, size_t vertexStart, size_t vertexCount, size_t instanceStart, size_t instanceCount);
+		virtual void DrawInstanced(PrimitiveType type, uint32_t vertexStart, uint32_t vertexCount, uint32_t instanceStart, uint32_t instanceCount) = 0;
 		/// Draw instanced indexed geometry.
-		void DrawIndexedInstanced(PrimitiveType type, size_t indexStart, size_t indexCount, size_t vertexStart, size_t instanceStart, size_t instanceCount);
+		virtual void DrawIndexedInstanced(PrimitiveType type, uint32_t indexStart, uint32_t indexCount, uint32_t vertexStart, uint32_t instanceStart, uint32_t instanceCount) = 0;
 
 		/// Return whether has the rendering window and context.
 		bool IsInitialized() const;
@@ -175,19 +171,15 @@ namespace Alimer
 		/// Return backbuffer height, or 0 if not initialized.
 		uint32_t GetHeight() const { return _backbufferSize.height; }
 		/// Return multisample level, or 1 if not using multisampling.
-		int Multisample() const { return multisample; }
+		uint32_t GetMultisample() const { return _multisample; }
 		/// Return current rendertarget width.
 		uint32_t GetRenderTargetWidth() const { return _renderTargetSize.width; }
 		/// Return current rendertarget height.
 		uint32_t GetRenderTargetHeight() const { return _renderTargetSize.height; }
-		/// Return whether is using fullscreen mode.
-		bool IsFullscreen() const;
-		/// Return whether the window is resizable.
-		bool IsResizable() const;
 		/// Return whether is using vertical sync.
 		bool VSync() const { return vsync; }
 		/// Return the rendering window.
-		Window* GetRenderWindow() const { return window.get(); }
+		Window* GetRenderWindow() const { return _window.get(); }
 		/// Return the current color rendertarget by index, or null if rendering to the backbuffer.
 		Texture* GetRenderTarget(size_t index) const;
 		/// Return the current depth-stencil buffer, or null if rendering to the backbuffer.
@@ -214,10 +206,6 @@ namespace Alimer
 		void RemoveGPUObject(GPUObject* object);
 		/// Remove all framebuffers except the currently bound one. No-op on Direct3D but provided for compatibility.
 		void CleanupFramebuffers() {}
-		/// Return the D3D11 device. Used internally and should not be called by portable application code.
-		void* D3DDevice() const;
-		/// Return the D3D11 immediate device context. Used internally and should not be called by portable application code.
-		void* D3DDeviceContext() const;
 
 		/// Screen mode changed event.
 		ScreenModeEvent screenModeEvent;
@@ -238,25 +226,17 @@ namespace Alimer
 		/// Implementation for holding OS-specific API objects.
 		GraphicsImpl* impl = nullptr;
 
-	private:
-		/// Create the D3D11 device and swap chain. Requires an open window. Can also be called again to recrease swap chain. Return true on success.
-		bool CreateD3DDevice(int multisample);
-		/// Update swap chain state for a new mode and create views for the backbuffer & default depth buffer.
-		bool UpdateSwapChain(uint32_t width, uint32_t height);
+	protected:
 		/// Handle window resize event.
-		void HandleResize(WindowResizeEvent& event);
-		/// Set texture state for the next draw call. PrepareDraw() calls this.
-		void PrepareTextures();
-		/// Set state for the next draw call. Return false if the draw call should not be attempted.
-		bool PrepareDraw(PrimitiveType type);
+		virtual void HandleResize(WindowResizeEvent&) {};
 
 	protected:
 		GraphicsDeviceType _deviceType;
-		bool _validation;
+		bool _validation{};
 		bool _initialized{};
 
 		/// OS-level rendering window.
-		std::unique_ptr<Window> window;
+		std::unique_ptr<Window> _window;
 		/// Current size of the backbuffer.
 		Size _backbufferSize{ Size::Empty };
 		/// Current size of the active rendertarget.
@@ -300,8 +280,7 @@ namespace Alimer
 		std::mutex _gpuResourceMutex;
 		/// GPU objects.
 		std::vector<GPUObject*> gpuObjects;
-		/// Input layouts.
-		InputLayoutMap _inputLayouts;
+		
 		/// Blend state objects.
 		StateObjectMap blendStates;
 		/// Depth state objects.
@@ -309,7 +288,7 @@ namespace Alimer
 		/// Rasterizer state objects.
 		StateObjectMap rasterizerStates;
 		/// Multisample level.
-		int multisample{ 1 };
+		uint32_t _multisample{ 1 };
 		/// Vertical sync flag.
 		bool vsync{ false };
 	};

@@ -24,12 +24,11 @@
 #pragma once
 
 #include "../IO/Stream.h"
-#include <memory>
-#include <string>
+#include <json/json.hpp>
+using json = nlohmann::json;
 
 namespace Alimer
 {
-	class JSONValue;
 	class Serializable;
 	class Stream;
 
@@ -86,9 +85,9 @@ namespace Alimer
 		/// Serialize to a binary stream.
 		virtual void ToBinary(Serializable* instance, Stream& dest) = 0;
 		/// Deserialize from JSON.
-		virtual void FromJSON(Serializable* instance, const JSONValue& source) = 0;
+		virtual void FromJSON(Serializable* instance, const json& source) = 0;
 		/// Serialize to JSON.
-		virtual void ToJSON(Serializable* instance, JSONValue& dest) = 0;
+		virtual void ToJSON(Serializable* instance, json& dest) = 0;
 		/// Return type.
 		virtual AttributeType GetType() const = 0;
 		/// Return whether is default value.
@@ -104,20 +103,18 @@ namespace Alimer
 		/// Return zero-based enum names, or null if none.
 		const char** GetEnumNames() const { return _enumNames; }
 		/// Return type name.
-		const String& GetTypeName() const;
+		const std::string& GetTypeName() const;
 		/// Return byte size of the attribute data, or 0 if it can be variable.
 		uint32_t GetByteSize() const;
 
 		/// Skip binary data of an attribute.
 		static void Skip(AttributeType type, Stream& source);
 		/// Serialize attribute value to JSON.
-		static void ToJSON(AttributeType type, JSONValue& dest, const void* source);
+		static void ToJSON(AttributeType type, json& dest, const void* source);
 		/// Deserialize attribute value from JSON.
-		static void FromJSON(AttributeType type, void* dest, const JSONValue& source);
+		static void FromJSON(AttributeType type, void* dest, const json& source);
 		/// Return attribute type from type name.
-		static AttributeType TypeFromName(const String& name);
-		/// Return attribute type from type name.
-		static AttributeType TypeFromName(const char* name);
+		static AttributeType TypeFromName(const std::string& name);
 
 	protected:
 		/// Variable name.
@@ -164,7 +161,7 @@ namespace Alimer
 		bool IsDefault(Serializable* instance) override { return GetValue(instance) == _defaultValue; }
 
 		/// Deserialize from JSON.
-		void FromJSON(Serializable* instance, const JSONValue& source) override
+		void FromJSON(Serializable* instance, const json& source) override
 		{
 			T value;
 			Attribute::FromJSON(GetType(), &value, source);
@@ -172,7 +169,7 @@ namespace Alimer
 		}
 
 		/// Serialize to JSON.
-		void ToJSON(Serializable* instance, JSONValue& dest) override
+		void ToJSON(Serializable* instance, json& dest) override
 		{
 			T value;
 			_accessor->Get(instance, &value);

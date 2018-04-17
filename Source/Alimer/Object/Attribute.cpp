@@ -21,7 +21,6 @@
 // THE SOFTWARE.
 //
 
-#include "../IO/JSONValue.h"
 #include "../IO/ObjectRef.h"
 #include "../IO/ResourceRef.h"
 #include "../Math/BoundingBox.h"
@@ -29,10 +28,11 @@
 #include "../Math/IntRect.h"
 #include "../Math/Matrix3x4.h"
 #include "Attribute.h"
+using namespace std;
 
 namespace Alimer
 {
-	static const String _typeNames[] =
+	static const string _typeNames[] =
 	{
 		"bool",
 		"byte",
@@ -118,7 +118,7 @@ namespace Alimer
 		switch (type)
 		{
 		case ATTR_STRING:
-			source.Read<String>();
+			source.ReadString();
 			break;
 
 		case ATTR_RESOURCEREF:
@@ -134,7 +134,7 @@ namespace Alimer
 			break;
 
 		case ATTR_JSONVALUE:
-			source.Read<JSONValue>();
+			source.ReadJSON();
 			break;
 
 		default:
@@ -142,7 +142,7 @@ namespace Alimer
 		}
 	}
 
-	const String& Attribute::GetTypeName() const
+	const string& Attribute::GetTypeName() const
 	{
 		return _typeNames[GetType()];
 	}
@@ -152,96 +152,96 @@ namespace Alimer
 		return _byteSizes[GetType()];
 	}
 
-	void Attribute::FromJSON(AttributeType type, void* dest, const JSONValue& source)
+	void Attribute::FromJSON(AttributeType type, void* dest, const json& source)
 	{
 		switch (type)
 		{
 		case ATTR_BOOL:
-			*(reinterpret_cast<bool*>(dest)) = source.GetBool();
+			*(reinterpret_cast<bool*>(dest)) = source.get<bool>();
 			break;
 
 		case ATTR_BYTE:
-			*(reinterpret_cast<unsigned char*>(dest)) = (unsigned char)source.GetNumber();
+			*(reinterpret_cast<uint8_t*>(dest)) = source.get<uint8_t>();
 			break;
 
 		case ATTR_UNSIGNED:
-			*(reinterpret_cast<unsigned*>(dest)) = (unsigned)source.GetNumber();
+			*(reinterpret_cast<uint32_t*>(dest)) = source.get<uint32_t>();
 			break;
 
 		case ATTR_INT:
-			*(reinterpret_cast<int*>(dest)) = (int)source.GetNumber();
+			*(reinterpret_cast<int*>(dest)) = source.get<int>();
 			break;
 
 		case ATTR_INTVECTOR2:
-			reinterpret_cast<IntVector2*>(dest)->FromString(source.GetString());
+			reinterpret_cast<IntVector2*>(dest)->FromString(source.get<string>());
 			break;
 
 		case ATTR_INTRECT:
-			reinterpret_cast<IntRect*>(dest)->FromString(source.GetStdString());
+			reinterpret_cast<IntRect*>(dest)->FromString(source.get<string>());
 			break;
 
 		case ATTR_FLOAT:
-			*(reinterpret_cast<float*>(dest)) = (float)source.GetNumber();
+			*(reinterpret_cast<float*>(dest)) = source.get<float>();
 			break;
 
 		case ATTR_VECTOR2:
-			reinterpret_cast<Vector2*>(dest)->FromString(source.GetString());
+			reinterpret_cast<Vector2*>(dest)->FromString(source.get<string>());
 			break;
 
 		case ATTR_VECTOR3:
-			reinterpret_cast<Vector3*>(dest)->FromString(source.GetString());
+			reinterpret_cast<Vector3*>(dest)->FromString(source.get<string>());
 			break;
 
 		case ATTR_VECTOR4:
-			reinterpret_cast<Vector4*>(dest)->FromString(source.GetString());
+			reinterpret_cast<Vector4*>(dest)->FromString(source.get<string>());
 			break;
 
 		case ATTR_QUATERNION:
-			reinterpret_cast<Vector4*>(dest)->FromString(source.GetString());
+			reinterpret_cast<Vector4*>(dest)->FromString(source.get<string>());
 			break;
 
 		case ATTR_COLOR:
-			reinterpret_cast<Color*>(dest)->FromString(source.GetString());
+			reinterpret_cast<Color*>(dest)->FromString(source.get<string>());
 			break;
 
 		case ATTR_RECT:
-			reinterpret_cast<Rect*>(dest)->FromString(source.GetString());
+			reinterpret_cast<Rect*>(dest)->FromString(source.get<string>());
 			break;
 
 		case ATTR_BOUNDINGBOX:
-			reinterpret_cast<Rect*>(dest)->FromString(source.GetString());
+			reinterpret_cast<Rect*>(dest)->FromString(source.get<string>());
 			break;
 
 		case ATTR_MATRIX3:
-			reinterpret_cast<Matrix3*>(dest)->FromString(source.GetString());
+			reinterpret_cast<Matrix3*>(dest)->FromString(source.get<string>());
 			break;
 
 		case ATTR_MATRIX3X4:
-			reinterpret_cast<Matrix3x4*>(dest)->FromString(source.GetString());
+			reinterpret_cast<Matrix3x4*>(dest)->FromString(source.get<string>());
 			break;
 
 		case ATTR_MATRIX4:
-			reinterpret_cast<Matrix4*>(dest)->FromString(source.GetString());
+			reinterpret_cast<Matrix4*>(dest)->FromString(source.get<string>());
 			break;
 
 		case ATTR_STRING:
-			*(reinterpret_cast<String*>(dest)) = source.GetString();
+			*(reinterpret_cast<string*>(dest)) = source.get<string>();
 			break;
 
 		case ATTR_RESOURCEREF:
-			reinterpret_cast<ResourceRef*>(dest)->FromString(source.GetStdString());
+			reinterpret_cast<ResourceRef*>(dest)->FromString(source.get<string>());
 			break;
 
 		case ATTR_RESOURCEREFLIST:
-			reinterpret_cast<ResourceRefList*>(dest)->FromString(source.GetStdString());
+			reinterpret_cast<ResourceRefList*>(dest)->FromString(source.get<string>());
 			break;
 
 		case ATTR_OBJECTREF:
-			reinterpret_cast<ObjectRef*>(dest)->id = (unsigned)source.GetNumber();
+			reinterpret_cast<ObjectRef*>(dest)->id = source.get<uint32_t>();
 			break;
 
 		case ATTR_JSONVALUE:
-			*(reinterpret_cast<JSONValue*>(dest)) = source;
+			*(reinterpret_cast<json*>(dest)) = source;
 			break;
 
 		default:
@@ -249,7 +249,7 @@ namespace Alimer
 		}
 	}
 
-	void Attribute::ToJSON(AttributeType type, JSONValue& dest, const void* source)
+	void Attribute::ToJSON(AttributeType type, json& dest, const void* source)
 	{
 		switch (type)
 		{
@@ -258,7 +258,7 @@ namespace Alimer
 			break;
 
 		case ATTR_BYTE:
-			dest = *(reinterpret_cast<const unsigned char*>(source));
+			dest = *(reinterpret_cast<const uint8_t*>(source));
 			break;
 
 		case ATTR_UNSIGNED:
@@ -322,7 +322,7 @@ namespace Alimer
 			break;
 
 		case ATTR_STRING:
-			dest = *(reinterpret_cast<const String*>(source));
+			dest = *(reinterpret_cast<const string*>(source));
 			break;
 
 		case ATTR_RESOURCEREF:
@@ -338,7 +338,7 @@ namespace Alimer
 			break;
 
 		case ATTR_JSONVALUE:
-			dest = *(reinterpret_cast<const JSONValue*>(source));
+			dest = *(reinterpret_cast<const json*>(source));
 			break;
 
 		default:
@@ -346,14 +346,9 @@ namespace Alimer
 		}
 	}
 
-	AttributeType Attribute::TypeFromName(const String& name)
+	AttributeType Attribute::TypeFromName(const string& name)
 	{
-		return (AttributeType)String::ListIndex(name, &_typeNames[0], MAX_ATTR_TYPES);
-	}
-
-	AttributeType Attribute::TypeFromName(const char* name)
-	{
-		return (AttributeType)String::ListIndex(name, &_typeNames[0], MAX_ATTR_TYPES);
+		return (AttributeType)str::ListIndex(name, &_typeNames[0], MAX_ATTR_TYPES);
 	}
 
 	template<> ALIMER_API AttributeType AttributeImpl<bool>::GetType() const
@@ -431,9 +426,8 @@ namespace Alimer
 		return ATTR_OBJECTREF;
 	}
 
-	template<> ALIMER_API AttributeType AttributeImpl<JSONValue>::GetType() const
+	template<> ALIMER_API AttributeType AttributeImpl<json>::GetType() const
 	{
 		return ATTR_JSONVALUE;
 	}
-
 }

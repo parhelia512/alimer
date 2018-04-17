@@ -29,6 +29,41 @@ namespace Alimer
 	map<StringHash, Object*> Object::subsystems;
 	map<StringHash, unique_ptr<ObjectFactory> > Object::factories;
 
+	TypeInfo::TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo) 
+		: _type(typeName)
+		, _typeName(typeName)
+		, _baseTypeInfo(baseTypeInfo)
+	{
+	}
+
+	bool TypeInfo::IsTypeOf(StringHash type) const
+	{
+		const TypeInfo* current = this;
+		while (current)
+		{
+			if (current->GetType() == type)
+				return true;
+
+			current = current->GetBaseTypeInfo();
+		}
+
+		return false;
+	}
+
+	bool TypeInfo::IsTypeOf(const TypeInfo* typeInfo) const
+	{
+		const TypeInfo* current = this;
+		while (current)
+		{
+			if (current == typeInfo)
+				return true;
+
+			current = current->GetBaseTypeInfo();
+		}
+
+		return false;
+	}
+
 	ObjectFactory::~ObjectFactory()
 	{
 	}
@@ -99,7 +134,7 @@ namespace Alimer
 	const string& Object::TypeNameFromType(StringHash type)
 	{
 		auto it = factories.find(type);
-		return it != factories.end() ? it->second->TypeName() : "";
+		return it != factories.end() ? it->second->TypeName() : str::EMPTY;
 	}
 
 }

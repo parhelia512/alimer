@@ -54,8 +54,8 @@ namespace Alimer
 
 	void ResourceRef::ToBinary(Stream& dest) const
 	{
-		dest.Write(type);
-		dest.Write(name);
+		dest.WriteStringHash(type);
+		dest.WriteString(name);
 	}
 
 	bool ResourceRefList::FromString(const string& str)
@@ -100,11 +100,11 @@ namespace Alimer
 
 	void ResourceRefList::ToBinary(Stream& dest) const
 	{
-		dest.Write(type);
+		dest.WriteStringHash(type);
 		dest.WriteVLE(static_cast<uint32_t>(names.size()));
 		for (auto it = names.begin(); it != names.end(); ++it)
 		{
-			dest.Write(*it);
+			dest.WriteString(*it);
 		}
 	}
 

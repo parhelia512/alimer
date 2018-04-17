@@ -30,8 +30,6 @@
 #include "Material.h"
 #include "Model.h"
 
-#include "../Debug/DebugNew.h"
-
 namespace Alimer
 {
 
@@ -95,7 +93,7 @@ namespace Alimer
 		{
 			VertexBufferDesc& vbDesc = vbDescs[i];
 
-			vbDesc.numVertices = source.ReadUInt();
+			vbDesc.vertexCount = source.ReadUInt();
 			uint32_t elementMask = source.ReadUInt();
 			source.ReadUInt(); // morphRangeStart
 			source.ReadUInt(); // morphRangeCount
@@ -152,10 +150,10 @@ namespace Alimer
 				vertexSize += 4;
 			}
 
-			vbDesc.vertexData.reset(new uint8_t[vbDesc.numVertices * vertexSize]);
+			vbDesc.vertexData.reset(new uint8_t[vbDesc.vertexCount * vertexSize]);
 			source.Read(
 				vbDesc.vertexData.get(), 
-				vbDesc.numVertices * vertexSize);
+				vbDesc.vertexCount * vertexSize);
 		}
 
 		uint32_t numIndexBuffers = source.ReadUInt();
@@ -249,7 +247,7 @@ namespace Alimer
 			const VertexBufferDesc& vbDesc = vbDescs[i];
 			SharedPtr<VertexBuffer> vb(new VertexBuffer());
 
-			vb->Define(ResourceUsage::Immutable, vbDesc.numVertices, vbDesc.vertexElements, true, vbDesc.vertexData.get());
+			vb->Define(ResourceUsage::Immutable, vbDesc.vertexCount, vbDesc.vertexElements, true, vbDesc.vertexData.get());
 			vbs.push_back(vb);
 		}
 

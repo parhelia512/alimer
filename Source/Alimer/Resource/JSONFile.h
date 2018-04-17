@@ -1,37 +1,57 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #pragma once
 
-#include "../IO/JSONValue.h"
 #include "Resource.h"
+#include <json/json.hpp>
+using json = nlohmann::json;
 
 namespace Alimer
 {
+	class Stream;
 
-class Stream;
+	/// JSON document. Contains a root JSON value and can be read/written to file as text.
+	class ALIMER_API JSONFile : public Resource
+	{
+		OBJECT(JSONFile);
 
-/// JSON document. Contains a root JSON value and can be read/written to file as text.
-class ALIMER_API JSONFile : public Resource
-{
-    OBJECT(JSONFile);
+	public:
+		/// Load from a stream as text. Return true on success. Will contain partial data on failure.
+		bool BeginLoad(Stream& source) override;
+		/// Save to a stream as text. Return true on success.
+		bool Save(Stream& dest) override;
 
-public:
-    /// Load from a stream as text. Return true on success. Will contain partial data on failure.
-    bool BeginLoad(Stream& source) override;
-    /// Save to a stream as text. Return true on success.
-    bool Save(Stream& dest) override;
-    
-    /// Register object factory.
-    static void RegisterObject();
+		/// Register object factory.
+		static void RegisterObject();
 
-    /// Return the root value.
-    JSONValue& Root() { return root; }
-    /// Return the const root value.
-    const JSONValue& Root() const { return root; }
+		/// Return the root value.
+		json& GetRoot() { return _root; }
+		/// Return the const root value.
+		const json& GetRoot() const { return _root; }
 
-private:
-    /// Root value.
-    JSONValue root;
-};
-
+	private:
+		/// Root value.
+		json _root;
+	};
 }

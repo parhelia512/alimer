@@ -24,8 +24,6 @@
 #include "GPUObject.h"
 #include "Graphics.h"
 
-#include "../Debug/DebugNew.h"
-
 namespace Alimer
 {
 

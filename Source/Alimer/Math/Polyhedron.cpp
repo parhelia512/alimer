@@ -24,11 +24,8 @@
 #include "Frustum.h"
 #include "Polyhedron.h"
 
-#include "../Debug/DebugNew.h"
-
 namespace Alimer
 {
-
 	Polyhedron::Polyhedron()
 	{
 	}
@@ -348,5 +345,4 @@ namespace Alimer
 		face[2] = v2;
 		face[3] = v3;
 	}
-
 }

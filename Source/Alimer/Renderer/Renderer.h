@@ -150,19 +150,19 @@ namespace Alimer
 		/// Graphics subsystem pointer.
 		WeakPtr<Graphics> graphics;
 		/// Current scene.
-		Scene* scene;
+		Scene* _scene;
 		/// Current scene camera.
-		Camera* camera;
+		Camera* _camera;
 		/// Current octree.
-		Octree* octree;
+		Octree* _octree;
 		/// Camera's view frustum.
-		Frustum frustum;
+		Frustum _frustum;
 		/// Camera's view mask.
-		uint32_t viewMask;
+		uint32_t _viewMask;
 		/// Geometries in frustum.
 		std::vector<GeometryNode*> geometries;
 		/// Lights in frustum.
-		std::vector<Light*> lights;
+		std::vector<Light*> _lights;
 		/// Batch queues per pass.
 		std::map<uint8_t, BatchQueue> batchQueues;
 		/// Instance transforms for uploading to the instance vertex buffer.

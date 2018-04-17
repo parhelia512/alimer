@@ -23,8 +23,7 @@
 
 #pragma once
 
-#include <d3d11.h>
-
+#include "../../Debug/Log.h"
 #include "../../PlatformIncl.h"
 
 #if defined(_XBOX_ONE) && defined(_TITLE)
@@ -33,6 +32,8 @@
 #else
 #	include <d3d11_1.h>
 #endif
+
+#include <d3dcompiler.h>
 
 #if (defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)) || (defined(_XBOX_ONE) && defined(_TITLE))
 #	pragma warning(push)
@@ -68,3 +69,15 @@
 #pragma warning(pop)
 
 #include <wincodec.h>
+
+namespace Alimer
+{
+	inline void ThrowIfFailed(HRESULT hr)
+	{
+		if (FAILED(hr))
+		{
+			LOGERRORF("Failed with code 0x%08X", hr);
+			__debugbreak();
+		}
+	}
+}

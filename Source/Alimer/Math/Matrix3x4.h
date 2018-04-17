@@ -1,4 +1,25 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #pragma once
 
@@ -6,7 +27,6 @@
 
 namespace Alimer
 {
-
 	/// 3x4 matrix for scene node transform calculations.
 	class ALIMER_API Matrix3x4
 	{
@@ -69,7 +89,7 @@ namespace Alimer
 		Matrix3x4(const Vector3& translation, const Quaternion& rotation, const Vector3& scale);
 
 		/// Construct by parsing a string.
-		Matrix3x4(const String& str)
+		Matrix3x4(const std::string& str)
 		{
 			FromString(str);
 		}
@@ -250,7 +270,7 @@ namespace Alimer
 		}
 
 		/// Parse from a string. Return true on success.
-		bool FromString(const String& str);
+		bool FromString(const std::string& str);
 		/// Parse from a C string. Return true on success.
 		bool FromString(const char* str);
 
@@ -333,7 +353,7 @@ namespace Alimer
 		/// Return float data.
 		const float* Data() const { return &m00; }
 		/// Return as string.
-		String ToString() const;
+		std::string ToString() const;
 
 		/// Zero matrix.
 		static const Matrix3x4 ZERO;

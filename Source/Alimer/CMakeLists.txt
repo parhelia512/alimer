@@ -53,6 +53,7 @@ add_engine_directory (Resource)
 add_engine_directory (Scene)
 add_engine_directory (Thread)
 add_engine_directory (Window)
+add_engine_directory (Application)
 
 if (ALIMER_D3D11)
 	add_engine_directory_group (Graphics/D3D11 Graphics)
@@ -90,10 +91,6 @@ endif ()
 
 # Add rendering API specific includes and library dependencies
 if (ALIMER_D3D11)
-	if (DIRECT3D_FOUND)
-		include_directories (${DIRECT3D_INCLUDE_DIRS})
-	endif ()
-	target_link_libraries (${TARGET_NAME} ${DIRECT3D_LIBRARIES})
 	target_compile_definitions (${TARGET_NAME} PRIVATE -DNOMINMAX)
 endif ()
 

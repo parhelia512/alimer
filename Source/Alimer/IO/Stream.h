@@ -25,10 +25,10 @@
 
 #include "../Base/String.h"
 #include "../Math/Quaternion.h"
+#include <json/json.hpp>
 
 namespace Alimer
 {
-	class JSONValue;
 	class StringHash;
 	struct ObjectRef;
 	struct ResourceRef;
@@ -92,12 +92,43 @@ namespace Alimer
 		std::string ReadLine();
 		/// Read a 4-character file ID.
 		std::string ReadFileID();
+		/// Read a 32-bit StringHash.
+		StringHash ReadStringHash();
 		/// Read a byte buffer, with size prepended as a VLE value.
 		std::vector<uint8_t> ReadBuffer();
 
 		/// Read a quaternion.
 		Quaternion ReadQuaternion();
 
+		/// Read a binary json value.
+		nlohmann::json ReadJSON();
+
+		/// Write an 8-bit integer.
+		void WriteByte(int8_t value);
+		/// Write a 16-bit integer.
+		void WriteShort(int16_t value);
+		/// Write a 32-bit integer.
+		void WriteInt(int32_t value);
+		/// Write a 64-bit integer.
+		void WriteInt64(int64_t value);
+		/// Write an 8-bit unsigned integer.
+		void WriteUByte(uint8_t value);
+		/// Write a 16-bit unsigned integer.
+		void WriteUShort(uint16_t value);
+		/// Write a 32-bit unsigned integer.
+		void WriteUInt(uint32_t value);
+		/// Write a 64-bit unsigned integer.
+		void WriteUInt64(uint64_t value);
+		/// Write a bool.
+		void WriteBool(bool value);
+		/// Write a float.
+		void WriteFloat(float value);
+		/// Write a double.
+		void WriteDouble(double value);
+		/// Write a null-terminated string.
+		void WriteString(const String& value);
+		/// Write a 32-bit StringHash.
+		void WriteStringHash(const StringHash& value);
 		/// Write a four-letter file ID. If the string is not long enough, spaces will be appended.
 		void WriteFileID(const std::string& value);
 		/// Write a byte buffer, with size encoded as VLE.
@@ -106,6 +137,14 @@ namespace Alimer
 		void WriteVLE(uint32_t value);
 		/// Write a text line. Char codes 13 & 10 will be automatically appended.
 		void WriteLine(const std::string& value);
+		/// Write a resource reference.
+		void Write(const ResourceRef& value);
+		/// Write a resource reference list.
+		void Write(const ResourceRefList& value);
+		/// Write a object reference.
+		void Write(const ObjectRef& value);
+		/// Write a json value in binary format.
+		void Write(const nlohmann::json& value);
 
 		/// Write a value, template version.
 		template <class T> void Write(const T& value) { Write(&value, sizeof value); }
@@ -137,18 +176,18 @@ namespace Alimer
 	};
 
 	template<> ALIMER_API bool Stream::Read();
-	template<> ALIMER_API String Stream::Read();
+	template<> ALIMER_API std::string Stream::Read();
 	template<> ALIMER_API StringHash Stream::Read();
 	template<> ALIMER_API ResourceRef Stream::Read();
 	template<> ALIMER_API ResourceRefList Stream::Read();
 	template<> ALIMER_API ObjectRef Stream::Read();
-	template<> ALIMER_API JSONValue Stream::Read();
+	template<> ALIMER_API nlohmann::json Stream::Read();
+
 	template<> ALIMER_API void Stream::Write(const bool& value);
-	template<> ALIMER_API void Stream::Write(const String& value);
+	template<> ALIMER_API void Stream::Write(const std::string& value);
 	template<> ALIMER_API void Stream::Write(const StringHash& value);
 	template<> ALIMER_API void Stream::Write(const ResourceRef& value);
 	template<> ALIMER_API void Stream::Write(const ResourceRefList& value);
 	template<> ALIMER_API void Stream::Write(const ObjectRef& value);
-	template<> ALIMER_API void Stream::Write(const JSONValue& value);
-
+	template<> ALIMER_API void Stream::Write(const nlohmann::json& value);
 }

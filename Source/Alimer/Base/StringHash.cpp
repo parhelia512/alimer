@@ -39,11 +39,6 @@ namespace Alimer
 	{
 	}
 
-	StringHash::StringHash(const String& str) noexcept
-		: _value(Calculate(str.CString()))
-	{
-	}
-
 	uint32_t StringHash::Calculate(const char* str, uint32_t hash)
 	{
 		if (!str)

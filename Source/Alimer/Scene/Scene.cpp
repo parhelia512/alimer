@@ -1,4 +1,25 @@
-// For conditions of distribution and use, see copyright notice in License.txt
+//
+// Alimer is based on the Turso3D codebase.
+// Copyright (c) 2018 Amer Koleci and contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 
 #include "../Debug/Log.h"
 #include "../Debug/Profiler.h"
@@ -8,11 +29,10 @@
 #include "Scene.h"
 #include "SpatialNode.h"
 
-#include "../Debug/DebugNew.h"
+using namespace std;
 
 namespace Alimer
 {
-
 	Scene::Scene() :
 		nextNodeId(1)
 	{
@@ -36,8 +56,8 @@ namespace Alimer
 	{
 		RegisterFactory<Scene>();
 		CopyBaseAttributes<Scene, Node>();
-		RegisterAttribute("layerNames", &Scene::LayerNamesAttr, &Scene::SetLayerNamesAttr);
-		RegisterAttribute("tagNames", &Scene::TagNamesAttr, &Scene::SetTagNamesAttr);
+		RegisterAttribute("layerNames", &Scene::GetLayerNamesAttr, &Scene::SetLayerNamesAttr);
+		RegisterAttribute("tagNames", &Scene::GetTagNamesAttr, &Scene::SetTagNamesAttr);
 	}
 
 	void Scene::Save(Stream& dest)
@@ -63,8 +83,8 @@ namespace Alimer
 			return false;
 		}
 
-		StringHash ownType = source.Read<StringHash>();
-		unsigned ownId = source.Read<unsigned>();
+		StringHash ownType = source.ReadStringHash();
+		uint32_t ownId = source.ReadUInt();
 		if (ownType != TypeStatic())
 		{
 			LOGERROR("Mismatching type of scene root node in scene file");
@@ -81,12 +101,12 @@ namespace Alimer
 		return true;
 	}
 
-	bool Scene::LoadJSON(const JSONValue& source)
+	bool Scene::LoadJSON(const json& source)
 	{
 		ALIMER_PROFILE(LoadSceneJSON);
 
-		StringHash ownType(source["type"].GetString());
-		unsigned ownId = (unsigned)source["id"].GetNumber();
+		StringHash ownType(source["type"].get<string>());
+		uint32_t ownId = source["id"].get<uint32_t>();
 
 		if (ownType != TypeStatic())
 		{
@@ -110,7 +130,7 @@ namespace Alimer
 
 		JSONFile json;
 		bool success = json.Load(source);
-		LoadJSON(json.Root());
+		LoadJSON(json.GetRoot());
 		return success;
 	}
 
@@ -121,7 +141,7 @@ namespace Alimer
 		LOGINFO("Saving scene to " + dest.GetName());
 
 		JSONFile json;
-		Node::SaveJSON(json.Root());
+		Node::SaveJSON(json.GetRoot());
 		return json.Save(dest);
 	}
 
@@ -130,8 +150,8 @@ namespace Alimer
 		ALIMER_PROFILE(Instantiate);
 
 		ObjectResolver resolver;
-		StringHash childType(source.Read<StringHash>());
-		unsigned childId = source.Read<unsigned>();
+		StringHash childType = source.ReadStringHash();
+		uint32_t childId = source.ReadUInt();
 
 		Node* child = CreateChild(childType);
 		if (child)
@@ -144,13 +164,13 @@ namespace Alimer
 		return child;
 	}
 
-	Node* Scene::InstantiateJSON(const JSONValue& source)
+	Node* Scene::InstantiateJSON(const json& source)
 	{
 		ALIMER_PROFILE(InstantiateJSON);
 
 		ObjectResolver resolver;
-		StringHash childType(source["type"].GetString());
-		unsigned childId = (unsigned)source["id"].GetNumber();
+		StringHash childType(source["type"].get<string>());
+		uint32_t childId = source["id"].get<uint32_t>();
 
 		Node* child = CreateChild(childType);
 		if (child)
@@ -167,7 +187,7 @@ namespace Alimer
 	{
 		JSONFile json;
 		json.Load(source);
-		return InstantiateJSON(json.Root());
+		return InstantiateJSON(json.GetRoot());
 	}
 
 	void Scene::DefineLayer(uint8_t index, const std::string& name)
@@ -206,7 +226,7 @@ namespace Alimer
 
 	void Scene::AddNode(Node* node)
 	{
-		if (!node || node->ParentScene() == this)
+		if (!node || node->GetParentScene() == this)
 			return;
 
 		while (nodes.find(nextNodeId) != nodes.end())
@@ -216,7 +236,7 @@ namespace Alimer
 				++nextNodeId;
 		}
 
-		Scene* oldScene = node->ParentScene();
+		Scene* oldScene = node->GetParentScene();
 		if (oldScene)
 		{
 			uint32_t oldId = node->GetId();
@@ -231,7 +251,7 @@ namespace Alimer
 		// If node has children, add them to the scene as well
 		if (node->NumChildren())
 		{
-			const auto& children = node->Children();
+			const auto& children = node->GetChildren();
 			for (auto it = children.begin(); it != children.end(); ++it)
 				AddNode(*it);
 		}
@@ -239,7 +259,7 @@ namespace Alimer
 
 	void Scene::RemoveNode(Node* node)
 	{
-		if (!node || node->ParentScene() != this)
+		if (!node || node->GetParentScene() != this)
 			return;
 
 		nodes.erase(node->GetId());
@@ -249,58 +269,55 @@ namespace Alimer
 		// If node has children, remove them from the scene as well
 		if (node->NumChildren())
 		{
-			const auto& children = node->Children();
+			const auto& children = node->GetChildren();
 			for (auto it = children.begin(); it != children.end(); ++it)
 				RemoveNode(*it);
 		}
 	}
 
-	void Scene::SetLayerNamesAttr(JSONValue names)
+	void Scene::SetLayerNamesAttr(json names)
 	{
 		_layerNames.clear();
 		_layers.clear();
 
-		const JSONArray& array = names.GetArray();
-		for (size_t i = 0; i < array.size(); ++i)
+		for (size_t i = 0; i < names.size(); ++i)
 		{
-			const std::string& name = array[i].GetStdString();
+			const string& name = names[i].get<string>();
 			_layerNames.push_back(name);
 			_layers[name] = (uint8_t)i;
 		}
 	}
 
-	JSONValue Scene::LayerNamesAttr() const
+	json Scene::GetLayerNamesAttr() const
 	{
-		JSONValue ret;
-
-		ret.SetEmptyArray();
+		json ret = json::array();
 		for (auto it = _layerNames.begin(); it != _layerNames.end(); ++it)
-			ret.Push(*it);
+		{
+			ret.push_back(*it);
+		}
 
 		return ret;
 	}
 
-	void Scene::SetTagNamesAttr(JSONValue names)
+	void Scene::SetTagNamesAttr(json names)
 	{
 		_tagNames.clear();
 		_tags.clear();
 
-		const JSONArray& array = names.GetArray();
-		for (size_t i = 0; i < array.size(); ++i)
+		for (size_t i = 0; i < names.size(); ++i)
 		{
-			const std::string& name = array[i].GetStdString();
+			const string& name = names[i].get<string>();
 			_tagNames.push_back(name);
 			_tags[name] = (uint8_t)i;
 		}
 	}
 
-	JSONValue Scene::TagNamesAttr() const
+	json Scene::GetTagNamesAttr() const
 	{
-		JSONValue ret;
+		json ret = json::array();
 
-		ret.SetEmptyArray();
 		for (auto it = _tagNames.begin(); it != _tagNames.end(); ++it)
-			ret.Push(*it);
+			ret.push_back(*it);
 
 		return ret;
 	}

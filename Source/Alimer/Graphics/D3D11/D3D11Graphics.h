@@ -43,14 +43,47 @@ namespace Alimer
 		/// Is backend supported?
 		static bool IsSupported();
 
-		ID3D11Device* GetD3DDevice() const;
-		ID3D11DeviceContext* GetD3DDeviceContext() const;
+		bool SetMode(const Size& size, bool fullscreen, bool resizable, uint32_t multisample) override;
+
+		// 
+		void SetRenderTargets(const std::vector<Texture*>& renderTargets, Texture* stencilBuffer) override;
+		void SetViewport(const IntRect& viewport) override;
+		void SetVertexBuffer(uint32_t index, VertexBuffer* buffer) override;
+		void SetConstantBuffer(ShaderStage stage, uint32_t index, ConstantBuffer* buffer) override;
+		void SetTexture(size_t index, Texture* texture) override;
+		void SetShaders(ShaderVariation* vs, ShaderVariation* ps) override;
+		void SetScissorTest(bool scissorEnable, const IntRect& scissorRect) override;
+
+		void Clear(ClearFlags clearFlags, const Color& clearColor, float clearDepth, uint8_t clearStencil) override;
+		void Draw(PrimitiveType type, uint32_t vertexStart, uint32_t vertexCount) override;
+		void DrawIndexed(PrimitiveType type, uint32_t indexStart, uint32_t indexCount, uint32_t vertexStart) override;
+		void DrawInstanced(PrimitiveType type, uint32_t vertexStart, uint32_t vertexCount, uint32_t instanceStart, uint32_t instanceCount) override;
+		void DrawIndexedInstanced(PrimitiveType type, uint32_t indexStart, uint32_t indexCount, uint32_t vertexStart, uint32_t instanceStart, uint32_t instanceCount) override;
+
+		ID3D11Device1* GetD3DDevice() const { return _d3dDevice.Get(); }
+		ID3D11DeviceContext1* GetD3DDeviceContext() const { return _d3dContext.Get(); }
 
 		/// Return currently bound index buffer.
 		D3D11Buffer* GetIndexBuffer() const { return _indexBuffer; }
 
 	private:
 		void Finalize() override;
+
+		/// Create the D3D11 device and swap chain. Requires an open window. Can also be called again to recrease swap chain. Return true on success.
+		bool CreateD3DDevice(uint32_t multisample);
+		/// Update swap chain state for a new mode and create views for the backbuffer & default depth buffer.
+		bool UpdateSwapChain(uint32_t width, uint32_t height);
+
+		void HandleResize(WindowResizeEvent& event) override;
+
+		/// Set texture state for the next draw call. PrepareDraw() calls this.
+		void PrepareTextures();
+
+		/// Set state for the next draw call. Return false if the draw call should not be attempted.
+		bool PrepareDraw(PrimitiveType type);
+
+		void Present() override;
+
 		BufferHandle* CreateBuffer(BufferUsage usage, uint32_t size, uint32_t stride, ResourceUsage resourceUsage, const void* initialData) override;
 
 		void SetIndexBufferCore(BufferHandle* handle, IndexType type) override;
@@ -60,8 +93,20 @@ namespace Alimer
 		/// Reset internally tracked state.
 		void ResetState();
 
+		Microsoft::WRL::ComPtr<IDXGIFactory1> _dxgiFactory{};
+		Microsoft::WRL::ComPtr<ID3D11Device1> _d3dDevice{};
+		Microsoft::WRL::ComPtr<ID3D11DeviceContext1> _d3dContext{};
+		/// Swap chain.
+		Microsoft::WRL::ComPtr<IDXGISwapChain> _swapChain{};
+
+		D3D_FEATURE_LEVEL _d3dFeatureLevel{ D3D_FEATURE_LEVEL_9_1 };
+
 		/// Bound index buffer.
 		D3D11Buffer* _indexBuffer = nullptr;
-	};
 
+		using InputLayoutMap = std::map<InputLayoutDesc, ID3D11InputLayout*>;
+
+		/// Input layouts.
+		InputLayoutMap _inputLayouts;
+	};
 }

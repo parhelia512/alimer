@@ -23,8 +23,7 @@
 
 #pragma once
 
-// Convenience header file for including commonly needed engine classes. Note: intentionally does not include Debug/DebugNew.h
-// so that placement new works as expected.
+// Convenience header file for including commonly needed engine classes.
 
 #include "Base/Ptr.h"
 #include "Debug/Log.h"

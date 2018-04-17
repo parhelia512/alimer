@@ -25,11 +25,9 @@
 #include "../Debug/Profiler.h"
 #include "../IO/File.h"
 #include "JSONFile.h"
-#include <memory>
 
 namespace Alimer
 {
-
 	void JSONFile::RegisterObject()
 	{
 		RegisterFactory<JSONFile>();
@@ -48,24 +46,22 @@ namespace Alimer
 		const char* end = pos + dataSize;
 
 		// Remove any previous content
-		root.SetNull();
 		/// \todo If fails, log the line number on which the error occurred
-		bool success = root.Parse(pos, end);
-		if (!success)
+		_root = json::parse(pos, end);
+		if (!_root.is_object())
 		{
 			LOGERROR("Parsing JSON from " + source.GetName() + " failed; data may be partial");
+			return false;
 		}
 
-		return success;
+		return true;
 	}
 
 	bool JSONFile::Save(Stream& dest)
 	{
 		ALIMER_PROFILE(SaveJSONFile);
 
-		std::string buffer;
-		root.ToString(buffer);
+		std::string buffer = _root.dump(4);
 		return dest.Write(buffer.data(), buffer.length()) == buffer.length();
 	}
-
 }

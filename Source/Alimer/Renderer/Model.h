@@ -19,7 +19,7 @@ namespace Alimer
 		/// Vertex declaration.
 		std::vector<VertexElement> vertexElements;
 		/// Number of vertices.
-		size_t numVertices;
+		uint32_t vertexCount;
 		/// Vertex data.
 		std::unique_ptr<uint8_t[]> vertexData;
 	};
@@ -62,7 +62,7 @@ namespace Alimer
 		~Bone();
 
 		/// Name.
-		String name;
+		std::string name;
 		/// Reset position.
 		Vector3 initialPosition;
 		/// Reset rotation.

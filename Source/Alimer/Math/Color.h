@@ -30,9 +30,6 @@
 
 namespace Alimer
 {
-
-	class String;
-
 	/// RGBA color.
 	class ALIMER_API Color
 	{
@@ -97,7 +94,7 @@ namespace Alimer
 		}
 
 		/// Construct by parsing a string.
-		Color(const String& str)
+		Color(const std::string& str)
 		{
 			FromString(str);
 		}
@@ -143,7 +140,7 @@ namespace Alimer
 		/// Set RGBA values from specified HSV values and alpha.
 		void FromHSV(float h, float s, float v, float a = 1.0f);
 		/// Parse from a string. Return true on success.
-		bool FromString(const String& str);
+		bool FromString(const std::string& str);
 		/// Parse from a C string. Return true on success.
 		bool FromString(const char* str);
 
@@ -193,7 +190,7 @@ namespace Alimer
 		bool Equals(const Color& rhs) const { return Alimer::Equals(r, rhs.r) && Alimer::Equals(g, rhs.g) && Alimer::Equals(b, rhs.b) && Alimer::Equals(a, rhs.a); }
 
 		/// Return as string.
-		String ToString() const;
+		std::string ToString() const;
 
 		/// Opaque white color.
 		static const Color WHITE;

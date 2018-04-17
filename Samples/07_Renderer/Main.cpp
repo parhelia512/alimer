@@ -22,7 +22,6 @@
 //
 
 #include "Alimer.h"
-#include "Debug/DebugNew.h"
 
 #ifdef _MSC_VER
 #include <crtdbg.h>
@@ -48,6 +47,7 @@ public:
 
 		cache = std::make_unique<ResourceCache>();
 		cache->AddResourceDir(GetExecutableDir() + "Data");
+		cache->AddResourceDir(GetParentPath(GetExecutableDir()) + "Data");
 
 		log = std::make_unique<Log>();
 		input = std::make_unique<Input>();
@@ -134,7 +134,7 @@ public:
 				break;
 
 			if (input->IsKeyPress('F'))
-				graphics->SetFullscreen(!graphics->IsFullscreen());
+				graphics->SetFullscreen(!graphics->GetRenderWindow()->IsFullscreen());
 
 			pitch += input->MouseMove().y * 0.25f;
 			yaw += input->MouseMove().x * 0.25f;

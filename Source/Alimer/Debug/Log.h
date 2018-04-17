@@ -125,7 +125,7 @@ namespace Alimer
 		/// %Log messages from other threads.
 		std::list<StoredLogMessage> _threadMessages;
 		/// %Log file.
-		std::unique_ptr<File> _logFile;
+		UniquePtr<File> _logFile;
 		/// Last log message.
 		std::string lastMessage;
 		/// Logging level.
