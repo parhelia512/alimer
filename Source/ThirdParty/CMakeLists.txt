@@ -21,6 +21,10 @@
 # THE SOFTWARE.
 #
 
+if (ALIMER_SDL)
+	add_subdirectory (SDL2)
+endif()
+
 # Add targets
 foreach (TARGET SPIRV-Cross)
 	add_subdirectory (${TARGET})
