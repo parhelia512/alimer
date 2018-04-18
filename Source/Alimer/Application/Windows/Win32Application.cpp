@@ -1,5 +1,4 @@
 //
-// Alimer is based on the Turso3D codebase.
 // Copyright (c) 2018 Amer Koleci and contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,32 +20,58 @@
 // THE SOFTWARE.
 //
 
-#include "GPUObject.h"
-#include "Graphics.h"
+#ifdef ALIMER_STATIC
+#include <windows.h>
+#include "../Application.h"
+#include "../../Debug/Log.h"
 
 namespace Alimer
 {
-	GPUObject::GPUObject() 
-		: dataLost(false)
+	bool Win32PlatformRun()
 	{
-		graphics = Object::GetSubsystem<Graphics>();
-		if (graphics)
-			graphics->AddGPUObject(this);
-	}
+		HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+		if (hr == RPC_E_CHANGED_MODE) {
+			hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+		}
 
-	GPUObject::~GPUObject()
-	{
-		if (graphics)
-			graphics->RemoveGPUObject(this);
-	}
+		if (hr == S_FALSE || FAILED(hr))
+		{
+			LOGERRORF("Failed to initialize COM, error: %d", hr);
+			return false;
+		}
 
-	void GPUObject::Release()
-	{
-	}
+#if ALIMER_DEBUG
+		//!AllocConsole();
+#endif
 
-	void GPUObject::Recreate()
-	{
-	}
+		// Enable high DPI as SDL not support.
+		if (HMODULE shCoreLibrary = ::LoadLibraryW(L"Shcore.dll"))
+		{
+			typedef HRESULT(WINAPI*SetProcessDpiAwarenessType)(size_t value);
+			if (auto fn = GetProcAddress(shCoreLibrary, "SetProcessDpiAwareness"))
+			{
+				((SetProcessDpiAwarenessType)fn)(2);    // PROCESS_PER_MONITOR_DPI_AWARE
+			}
 
+			FreeLibrary(shCoreLibrary);
+		}
+		else
+		{
+			if (HMODULE user32Library = ::LoadLibraryW(L"user32.dll"))
+			{
+				typedef BOOL(WINAPI * PFN_SetProcessDPIAware)(void);
+
+				if (auto fn = GetProcAddress(user32Library, "SetProcessDPIAware"))
+				{
+					((PFN_SetProcessDPIAware)fn)();
+				}
+
+				FreeLibrary(user32Library);
+			}
+		}
+
+		return true;
+	}
 }
 
+#endif

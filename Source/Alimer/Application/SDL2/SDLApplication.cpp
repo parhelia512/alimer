@@ -20,63 +20,80 @@
 // THE SOFTWARE.
 //
 
-#include "Application.h"
+#include "Application/Application.h"
+#include "Debug/Log.h"
+#include "Window/Input.h"
+
+#define SDL_MAIN_HANDLED
+#include <SDL.h>
 
 namespace Alimer
 {
-	static Application* __appInstance = nullptr;
-
-	Application::Application()
-		: _exitCode(EXIT_SUCCESS)
-		, _engine(new Engine())
-	{
-		__appInstance = this;
-		RegisterSubsystem(this);
-	}
-
-	Application::~Application()
-	{
-		RemoveSubsystem(this);
-		__appInstance = nullptr;
-	}
-
-	Application* Application::GetInstance()
-	{
-		return __appInstance;
-	}
-
-	int Application::Run()
-	{
-#if !defined(__GNUC__) || __EXCEPTIONS
-		try
-		{
+#if ALIMER_PLATFORM_WINDOWS
+	extern bool Win32PlatformRun();
 #endif
-			Setup();
-			if (_exitCode)
-				return _exitCode;
 
-			return PlatformRun();
-#if !defined(__GNUC__) || __EXCEPTIONS
-		}
-		catch (std::bad_alloc&)
+	int Application::PlatformRun()
+	{
+#if ALIMER_PLATFORM_WINDOWS
+		Win32PlatformRun();
+#endif
+
+		int result = SDL_Init(
+			SDL_INIT_VIDEO
+			| SDL_INIT_GAMECONTROLLER
+			| SDL_INIT_HAPTIC
+			| SDL_INIT_TIMER);
+		if (result < 0)
 		{
-			//ErrorDialog(GetTypeName(), "An out-of-memory error occurred. The application will now exit.");
+			SDL_ShowSimpleMessageBox(
+				SDL_MESSAGEBOX_ERROR,
+				"SDL Init Errors",
+				SDL_GetError(), nullptr);
 			return EXIT_FAILURE;
 		}
-#endif
+
+		SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
+
+		// Now init engine.
+		if (!_engine->Initialize(_settings))
+		{
+			ErrorExit();
+			return _exitCode;
+		}
+
+		Start();
+		if (_exitCode)
+			return _exitCode;
+
+		Input* input = GetSubsystem<Input>();
+
+		// Start the event loop.
+		SDL_Event evt;
+		while (!_engine->IsExiting())
+		{
+			while (SDL_PollEvent(&evt))
+			{
+				switch (evt.type)
+				{
+				case SDL_QUIT:
+					Exit();
+					break;
+				}
+			}
+
+			input->Update();
+			_engine->RunFrame();
+		}
+
+		//Exit();
+		return _exitCode;
 	}
 
-	void Application::Exit()
+	void Application::PlatformExit()
 	{
-		PlatformExit();
-	}
-
-	void Application::ErrorExit(const std::string& /*message*/)
-	{
-		// Exit the engine.
-		_engine->Exit(); 
-		_exitCode = EXIT_FAILURE;
-
-		// TODO: Error message.
+		_engine->Exit();
+		SDL_QuitSubSystem(SDL_INIT_EVERYTHING);
+		SDL_Quit();
 	}
 }

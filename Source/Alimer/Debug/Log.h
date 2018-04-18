@@ -26,7 +26,7 @@
 #include "../Object/Object.h"
 #include <list>
 #include <mutex>
-#include <memory>
+#include <thread>
 
 namespace Alimer
 {
@@ -136,6 +136,9 @@ namespace Alimer
 		bool inWrite;
 		/// Quite mode flag.
 		bool quiet;
+
+		/// Profiler thread.
+		std::thread::id _threadId{};
 	};
 
 }

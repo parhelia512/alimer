@@ -21,7 +21,6 @@
 // THE SOFTWARE.
 //
 
-#include "../Thread/Thread.h"
 #include "Profiler.h"
 
 #include <cstdio>
@@ -63,7 +62,7 @@ namespace Alimer
 
 	void ProfilerBlock::End()
 	{
-		long long currentTime = timer.ElapsedUSec();
+		uint64_t currentTime = timer.GetMilliseconds();
 		if (currentTime > maxTime)
 			maxTime = currentTime;
 		time += currentTime;
@@ -126,6 +125,7 @@ namespace Alimer
 		, totalFrames(0)
 		, _root(new ProfilerBlock(nullptr, "Root"))
 	{
+		_threadId = this_thread::get_id();
 		current = _root.get();
 		RegisterSubsystem(this);
 	}
@@ -138,7 +138,7 @@ namespace Alimer
 	void Profiler::BeginBlock(const char* name)
 	{
 		// Currently profiling is a no-op if attempted from outside main thread
-		if (!Thread::IsMainThread())
+		if (_threadId != this_thread::get_id())
 			return;
 
 		current = current->FindOrCreateChild(name);
@@ -147,7 +147,7 @@ namespace Alimer
 
 	void Profiler::EndBlock()
 	{
-		if (!Thread::IsMainThread())
+		if (_threadId != this_thread::get_id())
 			return;
 
 		if (current != _root.get())

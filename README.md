@@ -19,6 +19,7 @@ Alimer is fork from [Turso3D](https://github.com/cadaver/turso3d), which is lice
 
 The engine uses the following third-party libraries:
 
+- SDL 2.0.8 (https://www.libsdl.org)
 - SPIRV-Cross (https://github.com/KhronosGroup/SPIRV-Cross)
 - stb_image 2.19 (https://nothings.org)
 - stb_image_write 1.09 (https://nothings.org)

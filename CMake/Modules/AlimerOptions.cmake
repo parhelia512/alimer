@@ -102,6 +102,7 @@ endif ()
 include (CMakeDependentOption)
 option(ALIMER_ENABLE_ALL "Enables all optional subsystems by default" OFF)
 
+set (ALIMER_SDL_DEFAULT ON)
 set (ALIMER_LOGGING_DEFAULT ON)
 set (ALIMER_PROFILING_DEFAULT ON)
 
@@ -154,6 +155,8 @@ endif ()
 set (ALIMER_TOOLS_DEFAULT ${ALIMER_DEVELOPER})
 
 cmake_dependent_option (ALIMER_STATIC_RUNTIME "Use static C/C++ runtime library with MSVC" FALSE "MSVC" FALSE)
+
+option (ALIMER_SDL "USE SDL2" ${ALIMER_SDL_DEFAULT})
 option (ALIMER_LOGGING "Enable logging" ${ALIMER_LOGGING_DEFAULT})
 option (ALIMER_PROFILING "Enable performance profiling" ${ALIMER_PROFILING_DEFAULT})
 option (ALIMER_THREADING "Enable multithreading" ${ALIMER_THREADS_DEFAULT})

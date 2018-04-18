@@ -1,4 +1,5 @@
 //
+// Alimer is based on the Turso3D codebase.
 // Copyright (c) 2018 Amer Koleci and contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,24 +21,34 @@
 // THE SOFTWARE.
 //
 
-#include "Editor.h"
+#include "Base/Timer.h"
+using namespace std::chrono;
 
-#if defined(_WIN32) && !defined(ALIMER_WIN32_CONSOLE)
-#	include <windows.h>
-#	undef TRANSPARENT
-#	ifdef _MSC_VER
-#		include <crtdbg.h>
-#	endif
-#endif
-
-// TODO:
-#if defined(_WIN32)
-int WINAPI WinMain(HINSTANCE, HINSTANCE, PSTR, int)
-#else
-int main(int argc, char** argv)
-#endif
+namespace Alimer
 {
-	auto app = std::make_shared<Alimer::Editor>();
-	app->Run();
-	return 0;
+	Timer::Timer()
+	{
+		Reset();
+	}
+
+	void Timer::Reset()
+	{
+		_startTime = _clock.now();
+	}
+
+	uint64_t Timer::GetMilliseconds() const
+	{
+		auto now = _clock.now();
+		duration<double> diff = now - _startTime;
+
+		return duration_cast<milliseconds>(diff).count();
+	}
+
+	uint64_t Timer::GetMicroseconds() const
+	{
+		auto now = _clock.now();
+		duration<double> diff = now - _startTime;
+
+		return duration_cast<microseconds>(diff).count();
+	}
 }

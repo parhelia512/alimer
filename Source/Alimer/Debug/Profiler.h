@@ -25,7 +25,8 @@
 
 #include "../Math/Math.h"
 #include "../Object/Object.h"
-#include "../Thread/Timer.h"
+#include "../Base/Timer.h"
+#include <thread>
 #include <memory>
 
 namespace Alimer
@@ -53,7 +54,7 @@ namespace Alimer
 		/// Block name.
 		const char* name;
 		/// Hires timer for time measurement.
-		HiresTimer timer;
+		Timer timer;
 		/// Parent block.
 		ProfilerBlock* parent;
 		/// Child blocks.
@@ -125,6 +126,9 @@ namespace Alimer
 		size_t intervalFrames;
 		/// Total frames since start.
 		size_t totalFrames;
+
+		/// Profiler thread.
+		std::thread::id _threadId{};
 	};
 
 	/// Helper class for automatically beginning and ending a profiling block
@@ -134,7 +138,7 @@ namespace Alimer
 		/// Construct and begin a profiling block. The name must be persistent; string literals are recommended.
 		AutoProfileBlock(const char* name)
 		{
-			_profiler = Object::Subsystem<Profiler>();
+			_profiler = Object::GetSubsystem<Profiler>();
 			if (_profiler)
 				_profiler->BeginBlock(name);
 		}

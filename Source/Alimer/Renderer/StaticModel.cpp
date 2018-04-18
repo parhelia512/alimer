@@ -119,7 +119,7 @@ namespace Alimer
 
 	void StaticModel::SetModelAttr(const ResourceRef& model_)
 	{
-		ResourceCache* cache = Subsystem<ResourceCache>();
+		ResourceCache* cache = GetSubsystem<ResourceCache>();
 		SetModel(cache->LoadResource<Model>(model_.name));
 	}
 

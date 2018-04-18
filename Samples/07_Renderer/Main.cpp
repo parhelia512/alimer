@@ -57,7 +57,8 @@ public:
 
 		graphics->GetRenderWindow()->SetTitle("Renderer test");
 		graphics->GetRenderWindow()->SetMouseVisible(false);
-		if (!graphics->SetMode(Size(800, 600), false, true))
+		GraphicsSettings settings = {};
+		if (!graphics->Initialize(settings))
 			return;
 
 		renderer->SetupShadowMaps(1, 2048, FMT_D16);
@@ -108,7 +109,7 @@ public:
 		}
 
 		float yaw = 0.0f, pitch = 20.0f;
-		HiresTimer frameTimer;
+		Timer frameTimer;
 		Timer profilerTimer;
 		float dt = 0.0f;
 		std::string profilerOutput;
@@ -116,7 +117,7 @@ public:
 		for (;;)
 		{
 			frameTimer.Reset();
-			if (profilerTimer.ElapsedMSec() >= 1000)
+			if (profilerTimer.GetMilliseconds() >= 1000)
 			{
 				profilerOutput = profiler->OutputResults();
 				profilerTimer.Reset();
@@ -134,7 +135,9 @@ public:
 				break;
 
 			if (input->IsKeyPress('F'))
-				graphics->SetFullscreen(!graphics->GetRenderWindow()->IsFullscreen());
+			{
+				//graphics->SetFullscreen(!graphics->GetRenderWindow()->IsFullscreen());
+			}
 
 			pitch += input->MouseMove().y * 0.25f;
 			yaw += input->MouseMove().x * 0.25f;
@@ -171,7 +174,7 @@ public:
 			graphics->Present();
 
 			profiler->EndFrame();
-			dt = frameTimer.ElapsedUSec() * 0.000001f;
+			dt = frameTimer.GetMilliseconds() * 0.000001f;
 		}
 
 		LOGRAW(profilerOutput);

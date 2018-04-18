@@ -24,6 +24,7 @@
 #pragma once
 
 #include "../Graphics.h"
+#include "../../Base/HashMap.h"
 #include "D3D11Prerequisites.h"
 
 namespace Alimer
@@ -43,7 +44,7 @@ namespace Alimer
 		/// Is backend supported?
 		static bool IsSupported();
 
-		bool SetMode(const Size& size, bool fullscreen, bool resizable, uint32_t multisample) override;
+		bool Initialize(const GraphicsSettings& settings) override;
 
 		// 
 		void SetRenderTargets(const std::vector<Texture*>& renderTargets, Texture* stencilBuffer) override;
@@ -64,7 +65,7 @@ namespace Alimer
 		ID3D11DeviceContext1* GetD3DDeviceContext() const { return _d3dContext.Get(); }
 
 		/// Return currently bound index buffer.
-		D3D11Buffer* GetIndexBuffer() const { return _indexBuffer; }
+		D3D11Buffer* GetIndexBuffer() const { return _currentIndexBuffer; }
 
 	private:
 		void Finalize() override;
@@ -74,14 +75,13 @@ namespace Alimer
 		/// Update swap chain state for a new mode and create views for the backbuffer & default depth buffer.
 		bool UpdateSwapChain(uint32_t width, uint32_t height);
 
-		void HandleResize(WindowResizeEvent& event) override;
-
 		/// Set texture state for the next draw call. PrepareDraw() calls this.
 		void PrepareTextures();
 
 		/// Set state for the next draw call. Return false if the draw call should not be attempted.
 		bool PrepareDraw(PrimitiveType type);
 
+		bool BeginFrame() override;
 		void Present() override;
 
 		BufferHandle* CreateBuffer(BufferUsage usage, uint32_t size, uint32_t stride, ResourceUsage resourceUsage, const void* initialData) override;
@@ -100,11 +100,33 @@ namespace Alimer
 		Microsoft::WRL::ComPtr<IDXGISwapChain> _swapChain{};
 
 		D3D_FEATURE_LEVEL _d3dFeatureLevel{ D3D_FEATURE_LEVEL_9_1 };
+		bool _debugMode{};
 
-		/// Bound index buffer.
-		D3D11Buffer* _indexBuffer = nullptr;
-
+		using InputLayoutDesc = std::pair<uint64_t, uint32_t>;
 		using InputLayoutMap = std::map<InputLayoutDesc, ID3D11InputLayout*>;
+
+		/// Current input layout: vertex buffers' element mask and vertex shader's element mask combined.
+		InputLayoutDesc _currentInputLayout;
+
+		/// Current blend state object.
+		ID3D11BlendState1* _currentBlendState = nullptr;
+		/// Current depth state object.
+		ID3D11DepthStencilState* _currentDepthState = nullptr;
+		/// Current rasterizer state object.
+		ID3D11RasterizerState1* _currentRasterizerState = nullptr;
+
+		/// Current index buffer.
+		D3D11Buffer* _currentIndexBuffer = nullptr;
+
+		/// Input layout dirty flag.
+		bool _inputLayoutDirty;
+
+		/// Blend state objects.
+		HashMap<ID3D11BlendState1*> _blendStates;
+		/// Depth state objects.
+		HashMap<ID3D11DepthStencilState*> _depthStates;
+		/// Rasterizer state objects.
+		HashMap<ID3D11RasterizerState1*> _rasterizerStates;
 
 		/// Input layouts.
 		InputLayoutMap _inputLayouts;

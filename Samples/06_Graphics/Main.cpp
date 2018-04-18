@@ -32,32 +32,23 @@
 
 using namespace Alimer;
 
-class GraphicsTest : public Object
+class GraphicsTest : public Application
 {
-	ALIMER_OBJECT(GraphicsTest, Object);
+	ALIMER_OBJECT(GraphicsTest, Application);
 
 public:
-	void Run()
+	static constexpr uint32_t ObjectsCount = 1000;
+	std::unique_ptr<VertexBuffer> _vertexBuffer;
+	std::unique_ptr<VertexBuffer> _instanceVertexBuffer;
+	std::unique_ptr<IndexBuffer> _indexBuffer;
+	std::unique_ptr<Shader> _vertexShader;
+	std::unique_ptr<Shader> _fragmentShader;
+	std::unique_ptr<ConstantBuffer> _constantBuffer;
+
+	Texture* _texture;
+
+	void Start() override
 	{
-		RegisterGraphicsLibrary();
-		RegisterResourceLibrary();
-
-		cache = std::make_unique<ResourceCache>();
-		cache->AddResourceDir(GetExecutableDir() + "Data");
-		cache->AddResourceDir(GetParentPath(GetExecutableDir()) + "Data");
-
-		log = std::make_unique<Log>();
-		input = std::make_unique<Input>();
-
-		graphics.reset(Graphics::Create(GraphicsDeviceType::Direct3D11));
-		graphics->GetRenderWindow()->SetTitle("Graphics test");
-		if (!graphics->SetMode(Size(800, 600), false, true))
-			return;
-
-		SubscribeToEvent(graphics->GetRenderWindow()->closeRequestEvent, &GraphicsTest::HandleCloseRequest);
-
-		const uint32_t ObjectsCount = 1000;
-
 		float vertexData[] = {
 			// Position             // Texcoord
 			0.0f, 0.05f, 0.0f,      0.5f, 0.0f,
@@ -68,14 +59,14 @@ public:
 		std::vector<VertexElement> vertexDeclaration;
 		vertexDeclaration.push_back(VertexElement(ELEM_VECTOR3, SEM_POSITION));
 		vertexDeclaration.push_back(VertexElement(ELEM_VECTOR2, SEM_TEXCOORD));
-		
-		auto vb = std::make_unique<VertexBuffer>();
-		vb->Define(ResourceUsage::Immutable, 3, vertexDeclaration, true, vertexData);
+
+		_vertexBuffer = std::make_unique<VertexBuffer>();
+		_vertexBuffer->Define(ResourceUsage::Immutable, 3, vertexDeclaration, true, vertexData);
 
 		std::vector<VertexElement> instanceVertexDeclaration;
 		instanceVertexDeclaration.push_back(VertexElement(ELEM_VECTOR3, SEM_TEXCOORD, 1, true));
-		SharedPtr<VertexBuffer> ivb = new VertexBuffer();
-		ivb->Define(ResourceUsage::Dynamic, ObjectsCount, instanceVertexDeclaration, true);
+		_instanceVertexBuffer = std::make_unique<VertexBuffer>();
+		_instanceVertexBuffer->Define(ResourceUsage::Dynamic, ObjectsCount, instanceVertexDeclaration, true);
 
 		uint16_t indexData[] = {
 			0,
@@ -83,18 +74,18 @@ public:
 			2
 		};
 
-		std::unique_ptr<IndexBuffer> ib = std::make_unique<IndexBuffer>();
-		ib->Define(ResourceUsage::Immutable, 3, IndexType::UInt16, true, indexData);
+		_indexBuffer = std::make_unique<IndexBuffer>();
+		_indexBuffer->Define(ResourceUsage::Immutable, 3, IndexType::UInt16, true, indexData);
 
 		Constant pc(ELEM_VECTOR4, "Color");
-		
-		auto pcb = std::make_unique<ConstantBuffer>();
-		pcb->Define(1, &pc, true);
-		pcb->SetConstant("Color", Color::WHITE);
-		pcb->Apply();
+
+		_constantBuffer = std::make_unique<ConstantBuffer>();
+		_constantBuffer->Define(1, &pc, true);
+		_constantBuffer->SetConstant("Color", Color::WHITE);
+		_constantBuffer->Apply();
 
 		std::string vsCode =
-#ifndef TURSO3D_OPENGL
+#ifndef ALIMER_OPENGL
 			"struct VOut\n"
 			"{\n"
 			"    float4 position : SV_POSITION;\n"
@@ -124,13 +115,12 @@ public:
 			"}\n";
 #endif
 
-		auto vs = std::make_unique<Shader>();
-		vs->SetName("Test.vs");
-		vs->Define(SHADER_VS, vsCode);
-		ShaderVariation* vsv = vs->CreateVariation();
+		_vertexShader = std::make_unique<Shader>();
+		_vertexShader->SetName("Test.vs");
+		_vertexShader->Define(SHADER_VS, vsCode);
 
 		std::string psCode =
-#ifndef TURSO3D_OPENGL
+#ifndef ALIMER_OPENGL
 			"cbuffer ConstantBuffer : register(b0)\n"
 			"{\n"
 			"    float4 color;\n"
@@ -161,62 +151,54 @@ public:
 			"}\n";
 #endif
 
-		auto ps = std::make_unique<Shader>();
-		ps->SetName("Test.ps");
-		ps->Define(SHADER_PS, psCode);
-		ShaderVariation* psv = ps->CreateVariation();
-
-		Texture* tex = cache->LoadResource<Texture>("Test.png");
-
-		for (;;)
-		{
-			input->Update();
-			if (input->IsKeyPress('F'))
-			{
-				graphics->SetFullscreen(!graphics->GetRenderWindow()->IsFullscreen());
-			}
-
-			if (input->IsKeyPress('M'))
-				graphics->SetMultisample(graphics->GetMultisample() > 1 ? 1 : 4);
-			if (input->IsKeyPress(27))
-				graphics.reset();
-
-			// Break if window closed; Graphics drawing functions are not safe to any more
-			if (!graphics || !graphics->IsInitialized())
-				break;
-
-			Vector3 instanceData[ObjectsCount];
-			for (uint32_t i = 0; i < ObjectsCount; ++i)
-			{
-				instanceData[i] = Vector3(Random() * 2.0f - 1.0f, Random() * 2.0f - 1.0f, 0.0f);
-			}
-			ivb->SetData(0, ObjectsCount, instanceData);
-
-			graphics->Clear(ClearFlags::Color | ClearFlags::Depth, Color(0.0f, 0.0f, 0.5f));
-			graphics->SetVertexBuffer(0, vb.get());
-			graphics->SetVertexBuffer(1, ivb);
-			graphics->SetIndexBuffer(ib.get());
-			graphics->SetConstantBuffer(SHADER_PS, 0, pcb.get());
-			graphics->SetShaders(vsv, psv);
-			graphics->SetTexture(0, tex);
-			graphics->SetDepthState(CMP_LESS_EQUAL, true);
-			graphics->SetColorState(BLEND_MODE_REPLACE);
-			graphics->SetRasterizerState(CULL_BACK, FILL_SOLID);
-			graphics->DrawIndexedInstanced(TRIANGLE_LIST, 0, 3, 0, 0, ObjectsCount);
-
-			graphics->Present();
-		}
+		_fragmentShader = std::make_unique<Shader>();
+		_fragmentShader->SetName("Test.ps");
+		_fragmentShader->Define(SHADER_PS, psCode);
+		
+		_texture = _engine->GetCache()->LoadResource<Texture>("Test.png");
 	}
 
-	void HandleCloseRequest(Event& /* event */)
+	void Render() override
 	{
-		graphics.reset();
-	}
+		if (_engine->GetInput()->IsKeyPress('F'))
+		{
+			//graphics->SetFullscreen(!graphics->GetRenderWindow()->IsFullscreen());
+		}
 
-	std::unique_ptr<ResourceCache> cache;
-	std::unique_ptr<Graphics> graphics;
-	std::unique_ptr<Input> input;
-	std::unique_ptr<Log> log;
+		if (_engine->GetInput()->IsKeyPress('M'))
+		{
+			//graphics->SetMultisample(graphics->GetMultisample() > 1 ? 1 : 4);
+		}
+
+		// Escape.
+		if (_engine->GetInput()->IsKeyPress(27))
+		{
+			Exit();
+		}
+
+		Vector3 instanceData[ObjectsCount];
+		for (uint32_t i = 0; i < ObjectsCount; ++i)
+		{
+			instanceData[i] = Vector3(Random() * 2.0f - 1.0f, Random() * 2.0f - 1.0f, 0.0f);
+		}
+		_instanceVertexBuffer->SetData(0, ObjectsCount, instanceData);
+
+		auto* vertexVariation = _vertexShader->CreateVariation();
+		auto* fragmentVariation = _fragmentShader->CreateVariation();
+
+		auto graphics = _engine->GetGraphics();
+		graphics->Clear(ClearFlags::Color | ClearFlags::Depth, Color(0.0f, 0.0f, 0.5f));
+		graphics->SetVertexBuffer(0, _vertexBuffer.get());
+		graphics->SetVertexBuffer(1, _instanceVertexBuffer.get());
+		graphics->SetIndexBuffer(_indexBuffer.get());
+		graphics->SetConstantBuffer(SHADER_PS, 0, _constantBuffer.get());
+		graphics->SetShaders(vertexVariation, fragmentVariation);
+		graphics->SetTexture(0, _texture);
+		graphics->SetDepthState(CMP_LESS_EQUAL, true);
+		graphics->SetColorState(BLEND_MODE_REPLACE);
+		graphics->SetRasterizerState(CULL_BACK, FILL_SOLID);
+		graphics->DrawIndexedInstanced(TRIANGLE_LIST, 0, 3, 0, 0, ObjectsCount);
+	}
 };
 
 int main()

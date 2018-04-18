@@ -47,11 +47,6 @@ namespace Alimer
 		rawKeyPress.clear();
 		for (auto it = touches.begin(); it != touches.end(); ++it)
 			it->delta = IntVector2::ZERO;
-
-		// The OS-specific window message handling will call back to Input and update the state
-		Window* window = Subsystem<Window>();
-		if (window)
-			window->PumpMessages();
 	}
 
 	bool Input::IsKeyDown(unsigned keyCode) const
@@ -80,8 +75,8 @@ namespace Alimer
 
 	const IntVector2& Input::MousePosition() const
 	{
-		Window* window = Subsystem<Window>();
-		return window ? window->MousePosition() : IntVector2::ZERO;
+		Window* window = GetSubsystem<Window>();
+		return window ? window->GetMousePosition() : IntVector2::ZERO;
 	}
 
 	bool Input::IsMouseButtonDown(unsigned button) const

@@ -42,15 +42,17 @@ namespace Alimer
 	class Texture;
 	class VertexBuffer;
 	class Window;
-	class WindowResizeEvent;
 
 	// Handles.
 	class BufferHandle;
 	class TextureHandle;
 
-	using InputLayoutDesc = std::pair<uint64_t, uint32_t>;
-	
-	using StateObjectMap = std::map<uint64_t, void*>;
+	struct GraphicsSettings {
+		Window*			window;
+		bool			verticalSync{ false };
+		uint32_t		multisample{ 1 };
+		//PixelFormat		depthStencilFormat = PixelFormat::Undefined;
+	};
 
 	/// Screen mode set event.
 	class ScreenModeEvent : public Event
@@ -103,14 +105,16 @@ namespace Alimer
 		/// Destruct. Clean up the window, rendering context and GPU objects.
 		~Graphics();
 
-		/// Set graphics mode. Create the window and rendering context if not created yet. Return true on success.
-		virtual bool SetMode(const Size& size, bool fullscreen = false, bool resizable = false, uint32_t multisample = 1) = 0;
-		/// Set fullscreen mode on/off while retaining previous resolution. The initial graphics mode must have been set first. Return true on success.
-		bool SetFullscreen(bool enable);
+		/// Initializes the graphics.
+		virtual bool Initialize(const GraphicsSettings& settings) = 0;
+
 		/// Set new multisample level while retaining previous resolution. The initial graphics mode must have been set first. Return true on success.
-		bool SetMultisample(int multisample);
+		bool SetMultisample(uint32_t multisample);
 		/// Set vertical sync on/off.
 		void SetVSync(bool enable);
+
+		/// Begin frame rendering
+		virtual bool BeginFrame() = 0;
 		/// Present the contents of the backbuffer.
 		virtual void Present() = 0;
 		/// Set the color rendertarget and depth stencil buffer.
@@ -179,7 +183,7 @@ namespace Alimer
 		/// Return whether is using vertical sync.
 		bool VSync() const { return vsync; }
 		/// Return the rendering window.
-		Window* GetRenderWindow() const { return _window.get(); }
+		Window* GetRenderWindow() const { return _window; }
 		/// Return the current color rendertarget by index, or null if rendering to the backbuffer.
 		Texture* GetRenderTarget(size_t index) const;
 		/// Return the current depth-stencil buffer, or null if rendering to the backbuffer.
@@ -227,16 +231,12 @@ namespace Alimer
 		GraphicsImpl* impl = nullptr;
 
 	protected:
-		/// Handle window resize event.
-		virtual void HandleResize(WindowResizeEvent&) {};
-
-	protected:
 		GraphicsDeviceType _deviceType;
 		bool _validation{};
 		bool _initialized{};
 
 		/// OS-level rendering window.
-		std::unique_ptr<Window> _window;
+		Window* _window = nullptr;
 		/// Current size of the backbuffer.
 		Size _backbufferSize{ Size::Empty };
 		/// Current size of the active rendertarget.
@@ -260,8 +260,7 @@ namespace Alimer
 		RenderState renderState;
 		/// Textures dirty flag.
 		bool texturesDirty;
-		/// Input layout dirty flag.
-		bool inputLayoutDirty;
+		
 		/// Blend state dirty flag.
 		bool blendStateDirty;
 		/// Depth state dirty flag.
@@ -272,8 +271,7 @@ namespace Alimer
 		bool scissorRectDirty;
 		/// Current primitive type.
 		PrimitiveType primitiveType;
-		/// Current input layout: vertex buffers' element mask and vertex shader's element mask combined.
-		InputLayoutDesc inputLayout;
+		
 		/// Current viewport rectangle.
 		IntRect viewport;
 		/// GPU objects mutex.
@@ -281,12 +279,6 @@ namespace Alimer
 		/// GPU objects.
 		std::vector<GPUObject*> gpuObjects;
 		
-		/// Blend state objects.
-		StateObjectMap blendStates;
-		/// Depth state objects.
-		StateObjectMap depthStates;
-		/// Rasterizer state objects.
-		StateObjectMap rasterizerStates;
 		/// Multisample level.
 		uint32_t _multisample{ 1 };
 		/// Vertical sync flag.

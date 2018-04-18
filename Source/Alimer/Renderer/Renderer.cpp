@@ -608,7 +608,7 @@ namespace Alimer
 
 	void Renderer::Initialize()
 	{
-		graphics = Subsystem<Graphics>();
+		graphics = GetSubsystem<Graphics>();
 		assert(graphics && graphics->IsInitialized());
 
 		std::vector<Constant> constants;
@@ -1031,7 +1031,7 @@ namespace Alimer
 	{
 		ALIMER_PROFILE(LoadPassShaders);
 
-		ResourceCache* cache = Subsystem<ResourceCache>();
+		ResourceCache* cache = GetSubsystem<ResourceCache>();
 		// Use different extensions for GLSL & HLSL shaders
 #ifdef ALIMER_OPENGL
 		pass->shaders[SHADER_VS] = cache->LoadResource<Shader>(pass->GetShaderName(SHADER_VS) + ".vert");

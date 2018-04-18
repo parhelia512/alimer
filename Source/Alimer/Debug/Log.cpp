@@ -23,8 +23,6 @@
 
 #include "../IO/Console.h"
 #include "../IO/File.h"
-#include "../Thread/Thread.h"
-#include "../Thread/Timer.h"
 #include "Log.h"
 
 #include <cstdio>
@@ -42,6 +40,14 @@ namespace Alimer
 		nullptr
 	};
 
+	std::string GetTimeStamp()
+	{
+		time_t sysTime;
+		time(&sysTime);
+		std::string dateTime = ctime(&sysTime);
+		return str::Replace(dateTime, "\n", "");
+	}
+
 	Log::Log() :
 #ifdef _DEBUG
 		level(LOG_DEBUG),
@@ -52,6 +58,7 @@ namespace Alimer
 		inWrite(false),
 		quiet(false)
 	{
+		_threadId = this_thread::get_id();
 		RegisterSubsystem(this);
 	}
 
@@ -134,12 +141,12 @@ namespace Alimer
 	{
 		assert(msgLevel >= LOG_DEBUG && msgLevel < LOG_NONE);
 
-		Log* instance = Subsystem<Log>();
+		Log* instance = GetSubsystem<Log>();
 		if (!instance)
 			return;
 
 		// If not in the main thread, store message for later processing
-		if (!Thread::IsMainThread())
+		if (instance->_threadId != this_thread::get_id())
 		{
 			std::lock_guard<std::mutex> lock(instance->_logMutex);
 			instance->_threadMessages.push_back(StoredLogMessage(message, msgLevel, false));
@@ -155,7 +162,7 @@ namespace Alimer
 		instance->lastMessage = message;
 
 		if (instance->timeStamp)
-			formattedMessage = "[" + TimeStamp() + "] " + formattedMessage;
+			formattedMessage = "[" + GetTimeStamp() + "] " + formattedMessage;
 
 		if (instance->quiet)
 		{
@@ -184,12 +191,12 @@ namespace Alimer
 
 	void Log::WriteRaw(const string& message, bool error)
 	{
-		Log* instance = Subsystem<Log>();
+		Log* instance = GetSubsystem<Log>();
 		if (!instance)
 			return;
 
 		// If not in the main thread, store message for later processing
-		if (!Thread::IsMainThread())
+		if (instance->_threadId != this_thread::get_id())
 		{
 			std::lock_guard<std::mutex> lock(instance->_logMutex);
 			instance->_threadMessages.push_back(StoredLogMessage(message, LOG_RAW, error));

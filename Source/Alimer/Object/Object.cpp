@@ -26,8 +26,8 @@ using namespace std;
 
 namespace Alimer
 {
-	map<StringHash, Object*> Object::subsystems;
-	map<StringHash, unique_ptr<ObjectFactory> > Object::factories;
+	map<StringHash, Object*> Object::_subsystems;
+	map<StringHash, unique_ptr<ObjectFactory> > Object::_factories;
 
 	TypeInfo::TypeInfo(const char* typeName, const TypeInfo* baseTypeInfo) 
 		: _type(typeName)
@@ -103,7 +103,7 @@ namespace Alimer
 		if (!subsystem)
 			return;
 
-		subsystems[subsystem->GetType()] = subsystem;
+		_subsystems[subsystem->GetType()] = subsystem;
 	}
 
 	void Object::RemoveSubsystem(Object* subsystem)
@@ -111,20 +111,20 @@ namespace Alimer
 		if (!subsystem)
 			return;
 
-		auto it = subsystems.find(subsystem->GetType());
-		if (it != subsystems.end() && it->second == subsystem)
-			subsystems.erase(it);
+		auto it = _subsystems.find(subsystem->GetType());
+		if (it != _subsystems.end() && it->second == subsystem)
+			_subsystems.erase(it);
 	}
 
 	void Object::RemoveSubsystem(StringHash type)
 	{
-		subsystems.erase(type);
+		_subsystems.erase(type);
 	}
 
-	Object* Object::Subsystem(StringHash type)
+	Object* Object::GetSubsystem(StringHash type)
 	{
-		auto it = subsystems.find(type);
-		return it != subsystems.end() ? it->second : nullptr;
+		auto it = _subsystems.find(type);
+		return it != _subsystems.end() ? it->second : nullptr;
 	}
 
 	void Object::RegisterFactory(ObjectFactory* factory)
@@ -132,19 +132,18 @@ namespace Alimer
 		if (!factory)
 			return;
 
-		factories[factory->GetType()].reset(factory);
+		_factories[factory->GetType()].reset(factory);
 	}
 
 	Object* Object::Create(StringHash type)
 	{
-		auto it = factories.find(type);
-		return it != factories.end() ? it->second->Create() : nullptr;
+		auto it = _factories.find(type);
+		return it != _factories.end() ? it->second->Create() : nullptr;
 	}
 
 	const string& Object::GetTypeNameFromType(StringHash type)
 	{
-		auto it = factories.find(type);
-		return it != factories.end() ? it->second->GetTypeName() : str::EMPTY;
+		auto it = _factories.find(type);
+		return it != _factories.end() ? it->second->GetTypeName() : str::EMPTY;
 	}
-
 }

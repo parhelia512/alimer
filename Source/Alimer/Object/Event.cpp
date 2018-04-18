@@ -22,7 +22,6 @@
 //
 
 #include "../Debug/Log.h"
-#include "../Thread/Thread.h"
 #include "Event.h"
 using namespace std;
 
@@ -43,11 +42,13 @@ namespace Alimer
 
 	void Event::Send(RefCounted* sender)
 	{
+#if OBSOLETE
 		if (!Thread::IsMainThread())
 		{
 			LOGERROR("Attempted to send an event from outside the main thread");
 			return;
 		}
+#endif 
 
 		// Retain a weak pointer to the sender on the stack for safety, in case it is destroyed
 		// as a result of event handling, in which case the current event may also be destroyed
@@ -90,7 +91,7 @@ namespace Alimer
 		for (auto it = handlers.begin(); it != handlers.end(); ++it)
 		{
 			const auto& existing = *it;
-			if (existing 
+			if (existing
 				&& existing->Receiver() == handler->Receiver())
 			{
 				it->reset(handler);
@@ -106,7 +107,7 @@ namespace Alimer
 		for (auto it = handlers.begin(); it != handlers.end(); ++it)
 		{
 			const auto& handler = *it;
-			if (handler 
+			if (handler
 				&& handler->Receiver() == receiver)
 			{
 				// If event sending is going on, only clear the pointer but do not remove the element from the handler vector

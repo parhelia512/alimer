@@ -20,24 +20,34 @@
 // THE SOFTWARE.
 //
 
-#include "Editor.h"
+#include "Time.h"
+#include "Debug/Log.h"
+#include "Debug/Profiler.h"
 
-#if defined(_WIN32) && !defined(ALIMER_WIN32_CONSOLE)
-#	include <windows.h>
-#	undef TRANSPARENT
-#	ifdef _MSC_VER
-#		include <crtdbg.h>
-#	endif
-#endif
-
-// TODO:
-#if defined(_WIN32)
-int WINAPI WinMain(HINSTANCE, HINSTANCE, PSTR, int)
-#else
-int main(int argc, char** argv)
-#endif
+namespace Alimer
 {
-	auto app = std::make_shared<Alimer::Editor>();
-	app->Run();
-	return 0;
+	Time::Time()
+		: _timer(new Timer())
+	{
+		// Register self as a subsystem.
+		RegisterSubsystem(this);
+
+		_lastFrameTime = _timer->GetMicroseconds();
+	}
+
+	Time::~Time()
+	{
+		
+	}
+
+	void Time::Update()
+	{
+		uint64_t currentFrameTime = _timer->GetMicroseconds();
+		uint64_t timeDelta = currentFrameTime - _lastFrameTime;
+
+		_elapsedTime = timeDelta * 1.0 / 1000000.0;
+
+		_lastFrameTime = currentFrameTime;
+		_frameCount++;
+	}
 }

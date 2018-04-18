@@ -40,9 +40,7 @@ public:
 	void Run()
 	{
 		input = std::make_unique<Input>();
-		window = std::make_unique<Window>();
-		window->SetTitle("Window test");
-		window->SetSize(Size(800, 600), false, true);
+		window = std::make_unique<Window>("Window test", 800, 600);
 		printf("Window opened\n");
 
 		SubscribeToEvent(window->closeRequestEvent, &WindowTest::HandleCloseRequest);
@@ -61,7 +59,7 @@ public:
 		while (window->IsOpen())
 		{
 			input->Update();
-			Thread::Sleep(1);
+			std::this_thread::sleep_for(std::chrono::seconds(1));
 		}
 
 		printf("Window closed\n");

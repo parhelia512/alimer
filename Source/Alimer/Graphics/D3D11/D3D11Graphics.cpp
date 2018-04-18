@@ -135,9 +135,6 @@ namespace Alimer
 			defaultRenderTargetView(nullptr),
 			defaultDepthTexture(nullptr),
 			defaultDepthStencilView(nullptr),
-			blendState(nullptr),
-			depthState(nullptr),
-			rasterizerState(nullptr),
 			depthStencilView(nullptr),
 			blendStateHash(0xffffffffffffffff),
 			depthStateHash(0xffffffffffffffff),
@@ -154,12 +151,7 @@ namespace Alimer
 		ID3D11Texture2D* defaultDepthTexture;
 		/// Default depth-stencil view.
 		ID3D11DepthStencilView* defaultDepthStencilView;
-		/// Current blend state object.
-		ID3D11BlendState* blendState;
-		/// Current depth state object.
-		ID3D11DepthStencilState* depthState;
-		/// Current rasterizer state object.
-		ID3D11RasterizerState* rasterizerState;
+		
 		/// Current shader resource views.
 		ID3D11ShaderResourceView* resourceViews[MAX_TEXTURE_UNITS];
 		/// Current sampler states.
@@ -215,16 +207,13 @@ namespace Alimer
 		return true;
 	}
 
-	bool D3D11Graphics::SetMode(
-		const Size& size,
-		bool fullscreen,
-		bool resizable,
-		uint32_t multisample)
+	bool D3D11Graphics::Initialize(const GraphicsSettings& settings)
 	{
-		multisample = Clamp(multisample, 1, 16);
+		if (_initialized)
+			return true;
 
-		if (!_window->SetSize(size, fullscreen, resizable))
-			return false;
+		_window = settings.window;
+		uint32_t multisample = Clamp(settings.multisample, 1, 16);
 
 		// Create D3D11 device and swap chain when setting mode for the first time, or swap chain again when changing multisample
 		if (!_d3dDevice
@@ -232,6 +221,7 @@ namespace Alimer
 		{
 			if (!CreateD3DDevice(multisample))
 				return false;
+
 			// Swap chain needs to be updated manually for the first time, otherwise window resize event takes care of it
 			UpdateSwapChain(_window->GetWidth(), _window->GetHeight());
 		}
@@ -252,20 +242,15 @@ namespace Alimer
 		return true;
 	}
 
-	bool Graphics::SetFullscreen(bool enable)
+	bool Graphics::SetMultisample(uint32_t multisample)
 	{
 		if (!IsInitialized())
 			return false;
 
-		return SetMode(_backbufferSize, enable, _window->IsResizable(), _multisample);
-	}
-
-	bool Graphics::SetMultisample(int multisample_)
-	{
-		if (!IsInitialized())
-			return false;
-
-		return SetMode(_backbufferSize, _window->IsFullscreen(), _window->IsResizable(), multisample_);
+		// TODO: Handle
+		_multisample = multisample;
+		return false;
+		//return SetMode(_backbufferSize, _window->IsFullscreen(), _window->IsResizable(), multisample_);
 	}
 
 	void Graphics::SetVSync(bool enable)
@@ -285,26 +270,23 @@ namespace Alimer
 		}
 		_inputLayouts.clear();
 
-		for (auto it = blendStates.begin(); it != blendStates.end(); ++it)
+		for (auto it = _blendStates.begin(); it != _blendStates.end(); ++it)
 		{
-			ID3D11BlendState* d3dState = (ID3D11BlendState*)it->second;
-			d3dState->Release();
+			it->second->Release();
 		}
-		blendStates.clear();
+		_blendStates.clear();
 
-		for (auto it = depthStates.begin(); it != depthStates.end(); ++it)
+		for (auto it = _depthStates.begin(); it != _depthStates.end(); ++it)
 		{
-			ID3D11DepthStencilState* d3dState = (ID3D11DepthStencilState*)it->second;
-			d3dState->Release();
+			it->second->Release();
 		}
-		depthStates.clear();
+		_depthStates.clear();
 
-		for (auto it = rasterizerStates.begin(); it != rasterizerStates.end(); ++it)
+		for (auto it = _rasterizerStates.begin(); it != _rasterizerStates.end(); ++it)
 		{
-			ID3D11RasterizerState* d3dState = (ID3D11RasterizerState*)it->second;
-			d3dState->Release();
+			it->second->Release();
 		}
-		rasterizerStates.clear();
+		_rasterizerStates.clear();
 
 		if (_d3dContext)
 		{
@@ -336,8 +318,19 @@ namespace Alimer
 		ResetState();
 	}
 
+	bool D3D11Graphics::BeginFrame()
+	{
+		if (!_initialized)
+			return false;
+
+		return true;
+	}
+
 	void D3D11Graphics::Present()
 	{
+		if (!_initialized)
+			return;
+
 		{
 			ALIMER_PROFILE(Present);
 
@@ -432,7 +425,8 @@ namespace Alimer
 				&d3dBuffer,
 				&stride,
 				&offset);
-			inputLayoutDirty = true;
+
+			_inputLayoutDirty = true;
 		}
 	}
 
@@ -486,19 +480,20 @@ namespace Alimer
 
 	void D3D11Graphics::SetIndexBufferCore(BufferHandle* handle, IndexType type)
 	{
-		if (handle == _indexBuffer)
+		if (handle == _currentIndexBuffer)
 			return;
 
 		// Unset?
 		if (!handle)
 		{
+			_currentIndexBuffer = nullptr;
 			_d3dContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
 			return;
 		}
 
-		_indexBuffer = static_cast<D3D11Buffer*>(handle);
+		_currentIndexBuffer = static_cast<D3D11Buffer*>(handle);
 		_d3dContext->IASetIndexBuffer(
-			_indexBuffer->GetD3DBuffer(),
+			_currentIndexBuffer->GetD3DBuffer(),
 			d3d11::Convert(type),
 			0);
 	}
@@ -517,7 +512,7 @@ namespace Alimer
 				_d3dContext->VSSetShader(nullptr, nullptr, 0);
 
 			vertexShader = vs;
-			inputLayoutDirty = true;
+			_inputLayoutDirty = true;
 		}
 
 		if (ps != pixelShader)
@@ -641,7 +636,7 @@ namespace Alimer
 			SetTexture(i, nullptr);
 	}
 
-	void D3D11Graphics::Clear(ClearFlags clearFlags, const Color& clearColor, float clearDepth, unsigned char clearStencil)
+	void D3D11Graphics::Clear(ClearFlags clearFlags, const Color& clearColor, float clearDepth, uint8_t clearStencil)
 	{
 		PrepareTextures();
 
@@ -823,10 +818,13 @@ namespace Alimer
 				context.As(&_d3dContext)
 			);
 
+			_debugMode = _d3dDevice->GetCreationFlags() & D3D11_CREATE_DEVICE_DEBUG;
 		}
 
 		// Create swap chain. Release old if necessary
 		_swapChain.Reset();
+
+		WindowPlatformData platformData = _window->GetPlatformData();
 
 		DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
 		swapChainDesc.BufferCount = 1;
@@ -834,7 +832,7 @@ namespace Alimer
 		swapChainDesc.BufferDesc.Height = _window->GetHeight();
 		swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		swapChainDesc.OutputWindow = _window->GetHandle();
+		swapChainDesc.OutputWindow = platformData.hwnd;
 		swapChainDesc.SampleDesc.Count = multisample;
 		swapChainDesc.SampleDesc.Quality = multisample > 1 ? 0xffffffff : 0;
 		swapChainDesc.Windowed = TRUE;
@@ -849,7 +847,7 @@ namespace Alimer
 		// After creating the swap chain, disable automatic Alt-Enter fullscreen/windowed switching
 		// (the application will switch manually if it wants to)
 		_dxgiFactory->MakeWindowAssociation(
-			_window->GetHandle(),
+			platformData.hwnd,
 			DXGI_MWA_NO_WINDOW_CHANGES | DXGI_MWA_NO_ALT_ENTER);
 #endif
 
@@ -935,6 +933,7 @@ namespace Alimer
 		return success;
 	}
 
+#if TOOD
 	void D3D11Graphics::HandleResize(WindowResizeEvent& /*event*/)
 	{
 		// Handle window resize
@@ -944,6 +943,8 @@ namespace Alimer
 			UpdateSwapChain(_window->GetWidth(), _window->GetHeight());
 		}
 	}
+#endif // TOOD
+
 
 	void D3D11Graphics::PrepareTextures()
 	{
@@ -976,9 +977,10 @@ namespace Alimer
 			primitiveType = type;
 		}
 
-		if (inputLayoutDirty)
+		HRESULT hr = S_OK;
+		if (_inputLayoutDirty)
 		{
-			inputLayoutDirty = false;
+			_inputLayoutDirty = false;
 
 			InputLayoutDesc newInputLayout;
 			newInputLayout.first = 0;
@@ -986,17 +988,19 @@ namespace Alimer
 			for (size_t i = 0; i < MAX_VERTEX_STREAMS; ++i)
 			{
 				if (vertexBuffers[i])
+				{
 					newInputLayout.first |= (uint64_t)vertexBuffers[i]->GetElementHash() << (i * 16);
+				}
 			}
 
-			if (newInputLayout != inputLayout)
+			if (_currentInputLayout != newInputLayout)
 			{
 				// Check if layout already exists
 				auto it = _inputLayouts.find(newInputLayout);
 				if (it != _inputLayouts.end())
 				{
 					_d3dContext->IASetInputLayout(it->second);
-					inputLayout = newInputLayout;
+					_currentInputLayout = newInputLayout;
 				}
 				else
 				{
@@ -1026,53 +1030,52 @@ namespace Alimer
 						}
 					}
 
-					ID3D11InputLayout* d3dInputLayout = nullptr;
 					ID3DBlob* d3dBlob = (ID3DBlob*)vertexShader->BlobObject();
-					_d3dDevice->CreateInputLayout(
+					ID3D11InputLayout* d3dInputLayout = nullptr;
+					hr = _d3dDevice->CreateInputLayout(
 						elementDescs.data(),
-						(UINT)elementDescs.size(),
+						static_cast<UINT>(elementDescs.size()),
 						d3dBlob->GetBufferPointer(),
 						d3dBlob->GetBufferSize(), &d3dInputLayout);
-					if (d3dInputLayout)
+
+					if (FAILED(hr))
+					{
+						LOGERROR("Failed to create input layout");
+					}
+					else
 					{
 						_inputLayouts[newInputLayout] = d3dInputLayout;
 						_d3dContext->IASetInputLayout(d3dInputLayout);
-						inputLayout = newInputLayout;
+						_currentInputLayout = newInputLayout;
 					}
-					else
-						LOGERROR("Failed to create input layout");
 				}
 			}
 		}
 
 		if (blendStateDirty)
 		{
-			unsigned long long blendStateHash =
-				renderState.colorWriteMask |
-				(renderState.alphaToCoverage ? 0x10 : 0x0) |
-				(renderState.blendMode.blendEnable ? 0x20 : 0x0) |
-				(renderState.blendMode.srcBlend << 6) |
-				(renderState.blendMode.destBlend << 10) |
-				(renderState.blendMode.blendOp << 14) |
-				(renderState.blendMode.srcBlendAlpha << 17) |
-				(renderState.blendMode.destBlendAlpha << 21) |
-				(renderState.blendMode.blendOpAlpha << 25);
+			Hasher h;
+			h.UInt32(renderState.colorWriteMask);
+			h.UInt32(renderState.alphaToCoverage);
+			h.Data(reinterpret_cast<uint32_t *>(&renderState.blendMode), sizeof(renderState.blendMode));
+
+			auto blendStateHash = h.GetValue();
 
 			if (blendStateHash != impl->blendStateHash)
 			{
-				auto it = blendStates.find(blendStateHash);
-				if (it != blendStates.end())
+				auto it = _blendStates.find(blendStateHash);
+				if (it != end(_blendStates))
 				{
-					ID3D11BlendState* newBlendState = (ID3D11BlendState*)it->second;
+					ID3D11BlendState1* newBlendState = it->second;
 					_d3dContext->OMSetBlendState(newBlendState, nullptr, 0xffffffff);
-					impl->blendState = newBlendState;
+					_currentBlendState = newBlendState;
 					impl->blendStateHash = blendStateHash;
 				}
 				else
 				{
 					ALIMER_PROFILE(CreateBlendState);
 
-					D3D11_BLEND_DESC stateDesc = {};
+					D3D11_BLEND_DESC1 stateDesc = {};
 
 					stateDesc.AlphaToCoverageEnable = renderState.alphaToCoverage;
 					stateDesc.IndependentBlendEnable = false;
@@ -1085,14 +1088,14 @@ namespace Alimer
 					stateDesc.RenderTarget[0].BlendOpAlpha = (D3D11_BLEND_OP)renderState.blendMode.blendOpAlpha;
 					stateDesc.RenderTarget[0].RenderTargetWriteMask = renderState.colorWriteMask & COLORMASK_ALL;
 
-					ID3D11BlendState* newBlendState = nullptr;
-					_d3dDevice->CreateBlendState(&stateDesc, &newBlendState);
+					ID3D11BlendState1* newBlendState = nullptr;
+					_d3dDevice->CreateBlendState1(&stateDesc, &newBlendState);
 					if (newBlendState)
 					{
 						_d3dContext->OMSetBlendState(newBlendState, nullptr, 0xffffffff);
-						impl->blendState = newBlendState;
+						_currentBlendState = newBlendState;
 						impl->blendStateHash = blendStateHash;
-						blendStates[blendStateHash] = newBlendState;
+						_blendStates[blendStateHash] = newBlendState;
 
 						LOGDEBUGF("Created new blend state with hash %x", blendStateHash & 0xffffffff);
 					}
@@ -1112,21 +1115,21 @@ namespace Alimer
 				(renderState.stencilTest.stencilWriteMask << 14) |
 				(renderState.stencilTest.frontFail << 22) |
 				(renderState.stencilTest.frontDepthFail << 26) |
-				((unsigned long long)renderState.stencilTest.frontPass << 30) |
-				((unsigned long long)renderState.stencilTest.frontFunc << 34) |
-				((unsigned long long)renderState.stencilTest.frontFail << 38) |
-				((unsigned long long)renderState.stencilTest.frontDepthFail << 42) |
-				((unsigned long long)renderState.stencilTest.frontPass << 46) |
-				((unsigned long long)renderState.stencilTest.frontFunc << 50);
+				((uint64_t)renderState.stencilTest.frontPass << 30) |
+				((uint64_t)renderState.stencilTest.frontFunc << 34) |
+				((uint64_t)renderState.stencilTest.frontFail << 38) |
+				((uint64_t)renderState.stencilTest.frontDepthFail << 42) |
+				((uint64_t)renderState.stencilTest.frontPass << 46) |
+				((uint64_t)renderState.stencilTest.frontFunc << 50);
 
 			if (depthStateHash != impl->depthStateHash || renderState.stencilRef != impl->stencilRef)
 			{
-				auto it = depthStates.find(depthStateHash);
-				if (it != depthStates.end())
+				auto it = _depthStates.find(depthStateHash);
+				if (it != end(_depthStates))
 				{
-					ID3D11DepthStencilState* newDepthState = (ID3D11DepthStencilState*)it->second;
+					ID3D11DepthStencilState* newDepthState = it->second;
 					_d3dContext->OMSetDepthStencilState(newDepthState, renderState.stencilRef);
-					impl->depthState = newDepthState;
+					_currentDepthState = newDepthState;
 					impl->depthStateHash = depthStateHash;
 					impl->stencilRef = renderState.stencilRef;
 				}
@@ -1156,10 +1159,10 @@ namespace Alimer
 					if (newDepthState)
 					{
 						_d3dContext->OMSetDepthStencilState(newDepthState, renderState.stencilRef);
-						impl->depthState = newDepthState;
+						_currentDepthState = newDepthState;
 						impl->depthStateHash = depthStateHash;
 						impl->stencilRef = renderState.stencilRef;
-						depthStates[depthStateHash] = newDepthState;
+						_depthStates[depthStateHash] = newDepthState;
 
 						LOGDEBUGF("Created new depth state with hash %x", depthStateHash & 0xffffffff);
 					}
@@ -1171,30 +1174,29 @@ namespace Alimer
 
 		if (rasterizerStateDirty)
 		{
-			unsigned long long rasterizerStateHash =
+			uint64_t rasterizerStateHash =
 				(renderState.depthClip ? 0x1 : 0x0) |
 				(renderState.scissorEnable ? 0x2 : 0x0) |
 				(renderState.fillMode << 2) |
 				(renderState.cullMode << 4) |
 				((renderState.depthBias & 0xff) << 6) |
-				((unsigned long long)*((unsigned*)&renderState.slopeScaledDepthBias) << 14);
+				((uint64_t)*((uint32_t*)&renderState.slopeScaledDepthBias) << 14);
 
 			if (rasterizerStateHash != impl->rasterizerStateHash)
 			{
-				auto it = rasterizerStates.find(rasterizerStateHash);
-				if (it != rasterizerStates.end())
+				auto it = _rasterizerStates.find(rasterizerStateHash);
+				if (it != end(_rasterizerStates))
 				{
-					ID3D11RasterizerState* newRasterizerState = (ID3D11RasterizerState*)it->second;
+					ID3D11RasterizerState1* newRasterizerState = it->second;
 					_d3dContext->RSSetState(newRasterizerState);
-					impl->rasterizerState = newRasterizerState;
+					_currentRasterizerState = newRasterizerState;
 					impl->rasterizerStateHash = rasterizerStateHash;
 				}
 				else
 				{
 					ALIMER_PROFILE(CreateRasterizerState);
 
-					D3D11_RASTERIZER_DESC stateDesc;
-					memset(&stateDesc, 0, sizeof stateDesc);
+					D3D11_RASTERIZER_DESC1 stateDesc = {};
 
 					stateDesc.FillMode = (D3D11_FILL_MODE)renderState.fillMode;
 					stateDesc.CullMode = (D3D11_CULL_MODE)renderState.cullMode;
@@ -1206,15 +1208,15 @@ namespace Alimer
 					stateDesc.ScissorEnable = renderState.scissorEnable;
 					stateDesc.MultisampleEnable = TRUE;
 					stateDesc.AntialiasedLineEnable = FALSE;
-
-					ID3D11RasterizerState* newRasterizerState = nullptr;
-					_d3dDevice->CreateRasterizerState(&stateDesc, &newRasterizerState);
+					stateDesc.ForcedSampleCount = 0;
+					ID3D11RasterizerState1* newRasterizerState = nullptr;
+					_d3dDevice->CreateRasterizerState1(&stateDesc, &newRasterizerState);
 					if (newRasterizerState)
 					{
 						_d3dContext->RSSetState(newRasterizerState);
-						impl->rasterizerState = newRasterizerState;
+						_currentRasterizerState = newRasterizerState;
 						impl->rasterizerStateHash = rasterizerStateHash;
-						rasterizerStates[rasterizerStateHash] = newRasterizerState;
+						_rasterizerStates[rasterizerStateHash] = newRasterizerState;
 
 						LOGDEBUGF("Created new rasterizer state with hash %x", rasterizerStateHash & 0xffffffff);
 					}
@@ -1250,21 +1252,21 @@ namespace Alimer
 
 		renderState.Reset();
 
-		_indexBuffer = nullptr;
+		_currentIndexBuffer = nullptr;
 		vertexShader = nullptr;
 		pixelShader = nullptr;
-		impl->blendState = nullptr;
-		impl->depthState = nullptr;
-		impl->rasterizerState = nullptr;
+		_currentBlendState = nullptr;
+		_currentDepthState = nullptr;
+		_currentRasterizerState = nullptr;
 		impl->depthStencilView = nullptr;
 		impl->blendStateHash = 0xffffffffffffffff;
 		impl->depthStateHash = 0xffffffffffffffff;
 		impl->rasterizerStateHash = 0xffffffffffffffff;
 		impl->stencilRef = 0;
-		inputLayout.first = 0;
-		inputLayout.second = 0;
+		_currentInputLayout.first = 0;
+		_currentInputLayout.second = 0;
 		texturesDirty = false;
-		inputLayoutDirty = false;
+		_inputLayoutDirty = false;
 		blendStateDirty = false;
 		depthStateDirty = false;
 		rasterizerStateDirty = false;

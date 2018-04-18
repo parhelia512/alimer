@@ -20,24 +20,48 @@
 // THE SOFTWARE.
 //
 
-#include "Editor.h"
+#pragma once
 
-#if defined(_WIN32) && !defined(ALIMER_WIN32_CONSOLE)
-#	include <windows.h>
-#	undef TRANSPARENT
-#	ifdef _MSC_VER
-#		include <crtdbg.h>
-#	endif
-#endif
+#include "../Base/Timer.h"
+#include "../Object/Object.h"
 
-// TODO:
-#if defined(_WIN32)
-int WINAPI WinMain(HINSTANCE, HINSTANCE, PSTR, int)
-#else
-int main(int argc, char** argv)
-#endif
+namespace Alimer
 {
-	auto app = std::make_shared<Alimer::Editor>();
-	app->Run();
-	return 0;
+	/// Time module.
+	class ALIMER_API Time final : public Object
+	{
+		ALIMER_OBJECT(Time, Object);
+
+	public:
+		/// Constructor.
+		Time();
+		/// Destructor.
+		~Time() override;
+
+		/// Tick one frame.
+		void Update();
+
+		/// Get timer microseconds.
+		uint64_t GetMilliseconds() const { return _timer->GetMilliseconds(); }
+		/// Get timer microseconds.
+		uint64_t GetMicroseconds() const { return _timer->GetMicroseconds(); }
+
+		/// Get current frame delta time.
+		double GetElapsedSeconds() const { return _elapsedTime; }
+
+		/// Get total number of Update method calls.
+		uint32_t GetFrameCount() const { return _frameCount; }
+
+	private:
+		/// Timer.
+		std::unique_ptr<Timer> _timer;
+
+		/// Last frame time.
+		uint64_t _lastFrameTime;
+
+		/// Elased time since last frame in seconds.
+		double _elapsedTime{ };
+
+		uint32_t _frameCount{};
+	};
 }

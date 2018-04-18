@@ -56,8 +56,6 @@
 #include "Resource/JSONFile.h"
 #include "Resource/ResourceCache.h"
 #include "Scene/Scene.h"
-#include "Thread/Thread.h"
-#include "Thread/Timer.h"
 #include "Window/Input.h"
 #include "Window/Window.h"
 #include "Application/Application.h"

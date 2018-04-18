@@ -64,15 +64,15 @@ namespace Alimer
 	};
 
 #define ALIMER_OBJECT(typeName, baseTypeName) \
-    public: \
-        using ClassName = typeName; \
-        using Parent = baseTypeName; \
-        virtual Alimer::StringHash GetType() const override { return GetTypeInfoStatic()->GetType(); } \
-        virtual const std::string& GetTypeName() const override { return GetTypeInfoStatic()->GetTypeName(); } \
-        virtual const Alimer::TypeInfo* GetTypeInfo() const override { return GetTypeInfoStatic(); } \
-        static Alimer::StringHash GetTypeStatic() { return GetTypeInfoStatic()->GetType(); } \
-        static const std::string& GetTypeNameStatic() { return GetTypeInfoStatic()->GetTypeName(); } \
-        static const Alimer::TypeInfo* GetTypeInfoStatic() { static const Alimer::TypeInfo typeInfoStatic(#typeName, Parent::GetTypeInfoStatic()); return &typeInfoStatic; } \
+	public: \
+		using ClassName = typeName; \
+		using Parent = baseTypeName; \
+		virtual Alimer::StringHash GetType() const override { return GetTypeInfoStatic()->GetType(); } \
+		virtual const std::string& GetTypeName() const override { return GetTypeInfoStatic()->GetTypeName(); } \
+		virtual const Alimer::TypeInfo* GetTypeInfo() const override { return GetTypeInfoStatic(); } \
+		static Alimer::StringHash GetTypeStatic() { return GetTypeInfoStatic()->GetType(); } \
+		static const std::string& GetTypeNameStatic() { return GetTypeInfoStatic()->GetTypeName(); } \
+		static const Alimer::TypeInfo* GetTypeInfoStatic() { static const Alimer::TypeInfo typeInfoStatic(#typeName, Parent::GetTypeInfoStatic()); return &typeInfoStatic; } \
 
 	/// Base class for objects with type identification and possibility to create through a factory.
 	class ALIMER_API Object : public RefCounted
@@ -121,7 +121,7 @@ namespace Alimer
 		/// Remove a subsystem by type.
 		static void RemoveSubsystem(StringHash type);
 		/// Return a subsystem by type, or null if not registered.
-		static Object* Subsystem(StringHash type);
+		static Object* GetSubsystem(StringHash type);
 		/// Register an object factory.
 		static void RegisterFactory(ObjectFactory* factory);
 		/// Create and return an object through a factory. The caller is assumed to take ownership of the object. Return null if no factory registered. 
@@ -129,7 +129,7 @@ namespace Alimer
 		/// Return a type name from hash, or empty if not known. Requires a registered object factory.
 		static const std::string& GetTypeNameFromType(StringHash type);
 		/// Return a subsystem, template version.
-		template <class T> static T* Subsystem() { return static_cast<T*>(Subsystem(T::GetTypeStatic())); }
+		template <class T> static T* GetSubsystem() { return static_cast<T*>(GetSubsystem(T::GetTypeStatic())); }
 		/// Register an object factory, template version.
 		template <class T> static void RegisterFactory() { RegisterFactory(new ObjectFactoryImpl<T>()); }
 		/// Create and return an object through a factory, template version.
@@ -137,9 +137,9 @@ namespace Alimer
 
 	private:
 		/// Registered subsystems.
-		static std::map<StringHash, Object*> subsystems;
+		static std::map<StringHash, Object*> _subsystems;
 		/// Registered object factories.
-		static std::map<StringHash, std::unique_ptr<ObjectFactory>> factories;
+		static std::map<StringHash, std::unique_ptr<ObjectFactory>> _factories;
 	};
 
 	/// Base class for object factories.

@@ -283,7 +283,7 @@ namespace Alimer
 		if (root.count("textures")
 			&& root["textures"].is_object())
 		{
-			ResourceCache* cache = Subsystem<ResourceCache>();
+			ResourceCache* cache = GetSubsystem<ResourceCache>();
 			const json jsonTextures = root["textures"];
 			for (auto it = jsonTextures.begin(); it != jsonTextures.end(); ++it)
 			{

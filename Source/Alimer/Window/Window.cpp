@@ -25,17 +25,18 @@
 
 namespace Alimer
 {
-	Window::Window()
-		: _title("Alimer Window")
-		, _size(Size::Empty)
+	Window::Window(const std::string& title, uint32_t width, uint32_t height, 
+		bool resizable,
+		bool fullscreen)
+		: _title(title)
+		, _width(width)
+		, _height(height)
 		, savedPosition(IntVector2(M_MIN_INT, M_MIN_INT))
 		, mousePosition(IntVector2::ZERO)
-		, windowStyle(0)
 		, minimized(false)
 		, focus(false)
-		, resizable(false)
-		, fullscreen(false)
-		, inResize(false)
+		, _resizable(resizable)
+		, _fullscreen(fullscreen)
 		, mouseVisible(true)
 		, mouseVisibleInternal(true)
 	{

@@ -51,8 +51,6 @@ namespace Alimer
 		, _validation(validation)
 	{
 		RegisterSubsystem(this);
-		_window = make_unique<Window>();
-		SubscribeToEvent(_window->resizeEvent, &Graphics::HandleResize);
 	}
 
 	Graphics::~Graphics()

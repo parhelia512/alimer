@@ -88,7 +88,7 @@ namespace Alimer
 
 	bool Shader::ProcessIncludes(std::string& code, Stream& source)
 	{
-		ResourceCache* cache = Subsystem<ResourceCache>();
+		ResourceCache* cache = GetSubsystem<ResourceCache>();
 
 		while (!source.IsEof())
 		{

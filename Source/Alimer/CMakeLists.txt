@@ -51,9 +51,13 @@ add_engine_directory (Object)
 add_engine_directory (Renderer)
 add_engine_directory (Resource)
 add_engine_directory (Scene)
-add_engine_directory (Thread)
 add_engine_directory (Window)
 add_engine_directory (Application)
+
+if (ALIMER_SDL)
+	add_engine_directory_group (Application/SDL2 Application)
+	add_engine_directory_group (Window/SDL2 Window)
+endif ()
 
 if (ALIMER_D3D11)
 	add_engine_directory_group (Graphics/D3D11 Graphics)
@@ -65,6 +69,7 @@ if (ALIMER_OPENGL)
 endif ()
 
 if (PLATFORM_WINDOWS)
+	add_engine_directory_group (Application/Windows Application)
 	add_engine_directory_group (IO/Windows IO)
 	add_engine_directory_group (Window/Win32 Window)
 endif ()
@@ -87,6 +92,12 @@ if (BUILD_SHARED_LIBS OR EMSCRIPTEN)
 	target_compile_definitions (${TARGET_NAME} PRIVATE -DALIMER_EXPORTS)
 else ()
 	target_compile_definitions (${TARGET_NAME} PUBLIC -DALIMER_STATIC)
+endif ()
+
+
+if (ALIMER_SDL)
+	target_compile_definitions (${TARGET_NAME} PRIVATE -DALIMER_SDL)
+	target_link_libraries (${TARGET_NAME} SDL2)
 endif ()
 
 # Add rendering API specific includes and library dependencies
