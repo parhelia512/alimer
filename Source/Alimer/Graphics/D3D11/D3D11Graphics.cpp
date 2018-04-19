@@ -177,13 +177,13 @@ namespace Alimer
 #if ALIMER_PLATFORM_WINDOWS && !ALIMER_PLATFORM_UWP
 		if (FAILED(LoadLibraries()))
 		{
-			LOGERRORF("Failed to load D3D11 libraries.");
+			ALIMER_LOGERROR("Failed to load D3D11 libraries.");
 		}
 #endif
 
 		if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&_dxgiFactory))))
 		{
-			LOGERRORF("Failed to create DXGIFactory.");
+			ALIMER_LOGERROR("Failed to create DXGIFactory.");
 		}
 
 		Unused(applicationName);
@@ -232,7 +232,7 @@ namespace Alimer
 		screenModeEvent.multisample = multisample;
 		SendEvent(screenModeEvent);
 
-		LOGDEBUGF("Set screen mode %dx%d fullscreen %d resizable %d multisample %d",
+		ALIMER_LOGDEBUG("Set screen mode {}x{} fullscreen {} resizable {} multisample {}",
 			_backbufferSize.width,
 			_backbufferSize.height,
 			_window->IsFullscreen(), 
@@ -337,7 +337,7 @@ namespace Alimer
 			HRESULT hr = _swapChain->Present(vsync ? 1 : 0, 0);
 			if (FAILED(hr))
 			{
-				LOGERROR("[D3D11] - Swapchain Present failed");
+				ALIMER_LOGERROR("[D3D11] - Swapchain Present failed");
 			}
 		}
 	}
@@ -804,7 +804,7 @@ namespace Alimer
 
 				if (FAILED(hr))
 				{
-					LOGERROR("Failed to create D3D11 device");
+					ALIMER_LOGERROR("Failed to create D3D11 device");
 					return false;
 				}
 			}
@@ -857,7 +857,7 @@ namespace Alimer
 			return true;
 		}
 
-		LOGERROR("Failed to create D3D11 swap chain");
+		ALIMER_LOGERROR("Failed to create D3D11 swap chain");
 		return false;
 	}
 
@@ -895,7 +895,7 @@ namespace Alimer
 		}
 		else
 		{
-			LOGERROR("Failed to get backbuffer texture");
+			ALIMER_LOGERROR("Failed to get backbuffer texture");
 			success = false;
 		}
 
@@ -920,7 +920,7 @@ namespace Alimer
 		}
 		else
 		{
-			LOGERROR("Failed to create backbuffer depth-stencil texture");
+			ALIMER_LOGERROR("Failed to create backbuffer depth-stencil texture");
 			success = false;
 		}
 
@@ -1040,7 +1040,7 @@ namespace Alimer
 
 					if (FAILED(hr))
 					{
-						LOGERROR("Failed to create input layout");
+						ALIMER_LOGERROR("Failed to create input layout");
 					}
 					else
 					{
@@ -1097,7 +1097,7 @@ namespace Alimer
 						impl->blendStateHash = blendStateHash;
 						_blendStates[blendStateHash] = newBlendState;
 
-						LOGDEBUGF("Created new blend state with hash %x", blendStateHash & 0xffffffff);
+						ALIMER_LOGDEBUG("[D3D11] - Created new blend state with hash {}", blendStateHash & 0xffffffff);
 					}
 				}
 			}
@@ -1164,7 +1164,7 @@ namespace Alimer
 						impl->stencilRef = renderState.stencilRef;
 						_depthStates[depthStateHash] = newDepthState;
 
-						LOGDEBUGF("Created new depth state with hash %x", depthStateHash & 0xffffffff);
+						ALIMER_LOGDEBUG("[D3D11] - Created new depth state with hash {}", depthStateHash & 0xffffffff);
 					}
 				}
 			}
@@ -1218,7 +1218,7 @@ namespace Alimer
 						impl->rasterizerStateHash = rasterizerStateHash;
 						_rasterizerStates[rasterizerStateHash] = newRasterizerState;
 
-						LOGDEBUGF("Created new rasterizer state with hash %x", rasterizerStateHash & 0xffffffff);
+						ALIMER_LOGDEBUG("[D3D11] - Created new rasterizer state with hash {}", rasterizerStateHash & 0xffffffff);
 					}
 				}
 			}

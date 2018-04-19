@@ -1,5 +1,4 @@
 #
-# Alimer is based on the Turso3D codebase.
 # Copyright (c) 2018 Amer Koleci and contributors.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,33 +19,33 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
-set (TARGET_NAME spirv_cross)
 
 set(SPIRV_CROSS_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/GLSL.std.450.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/spirv_common.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/spirv_cfg.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/spirv_cfg.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/spirv_cross.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/spirv_cross.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/spirv.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/GLSL.std.450.h
+	${CMAKE_CURRENT_SOURCE_DIR}/spirv_common.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/spirv_cfg.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/spirv_cfg.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/spirv_cross.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/spirv_cross.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/spirv.hpp
 )
 
 if (ALIMER_D3D11 OR ALIMER_D3D12)
-    list(APPEND SPIRV_CROSS_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/spirv_hlsl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/spirv_hlsl.hpp
-    )
+	list(APPEND SPIRV_CROSS_SOURCES
+		${CMAKE_CURRENT_SOURCE_DIR}/spirv_hlsl.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/spirv_hlsl.hpp
+	)
 endif()
 
 if (ALIMER_VULKAN OR ALIMER_OPENGL)
-    list(APPEND SPIRV_CROSS_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/spirv_glsl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/spirv_glsl.hpp
-    )
+	list(APPEND SPIRV_CROSS_SOURCES
+		${CMAKE_CURRENT_SOURCE_DIR}/spirv_glsl.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/spirv_glsl.hpp
+	)
 endif()
 
-add_library(${TARGET_NAME} STATIC ${SPIRV_CROSS_SOURCES})
-target_include_directories(${TARGET_NAME} SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-set_property(TARGET ${TARGET_NAME} PROPERTY FOLDER "ThirdParty")
+add_library(spirv_cross OBJECT ${SPIRV_CROSS_SOURCES})
+target_include_directories(spirv_cross
+	PUBLIC    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+)
+set_target_properties(spirv_cross PROPERTIES FOLDER ThirdParty)

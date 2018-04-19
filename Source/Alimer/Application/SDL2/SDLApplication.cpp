@@ -92,6 +92,7 @@ namespace Alimer
 
 	void Application::PlatformExit()
 	{
+		Stop();
 		_engine->Exit();
 		SDL_QuitSubSystem(SDL_INIT_EVERYTHING);
 		SDL_Quit();

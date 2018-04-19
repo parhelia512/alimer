@@ -85,13 +85,22 @@ namespace Alimer
 		bool Define(
 			TextureType type,
 			const Size& size,
-			ImageFormat format,
+			PixelFormat format,
 			uint32_t mipLevels,
 			TextureUsage usage = TextureUsage::ShaderRead,
 			const ImageLevel* initialData = 0);
 
 		/// Define sampling parameters. Return true on success.
-		bool DefineSampler(TextureFilterMode filter = FILTER_TRILINEAR, TextureAddressMode u = ADDRESS_WRAP, TextureAddressMode v = ADDRESS_WRAP, TextureAddressMode w = ADDRESS_WRAP, uint32_t maxAnisotropy = 16, float minLod = -M_MAX_FLOAT, float maxLod = M_MAX_FLOAT, const Color& borderColor = Color::BLACK);
+		bool DefineSampler(
+			TextureFilterMode filter = FILTER_TRILINEAR,
+			SamplerAddressMode u = SamplerAddressMode::Wrap,
+			SamplerAddressMode v = SamplerAddressMode::Wrap,
+			SamplerAddressMode w = SamplerAddressMode::Wrap,
+			uint32_t maxAnisotropy = 16,
+			float minLod = -M_MAX_FLOAT,
+			float maxLod = M_MAX_FLOAT,
+			const Color& borderColor = Color::BLACK);
+
 		/// Set data for a mipmap level. Not supported for immutable textures. Return true on success.
 		bool SetData(uint32_t face, uint32_t level, IntRect rect, const ImageLevel& data);
 
@@ -104,9 +113,9 @@ namespace Alimer
 		/// Return height.
 		uint32_t GetHeight() const { return _size.height; }
 		/// Return image format.
-		ImageFormat Format() const { return _format; }
+		PixelFormat GetFormat() const { return _format; }
 		/// Return whether uses a compressed format.
-		bool IsCompressed() const { return _format >= FMT_DXT1; }
+		bool IsCompressed() const { return Alimer::IsCompressed(_format); }
 		/// Return number of mipmap levels.
 		uint32_t GetMipLevels() const { return _mipLevels; }
 		uint32_t NumFaces() const {
@@ -115,9 +124,9 @@ namespace Alimer
 		/// Return resource usage type.
 		TextureUsage GetUsage() const { return _usage; }
 		/// Return whether is a color rendertarget texture.
-		bool IsRenderTarget() const { return any(_usage & TextureUsage::RenderTarget) && (_format < FMT_D16 || _format > FMT_D24S8); }
+		bool IsRenderTarget() const { return any(_usage & TextureUsage::RenderTarget) && !Alimer::IsDepthStencilFormat(_format); }
 		/// Return whether is a depth-stencil texture.
-		bool IsDepthStencil() const { return any(_usage & TextureUsage::RenderTarget) && _format >= FMT_D16 && _format <= FMT_D24S8; }
+		bool IsDepthStencil() const { return any(_usage & TextureUsage::RenderTarget) && Alimer::IsDepthStencilFormat(_format); }
 
 		TextureHandle* GetHandle() { return _handle; }
 
@@ -142,7 +151,7 @@ namespace Alimer
 		Size _size = Size::One;
 
 		/// Image format.
-		ImageFormat _format{ FMT_NONE };
+		PixelFormat _format{ PixelFormat::Undefined };
 		/// Number of mipmap levels.
 		uint32_t _mipLevels{ 1 };
 		/// Images used for loading.
@@ -151,7 +160,7 @@ namespace Alimer
 		/// Texture filtering mode.
 		TextureFilterMode _filter;
 		/// Texture addressing modes for each coordinate axis.
-		TextureAddressMode _addressModes[3];
+		SamplerAddressMode _addressModes[3];
 		/// Maximum anisotropy.
 		uint32_t _maxAnisotropy;
 		/// Minimum LOD.

@@ -21,8 +21,8 @@
 // THE SOFTWARE.
 //
 
-#include "../../Debug/Log.h"
-#include "../../Debug/Profiler.h"
+#include "Debug/Log.h"
+#include "Debug/Profiler.h"
 #include "D3D11Buffer.h"
 #include "D3D11Graphics.h"
 #include "D3D11Convert.h"
@@ -64,7 +64,7 @@ namespace Alimer
 			_buffer.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			LOGERROR("[D3D11] - Failed to create Buffer");
+			ALIMER_LOGERROR("[D3D11] - Failed to create Buffer");
 		}
 	}
 
@@ -96,7 +96,7 @@ namespace Alimer
 
 			if (FAILED(hr))
 			{
-				LOGERROR("Failed to map index buffer for update");
+				ALIMER_LOGERROR("Failed to map index buffer for update");
 				return false;
 			}
 

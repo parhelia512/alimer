@@ -326,7 +326,7 @@ namespace Alimer
 		{
 			if (textures[i])
 			{
-				root["textures"][std::to_string((int)i)] = textures[i]->Name();
+				root["textures"][std::to_string((int)i)] = textures[i]->GetName();
 			}
 		}
 

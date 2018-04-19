@@ -24,7 +24,7 @@
 #pragma once
 
 #include "../Graphics/Buffer.h"
-#include <json/json.hpp>
+#include "../json/json.hpp"
 using json = nlohmann::json;
 
 namespace Alimer

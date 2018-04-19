@@ -45,7 +45,7 @@ namespace Alimer
 #if OBSOLETE
 		if (!Thread::IsMainThread())
 		{
-			LOGERROR("Attempted to send an event from outside the main thread");
+			ALIMER_LOGERROR("Attempted to send an event from outside the main thread");
 			return;
 		}
 #endif 

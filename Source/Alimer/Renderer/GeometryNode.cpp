@@ -120,18 +120,18 @@ namespace Alimer
 		}
 	}
 
-	void GeometryNode::SetGeometry(size_t index, Geometry* geometry)
+	void GeometryNode::SetGeometry(uint32_t index, Geometry* geometry)
 	{
 		if (!geometry)
 		{
-			LOGERROR("Can not assign null geometry");
+			ALIMER_LOGERROR("Can not assign null geometry");
 			return;
 		}
 
 		if (index < _batches.size())
 			_batches[index].geometry = geometry;
 		else
-			LOGERRORF("Out of bounds batch index %d for setting geometry", (int)index);
+			ALIMER_LOGDEBUG("Out of bounds batch index {} for setting geometry", index);
 	}
 
 	void GeometryNode::SetMaterial(Material* material)
@@ -143,7 +143,7 @@ namespace Alimer
 			_batches[i].material = material;
 	}
 
-	void GeometryNode::SetMaterial(size_t index, Material* material)
+	void GeometryNode::SetMaterial(uint32_t index, Material* material)
 	{
 		if (index < _batches.size())
 		{
@@ -152,7 +152,7 @@ namespace Alimer
 			_batches[index].material = material;
 		}
 		else
-			LOGERRORF("Out of bounds batch index %d for setting material", (int)index);
+			ALIMER_LOGERROR("Out of bounds batch index {} for setting material", index);
 	}
 
 	void GeometryNode::SetLocalBoundingBox(const BoundingBox& box)
@@ -192,7 +192,7 @@ namespace Alimer
 		ret.names.resize(_batches.size());
 		for (size_t i = 0; i < _batches.size(); ++i)
 		{
-			ret.names[i] = ResourceName(_batches[i].material.Get());
+			ret.names[i] = GetResourceName(_batches[i].material.Get());
 		}
 
 		return ret;

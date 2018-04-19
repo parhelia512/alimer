@@ -29,7 +29,7 @@ namespace Alimer
 		void SetName(const std::string& newName);
 
 		/// Return name of the resource.
-		const std::string& Name() const { return _name; }
+		const std::string& GetName() const { return _name; }
 		/// Return name hash of the resource.
 		const StringHash& GetNameHash() const { return _nameHash; }
 
@@ -41,13 +41,13 @@ namespace Alimer
 	};
 
 	/// Return name from a resource pointer.
-	inline const std::string& ResourceName(Resource* resource)
+	inline const std::string& GetResourceName(Resource* resource)
 	{
-		return resource ? resource->Name() : str::EMPTY;
+		return resource ? resource->GetName() : str::EMPTY;
 	}
 
 	/// Return type from a resource pointer, or default type if null.
-	inline StringHash ResourceType(Resource* resource, StringHash defaultType)
+	inline StringHash GetResourceType(Resource* resource, StringHash defaultType)
 	{
 		return resource ? resource->GetType() : defaultType;
 	}
@@ -55,15 +55,15 @@ namespace Alimer
 	/// Make a resource ref from a resource pointer.
 	inline ResourceRef MakeResourceRef(Resource* resource, StringHash defaultType)
 	{
-		return ResourceRef(ResourceType(resource, defaultType), ResourceName(resource));
+		return ResourceRef(GetResourceType(resource, defaultType), GetResourceName(resource));
 	}
 
 	/// Return resource names from a vector of resource pointers.
-	template <class T> std::vector<std::string> ResourceNames(const std::vector<T*>& resources)
+	template <class T> std::vector<std::string> GetResourceNames(const std::vector<T*>& resources)
 	{
 		std::vector<std::string> ret(resources.size());
 		for (size_t i = 0; i < resources..(); ++i)
-			ret[i] = ResourceName(resources[i]);
+			ret[i] = GetResourceName(resources[i]);
 
 		return ret;
 	}
@@ -73,5 +73,4 @@ namespace Alimer
 	{
 		return ResourceRefList(T::GetTypeStatic(), GetResourceNames(resources));
 	}
-
 }

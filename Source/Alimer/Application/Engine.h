@@ -31,6 +31,8 @@ namespace Alimer
 	class ResourceCache;
 	class Input;
 	class Graphics;
+	class Renderer;
+	class Profiler;
 
 	struct EngineSettings
 	{
@@ -99,6 +101,9 @@ namespace Alimer
 		/// Graphics module.
 		inline Graphics* GetGraphics() { return _graphics.get(); }
 
+		/// Renderer module.
+		inline Renderer* GetRenderer() { return _renderer.get(); }
+
 	private:
 		/// Handle window resize event.
 		void HandleResize(WindowResizeEvent&);
@@ -116,6 +121,9 @@ namespace Alimer
 		/// Log module.
 		std::unique_ptr<Log> _log;
 
+		/// Profiler module [optional].
+		std::unique_ptr<Profiler> _profiler;
+
 		/// Time module.
 		std::unique_ptr<Time> _time;
 
@@ -127,5 +135,8 @@ namespace Alimer
 
 		/// Graphics module.
 		std::unique_ptr<Graphics> _graphics;
+
+		/// Renderer module.
+		std::unique_ptr<Renderer> _renderer;
 	};
 }

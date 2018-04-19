@@ -21,8 +21,8 @@
 // THE SOFTWARE.
 //
 
-#include "../Debug/Log.h"
-#include "../Debug/Profiler.h"
+#include "Debug/Log.h"
+#include "Debug/Profiler.h"
 #include "Texture.h"
 #include "GraphicsImpl.h"
 
@@ -54,10 +54,10 @@ namespace Alimer
 		}
 
 		// If image uses unsupported format, decompress to RGBA now
-		if (_loadImages[0]->Format() >= FMT_ETC1)
+		if (_loadImages[0]->GetFormat() >= PixelFormat::ETC1)
 		{
 			Image* rgbaImage = new Image();
-			rgbaImage->SetSize(_loadImages[0]->GetSize(), FMT_RGBA8);
+			rgbaImage->SetSize(_loadImages[0]->GetSize(), PixelFormat::RGBA8UNorm);
 			_loadImages[0]->DecompressLevel(rgbaImage->Data(), 0);
 			_loadImages[0].reset(rgbaImage); // This destroys the original compressed image
 		}
@@ -98,13 +98,17 @@ namespace Alimer
 		bool success = Define(
 			TextureType::Type2D,
 			image->GetSize(),
-			image->Format(),
+			image->GetFormat(),
 			static_cast<uint32_t>(initialData.size()),
 			TextureUsage::ShaderRead,
 			initialData.data());
 
 		/// \todo Read a parameter file for the sampling parameters
-		success &= DefineSampler(FILTER_TRILINEAR, ADDRESS_WRAP, ADDRESS_WRAP, ADDRESS_WRAP);
+		success &= DefineSampler(
+			FILTER_TRILINEAR,
+			SamplerAddressMode::Wrap,
+			SamplerAddressMode::Wrap,
+			SamplerAddressMode::Wrap);
 
 		_loadImages.clear();
 		return success;

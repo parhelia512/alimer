@@ -125,6 +125,8 @@ namespace Alimer
 
 	ResourceRef StaticModel::ModelAttr() const
 	{
-		return ResourceRef(Model::GetTypeStatic(), ResourceName(model.Get()));
+		return ResourceRef(
+			Model::GetTypeStatic(), 
+			GetResourceName(model.Get()));
 	}
 }

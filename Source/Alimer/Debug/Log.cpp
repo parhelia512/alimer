@@ -25,213 +25,91 @@
 #include "../IO/File.h"
 #include "Log.h"
 
-#include <cstdio>
-#include <ctime>
-using namespace std;
+#include <spdlog/spdlog.h>
+
+#if ALIMER_PLATFORM_WINDOWS
+#	ifdef _MSC_VER
+#		include "spdlog/sinks/msvc_sink.h"
+
+namespace spdlog_private
+{
+	using AlimerPlatformSink = spdlog::sinks::msvc_sink_mt;
+}
+
+#	else
+#	include "spdlog/sinks/wincolor_sink.h"
+
+namespace spdlog_private
+{
+	using AlimerPlatformSink = spdlog::sinks::wincolor_stdout_sink_mt;
+}
+
+#	endif
+#elif ALIMER_PLATFORM_LINUX || ALIMER_PLATFORM_APPLE
+#	include "spdlog/sinks/stdout_sinks.h"
+
+namespace spdlog_private
+{
+	using AlimerPlatformSink = spdlog::sinks::stdout_sink_mt;
+}
+
+#elif ALIMER_PLATFORM_ANDROID
+#	include "spdlog/sinks/android_sink.h"
+
+namespace spdlog_private
+{
+	using AlimerPlatformSink = spdlog::sinks::android_sink_mt;
+}
+
+#else
+#	include "spdlog/sinks/stdout_sinks.h"
+namespace spdlog_private
+{
+	using AlimerPlatformSink = spdlog::sinks::stdout_sink_mt;
+}
+#endif
+
+#include "spdlog/sinks/dist_sink.h"
+#include "spdlog/sinks/file_sinks.h"
+
+using namespace spdlog;
 
 namespace Alimer
 {
-	const char* logLevelPrefixes[] =
+	Log::Log()
 	{
-		"DEBUG",
-		"INFO",
-		"WARNING",
-		"ERROR",
-		nullptr
-	};
-
-	std::string GetTimeStamp()
-	{
-		time_t sysTime;
-		time(&sysTime);
-		std::string dateTime = ctime(&sysTime);
-		return str::Replace(dateTime, "\n", "");
-	}
-
-	Log::Log() :
+		// Create custom log container
+		auto logContainer = std::make_shared<sinks::dist_sink_mt>();;
+		logContainer->add_sink(std::make_shared<spdlog_private::AlimerPlatformSink>());
+		logContainer->add_sink(std::make_shared<sinks::daily_file_sink_mt>("AlimerLog", 23, 59));
 #ifdef _DEBUG
-		level(LOG_DEBUG),
+#if ALIMER_PLATFORM_WINDOWS
+		AllocConsole();
+		logContainer->add_sink(std::make_shared<spdlog::sinks::wincolor_stdout_sink_mt>());
 #else
-		level(LOG_INFO),
+		logContainer->add_sink(std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>());
 #endif
-		timeStamp(false),
-		inWrite(false),
-		quiet(false)
-	{
-		_threadId = this_thread::get_id();
+#endif
+
+		_logger = spdlog::create(ALIMER_LOG, logContainer);
+
+#ifdef _DEBUG
+		SetLevel(LogLevel::Debug);
+#else
+		SetLevel(LogLevel::Info);
+#endif
+
 		RegisterSubsystem(this);
 	}
 
 	Log::~Log()
 	{
-		Close();
 		RemoveSubsystem(this);
 	}
 
-	void Log::Open(const string& fileName)
+	void Log::SetLevel(LogLevel newLevel)
 	{
-		if (fileName.empty())
-			return;
-
-		if (_logFile && _logFile->IsOpen())
-		{
-			if (_logFile->GetName() == fileName)
-				return;
-
-			Close();
-		}
-
-		_logFile = std::make_unique<File>();
-		if (_logFile->Open(fileName, FileMode::Write))
-		{
-			LOGINFO("Opened log file " + fileName);
-		}
-		else
-		{
-			_logFile.reset();
-			LOGERROR("Failed to create log file " + fileName);
-		}
+		_level = newLevel;
+		spdlog::set_level(static_cast<spdlog::level::level_enum>(newLevel));
 	}
-
-	void Log::Close()
-	{
-		if (_logFile && _logFile->IsOpen())
-		{
-			_logFile->Close();
-			_logFile.reset();
-		}
-	}
-
-	void Log::SetLevel(int newLevel)
-	{
-		assert(newLevel >= LOG_DEBUG && newLevel < LOG_NONE);
-
-		level = newLevel;
-	}
-
-	void Log::SetTimeStamp(bool enable)
-	{
-		timeStamp = enable;
-	}
-
-	void Log::SetQuiet(bool enable)
-	{
-		quiet = enable;
-	}
-
-	void Log::EndFrame()
-	{
-		std::lock_guard<std::mutex> lock(_logMutex);
-
-		// Process messages accumulated from other threads (if any)
-		while (!_threadMessages.empty())
-		{
-			const StoredLogMessage& stored = _threadMessages.front();
-
-			if (stored.level != LOG_RAW)
-				Write(stored.level, stored.message);
-			else
-				WriteRaw(stored.message, stored.error);
-
-			_threadMessages.pop_front();
-		}
-	}
-
-	void Log::Write(int msgLevel, const string& message)
-	{
-		assert(msgLevel >= LOG_DEBUG && msgLevel < LOG_NONE);
-
-		Log* instance = GetSubsystem<Log>();
-		if (!instance)
-			return;
-
-		// If not in the main thread, store message for later processing
-		if (instance->_threadId != this_thread::get_id())
-		{
-			std::lock_guard<std::mutex> lock(instance->_logMutex);
-			instance->_threadMessages.push_back(StoredLogMessage(message, msgLevel, false));
-			return;
-		}
-
-		// Do not log if message level excluded or if currently sending a log event
-		if (instance->level > msgLevel || instance->inWrite)
-			return;
-
-		string formattedMessage = logLevelPrefixes[msgLevel];
-		formattedMessage += ": " + message;
-		instance->lastMessage = message;
-
-		if (instance->timeStamp)
-			formattedMessage = "[" + GetTimeStamp() + "] " + formattedMessage;
-
-		if (instance->quiet)
-		{
-			// If in quiet mode, still print the error message to the standard error stream
-			if (msgLevel == LOG_ERROR)
-				PrintUnicodeLine(formattedMessage, true);
-		}
-		else
-			PrintUnicodeLine(formattedMessage, msgLevel == LOG_ERROR);
-
-		if (instance->_logFile)
-		{
-			instance->_logFile->WriteLine(formattedMessage);
-			instance->_logFile->Flush();
-		}
-
-		instance->inWrite = true;
-
-		LogMessageEvent& event = instance->logMessageEvent;
-		event.message = formattedMessage;
-		event.level = msgLevel;
-		instance->SendEvent(event);
-
-		instance->inWrite = false;
-	}
-
-	void Log::WriteRaw(const string& message, bool error)
-	{
-		Log* instance = GetSubsystem<Log>();
-		if (!instance)
-			return;
-
-		// If not in the main thread, store message for later processing
-		if (instance->_threadId != this_thread::get_id())
-		{
-			std::lock_guard<std::mutex> lock(instance->_logMutex);
-			instance->_threadMessages.push_back(StoredLogMessage(message, LOG_RAW, error));
-			return;
-		}
-
-		// Prevent recursion during log event
-		if (instance->inWrite)
-			return;
-
-		instance->lastMessage = message;
-
-		if (instance->quiet)
-		{
-			// If in quiet mode, still print the error message to the standard error stream
-			if (error)
-				PrintUnicode(message, true);
-		}
-		else
-			PrintUnicode(message, error);
-
-		if (instance->_logFile)
-		{
-			instance->_logFile->Write(message.c_str(), message.length());
-			instance->_logFile->Flush();
-		}
-
-		instance->inWrite = true;
-
-		LogMessageEvent& event = instance->logMessageEvent;
-		event.message = message;
-		event.level = error ? LOG_ERROR : LOG_INFO;
-		instance->SendEvent(event);
-
-		instance->inWrite = false;
-	}
-
 }

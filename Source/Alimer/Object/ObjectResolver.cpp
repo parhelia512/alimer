@@ -55,7 +55,7 @@ namespace Alimer
 			}
 			else
 			{
-				LOGWARNING("Could not resolve object reference " + std::to_string(it->oldId));
+				ALIMER_LOGWARN("Could not resolve object reference {}", it->oldId);
 			}
 		}
 	}

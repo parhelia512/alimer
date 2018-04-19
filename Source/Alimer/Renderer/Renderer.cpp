@@ -90,7 +90,7 @@ namespace Alimer
 	{
 	}
 
-	void Renderer::SetupShadowMaps(uint32_t num, uint32_t size, ImageFormat format)
+	void Renderer::SetupShadowMaps(uint32_t num, uint32_t size, PixelFormat format)
 	{
 		if (size < 1)
 			size = 1;
@@ -107,7 +107,11 @@ namespace Alimer
 				TextureUsage::ShaderRead | TextureUsage::RenderTarget))
 			{
 				// Setup shadow map sampling with hardware depth compare
-				it->texture->DefineSampler(COMPARE_BILINEAR, ADDRESS_CLAMP, ADDRESS_CLAMP, ADDRESS_CLAMP, 1);
+				it->texture->DefineSampler(
+					COMPARE_BILINEAR,
+					SamplerAddressMode::Clamp,
+					SamplerAddressMode::Clamp,
+					SamplerAddressMode::Clamp, 1);
 			}
 		}
 	}
@@ -697,12 +701,12 @@ namespace Alimer
 			faces2.push_back(level);
 		}
 
-		_faceSelectionTexture1->Define(TextureType::TypeCube, Size(1, 1), FMT_RGBA32F, 1, TextureUsage::ShaderRead, &faces1[0]);
-		_faceSelectionTexture1->DefineSampler(FILTER_POINT, ADDRESS_CLAMP, ADDRESS_CLAMP, ADDRESS_CLAMP);
+		_faceSelectionTexture1->Define(TextureType::TypeCube, Size(1, 1), PixelFormat::RGBA32Float, 1, TextureUsage::ShaderRead, &faces1[0]);
+		_faceSelectionTexture1->DefineSampler(FILTER_POINT, SamplerAddressMode::Clamp, SamplerAddressMode::Clamp, SamplerAddressMode::Clamp);
 		_faceSelectionTexture1->SetDataLost(false);
 
-		_faceSelectionTexture2->Define(TextureType::TypeCube, Size(1, 1), FMT_RGBA32F, 1, TextureUsage::ShaderRead, &faces2[0]);
-		_faceSelectionTexture2->DefineSampler(FILTER_POINT, ADDRESS_CLAMP, ADDRESS_CLAMP, ADDRESS_CLAMP);
+		_faceSelectionTexture2->Define(TextureType::TypeCube, Size(1, 1), PixelFormat::RGBA32Float, 1, TextureUsage::ShaderRead, &faces2[0]);
+		_faceSelectionTexture2->DefineSampler(FILTER_POINT, SamplerAddressMode::Clamp, SamplerAddressMode::Clamp, SamplerAddressMode::Clamp);
 		_faceSelectionTexture2->SetDataLost(false);
 	}
 

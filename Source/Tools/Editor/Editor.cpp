@@ -26,6 +26,5 @@ namespace Alimer
 {
 	Editor::Editor()
 	{
-
 	}
 }

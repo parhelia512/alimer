@@ -42,7 +42,7 @@ int main()
     printf("\nTesting scene serialization\n");
     
     Log log;
-    log.Open("03_Scene.log");
+    //log.Open("03_Scene.log");
     
     {
         Profiler profiler;
@@ -86,7 +86,7 @@ int main()
         }
 
         profiler.EndFrame();
-        LOGRAW(profiler.OutputResults(false, false, 16));
+        ALIMER_LOGINFO(profiler.OutputResults(false, false, 16));
     }
     
     return 0;

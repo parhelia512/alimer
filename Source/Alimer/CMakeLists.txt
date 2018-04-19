@@ -23,69 +23,83 @@
 
 set (TARGET_NAME Alimer)
 
-# Macro to add files from a directory grouped to the solution file
-macro (add_engine_directory DIRECTORY)
-	file (GLOB DIR_FILES ${DIRECTORY}/*.h ${DIRECTORY}/*.hpp ${DIRECTORY}/*.c ${DIRECTORY}/*.cpp)
-	get_filename_component (GROUP ${DIRECTORY} NAME)
-	source_group ("${GROUP}" FILES ${DIR_FILES})
-	list (APPEND SOURCE_FILES ${DIR_FILES})
-endmacro ()
-
-macro (add_engine_directory_group DIRECTORY GROUP)
-	file (GLOB DIR_FILES ${DIRECTORY}/*.h ${DIRECTORY}/*.hpp ${DIRECTORY}/*.c ${DIRECTORY}/*.cpp)
-	source_group ("${GROUP}" FILES ${DIR_FILES})
-	list (APPEND SOURCE_FILES ${DIR_FILES})
-endmacro ()
+macro (define_engine_source_files)
+	cmake_parse_arguments(DEFINE_SRC_FILES "NORECURSE" "" "" ${ARGN} )
+	if (DEFINE_SRC_FILES_NORECURSE)
+		set (_action GLOB)
+	else ()
+		set (_action GLOB_RECURSE)
+	endif ()
+	foreach (path ${DEFINE_SRC_FILES_UNPARSED_ARGUMENTS})
+		# Get header files
+		file (${_action} _files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${path}/*.h)
+		list (REMOVE_ITEM _files
+			Alimer.h
+			Graphics/GraphicsImpl.h
+		)
+		list (APPEND HEADER_FILES ${_files})
+		# Install them
+		install (FILES ${_files} DESTINATION ${DEST_INCLUDE_DIR}/${path})
+		# Get source files
+		file (${_action} _files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${path}/*.cpp)
+		list (APPEND SOURCE_FILES ${_files})
+	endforeach ()
+endmacro()
 
 # Generate the AlimerConfig.h file
 configure_file (AlimerConfig.h.in ${CMAKE_CURRENT_SOURCE_DIR}/AlimerConfig.h)
 
 # Add source files from subdirectories
-add_engine_directory (Base)
-add_engine_directory (Debug)
-add_engine_directory (Graphics)
-add_engine_directory (IO)
-add_engine_directory (JSON)
-add_engine_directory (Math)
-add_engine_directory (Object)
-add_engine_directory (Renderer)
-add_engine_directory (Resource)
-add_engine_directory (Scene)
-add_engine_directory (Window)
-add_engine_directory (Application)
+define_engine_source_files(NORECURSE . Graphics)
+define_engine_source_files (Base Debug IO JSON Math Object Renderer Resource Scene Window Application)
 
 if (ALIMER_SDL)
-	add_engine_directory_group (Application/SDL2 Application)
-	add_engine_directory_group (Window/SDL2 Window)
+	define_engine_source_files (Application/SDL2)
+	define_engine_source_files  (Window/SDL2)
 endif ()
 
 if (ALIMER_D3D11)
-	add_engine_directory_group (Graphics/D3D11 Graphics)
+	define_engine_source_files  (Graphics/D3D11)
 endif ()
 
 if (ALIMER_OPENGL)
-	add_engine_directory_group (Graphics/GL Graphics)
-	add_engine_directory (ThirdParty/FlextGL)
+	define_engine_source_files  (Graphics/GL)
 endif ()
 
 if (PLATFORM_WINDOWS)
-	add_engine_directory_group (Application/Windows Application)
-	add_engine_directory_group (IO/Windows IO)
-	add_engine_directory_group (Window/Win32 Window)
+	define_engine_source_files  (Application/Windows)
+	define_engine_source_files  (IO/Windows)
+	define_engine_source_files  (Window/Win32)
 endif ()
 
-# Add root-level files
-file (GLOB ROOT_FILES *.h *.c *.cpp)
-list (APPEND SOURCE_FILES ${ROOT_FILES})
+# Group source code in VS solution
+group_sources()
+
+set (THIRD_PARTY_DEPENDENCIES STB spirv_cross SDL2)
+if (ALIMER_SDL)
+	list(APPEND THIRD_PARTY_DEPENDENCIES SDL2)
+endif()
+
+foreach (dep ${THIRD_PARTY_DEPENDENCIES})
+	if (TARGET "${dep}")
+		get_target_property(_TARGET_TYPE ${dep} TYPE)
+		if(_TARGET_TYPE STREQUAL "OBJECT_LIBRARY")
+			list(APPEND SOURCE_FILES "$<TARGET_OBJECTS:${dep}>")
+		endif ()
+	endif ()
+endforeach()
 
 # Define the library target.
-add_library (${TARGET_NAME} ${ALIMER_LIBRARY_TYPE} ${SOURCE_FILES})
+add_library (${TARGET_NAME} ${ALIMER_LIBRARY_TYPE} ${SOURCE_FILES} ${HEADER_FILES})
 
 target_include_directories(${TARGET_NAME} PUBLIC
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/..>        # For parent projects to find auto-generated engine headers
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>        # For parent projects to find engine headers
+	$<INSTALL_INTERFACE:${DEST_BASE_INCLUDE_DIR}>
+	$<INSTALL_INTERFACE:${DEST_THIRDPARTY_HEADERS}>
+	$<BUILD_INTERFACE:${ALIMER_THIRD_PARTY_DIR}/spdlog/include>
 	PRIVATE
-	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-	${ALIMER_THIRD_PARTY_DIR}/STB
+		$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 
 if (BUILD_SHARED_LIBS OR EMSCRIPTEN)
@@ -94,10 +108,8 @@ else ()
 	target_compile_definitions (${TARGET_NAME} PUBLIC -DALIMER_STATIC)
 endif ()
 
-
 if (ALIMER_SDL)
 	target_compile_definitions (${TARGET_NAME} PRIVATE -DALIMER_SDL)
-	target_link_libraries (${TARGET_NAME} SDL2)
 endif ()
 
 # Add rendering API specific includes and library dependencies
@@ -111,9 +123,21 @@ if (ALIMER_OPENGL)
 	target_link_libraries (${TARGET_NAME} ${OPENGL_gl_LIBRARY})
 endif ()
 
+# Link dependencies
+foreach (dep ${THIRD_PARTY_DEPENDENCIES})
+	if (TARGET "${dep}")
+		get_target_property(_TARGET_TYPE ${dep} TYPE)
+		if(_TARGET_TYPE STREQUAL "OBJECT_LIBRARY")
+			target_link_objects(${TARGET_NAME} "${dep}")
+		else ()
+			target_link_libraries(${TARGET_NAME} "${dep}")
+		endif ()
+	endif ()
+endforeach()
+
 # Add OS-specific library dependencies
 if (WIN32)
-	target_link_libraries (${TARGET_NAME} winmm)
+	target_link_libraries (${TARGET_NAME} user32 gdi32 winmm imm32 ole32 oleaut32 version uuid advapi32 shell32)
 else ()
 	target_link_libraries (${TARGET_NAME} pthread)
 endif ()

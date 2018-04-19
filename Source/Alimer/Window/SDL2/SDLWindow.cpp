@@ -56,7 +56,7 @@ namespace Alimer
 		else
 		{
 			const char* sdlError = SDL_GetError();
-			LOGERRORF("Window: Failed to create window. SDL error: \"%s\"", sdlError);
+			ALIMER_LOGERROR("Window: Failed to create window. SDL error: \"{}\"", sdlError);
 			return;
 		}
 

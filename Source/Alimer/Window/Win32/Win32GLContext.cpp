@@ -81,7 +81,7 @@ bool GLContext::Create(int multisample)
 
     if (!window)
     {
-        LOGERROR("Window is null, can not create OpenGL context");
+        ALIMER_LOGERROR("Window is null, can not create OpenGL context");
         return false;
     }
 
@@ -91,14 +91,14 @@ bool GLContext::Create(int multisample)
         10, 10, 0, 0, GetModuleHandle(0), nullptr);
     if (!dummyWindowHandle)
     {
-        LOGERROR("Failed to create a dummy window for OpenGL context creation");
+        ALIMER_LOGERROR("Failed to create a dummy window for OpenGL context creation");
         return false;
     }
 
     HDC dummyDCHandle = GetDC(dummyWindowHandle);
     if (!dummyDCHandle)
     {
-        LOGERROR("Failed to get DC for dummy window");
+        ALIMER_LOGERROR("Failed to get DC for dummy window");
         DestroyWindow(dummyWindowHandle);
         return false;
     }
@@ -118,7 +118,7 @@ bool GLContext::Create(int multisample)
     int pixelFormat = ChoosePixelFormat(dummyDCHandle, &pfd);
     if (!pixelFormat)
     {
-        LOGERROR("Failed to choose pixel format for dummy window");
+        ALIMER_LOGERROR("Failed to choose pixel format for dummy window");
         DestroyWindow(dummyWindowHandle);
         return false;
     }
@@ -126,7 +126,7 @@ bool GLContext::Create(int multisample)
     DescribePixelFormat(dummyDCHandle, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd);
     if (!SetPixelFormat(dummyDCHandle, pixelFormat, &pfd))
     {
-        LOGERROR("Failed to set pixel format for dummy window");
+        ALIMER_LOGERROR("Failed to set pixel format for dummy window");
         DestroyWindow(dummyWindowHandle);
         return false;
     }
@@ -134,14 +134,14 @@ bool GLContext::Create(int multisample)
     HGLRC dummyContextHandle = wglCreateContext(dummyDCHandle);
     if (!dummyContextHandle)
     {
-        LOGERROR("Failed to create OpenGL context for dummy window");
+        ALIMER_LOGERROR("Failed to create OpenGL context for dummy window");
         DestroyWindow(dummyWindowHandle);
         return false;
     }
 
     if (!wglMakeCurrent(dummyDCHandle, dummyContextHandle))
     {
-        LOGERROR("Failed to make OpenGL context current for dummy window");
+        ALIMER_LOGERROR("Failed to make OpenGL context current for dummy window");
         DestroyWindow(dummyWindowHandle);
         return false;
     }
@@ -152,7 +152,7 @@ bool GLContext::Create(int multisample)
 
     if (!wglChoosePixelFormatARB || !wglCreateContextAttribsARB)
     {
-        LOGERROR("WGL extension functions not available for creating an OpenGL context");
+        ALIMER_LOGERROR("WGL extension functions not available for creating an OpenGL context");
         wglMakeCurrent(0, 0);
         wglDeleteContext(dummyContextHandle);
         DestroyWindow(dummyWindowHandle);
@@ -180,7 +180,7 @@ bool GLContext::Create(int multisample)
     /// \todo Handle fallback pixel formats
     if (!pixelFormat)
     {
-        LOGERROR("Failed to choose pixel format for OpenGL window");
+        ALIMER_LOGERROR("Failed to choose pixel format for OpenGL window");
         wglMakeCurrent(0, 0);
         wglDeleteContext(dummyContextHandle);
         DestroyWindow(dummyWindowHandle);
@@ -190,7 +190,7 @@ bool GLContext::Create(int multisample)
     DescribePixelFormat((HDC)dcHandle, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd);
     if (!SetPixelFormat((HDC)dcHandle, pixelFormat, &pfd))
     {
-        LOGERROR("Failed to set pixel format for OpenGL window");
+        ALIMER_LOGERROR("Failed to set pixel format for OpenGL window");
         wglMakeCurrent(0, 0);
         wglDeleteContext(dummyContextHandle);
         DestroyWindow(dummyWindowHandle);
@@ -212,7 +212,7 @@ bool GLContext::Create(int multisample)
 
     if (!contextHandle)
     {
-        LOGERROR("Failed to create OpenGL context");
+        ALIMER_LOGERROR("Failed to create OpenGL context");
         return false;
     }
 
@@ -221,7 +221,7 @@ bool GLContext::Create(int multisample)
     wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
     if (!flextInit())
     {
-        LOGERROR("Failed to acquire OpenGL function pointers and extensions");
+        ALIMER_LOGERROR("Failed to acquire OpenGL function pointers and extensions");
         Release();
         return false;
     }

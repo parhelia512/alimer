@@ -100,7 +100,7 @@ namespace Alimer
 		~Renderer();
 
 		/// Set number, size and format of shadow maps. These will be divided among the lights that need to render shadow maps.
-		void SetupShadowMaps(uint32_t num, uint32_t size, ImageFormat format);
+		void SetupShadowMaps(uint32_t num, uint32_t size, PixelFormat format);
 		/// Prepare a view for rendering. Convenience function that calls CollectObjects(), CollectLightInteractions() and CollectBatches() in one go. Return true on success.
 		bool PrepareView(Scene* scene, Camera* camera, const std::vector<PassDesc>& passes);
 		/// Initialize rendering of a new view and collect visible objects from the camera's point of view. Return true on success (scene, camera and octree are non-null.)

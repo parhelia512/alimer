@@ -75,7 +75,7 @@ namespace Alimer
 			newConstant.type = (ElementType)str::ListIndex(type, elementTypeNames, MAX_ELEMENT_TYPES);
 			if (newConstant.type == MAX_ELEMENT_TYPES)
 			{
-				LOGERRORF("Unknown element type %s in constant buffer JSON", type.c_str());
+				ALIMER_LOGERROR("Unknown element type {} in constant buffer JSON", type);
 				break;
 			}
 			if (jsonConstant["numElements"].is_number())
@@ -156,7 +156,7 @@ namespace Alimer
 
 		if (!numConstants)
 		{
-			LOGERROR("Can not define constant buffer with no constants");
+			ALIMER_LOGERROR("Can not define constant buffer with no constants");
 			return false;
 		}
 
@@ -169,7 +169,7 @@ namespace Alimer
 		{
 			if (srcConstants->type == ELEM_UBYTE4)
 			{
-				LOGERROR("UBYTE4 type is not supported in constant buffers");
+				ALIMER_LOGERROR("UBYTE4 type is not supported in constant buffers");
 				_constants.clear();
 				_size = 0;
 				return false;

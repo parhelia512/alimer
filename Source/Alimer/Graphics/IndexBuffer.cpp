@@ -51,20 +51,20 @@ namespace Alimer
 
 		if (!indexCount)
 		{
-			LOGERROR("Can not define index buffer with no indices");
+			ALIMER_LOGERROR("Can not define index buffer with no indices");
 			return false;
 		}
 
 		if (usage == ResourceUsage::Immutable && !data)
 		{
-			LOGERROR("Immutable index buffer must define initial data");
+			ALIMER_LOGERROR("Immutable index buffer must define initial data");
 			return false;
 		}
 
 		if (indexType != IndexType::UInt16
 			&& indexType != IndexType::UInt32)
 		{
-			LOGERROR("Index type must be UInt16 or UInt32");
+			ALIMER_LOGERROR("Index type must be UInt16 or UInt32");
 			return false;
 		}
 
@@ -85,18 +85,18 @@ namespace Alimer
 
 		if (!data)
 		{
-			LOGERROR("Null source data for updating index buffer");
+			ALIMER_LOGERROR("Null source data for updating index buffer");
 			return false;
 		}
 		if (firstIndex + indexCount > GetIndexCount())
 		{
-			LOGERROR("Out of bounds range for updating index buffer");
+			ALIMER_LOGERROR("Out of bounds range for updating index buffer");
 			return false;
 		}
 
 		if (_handle && _resourceUsage == ResourceUsage::Immutable)
 		{
-			LOGERROR("Can not update immutable index buffer");
+			ALIMER_LOGERROR("Can not update immutable index buffer");
 			return false;
 		}
 

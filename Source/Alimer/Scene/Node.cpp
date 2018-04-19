@@ -160,7 +160,7 @@ namespace Alimer
 		if (_layer < 32)
 			_layer = newLayer;
 		else
-			LOGERROR("Can not set layer 32 or higher");
+			ALIMER_LOGERROR("Can not set layer 32 or higher");
 	}
 
 	void Node::SetLayerName(const std::string& newLayerName)
@@ -173,7 +173,7 @@ namespace Alimer
 		if (it != layers.end())
 			_layer = it->second;
 		else
-			LOGERROR("Layer " + newLayerName + " not defined in the scene");
+			ALIMER_LOGERROR("Layer " + newLayerName + " not defined in the scene");
 	}
 
 	void Node::SetTag(uint8_t newTag)
@@ -191,7 +191,7 @@ namespace Alimer
 		if (it != tags.end())
 			_tag = it->second;
 		else
-			LOGERROR("Tag " + newTagName + " not defined in the scene");
+			ALIMER_LOGERROR("Tag " + newTagName + " not defined in the scene");
 	}
 
 	void Node::SetEnabled(bool enable)
@@ -219,7 +219,7 @@ namespace Alimer
 		if (newParent)
 			newParent->AddChild(this);
 		else
-			LOGERROR("Could not set null parent");
+			ALIMER_LOGERROR("Could not set null parent");
 	}
 
 	Node* Node::CreateChild(StringHash childType)
@@ -227,13 +227,13 @@ namespace Alimer
 		SharedPtr<Object> newObject = Create(childType);
 		if (!newObject)
 		{
-			LOGERRORF("Could not create child node of unknown type %s", childType.ToString().c_str());
+			ALIMER_LOGERROR("Could not create child node of unknown type {}", Object::GetTypeNameFromType(childType));
 			return nullptr;
 		}
 		Node* child = dynamic_cast<Node*>(newObject.Get());
 		if (!child)
 		{
-			LOGERROR(newObject->GetTypeName() + " is not a Node subclass, could not add as a child");
+			ALIMER_LOGERROR(newObject->GetTypeName() + " is not a Node subclass, could not add as a child");
 			return nullptr;
 		}
 
@@ -257,7 +257,7 @@ namespace Alimer
 
 		if (child == this)
 		{
-			LOGERROR("Attempted parenting node to self");
+			ALIMER_LOGERROR("Attempted parenting node to self");
 			return;
 		}
 
@@ -267,7 +267,7 @@ namespace Alimer
 		{
 			if (current == child)
 			{
-				LOGERROR("Attempted cyclic node parenting");
+				ALIMER_LOGERROR("Attempted cyclic node parenting");
 				return;
 			}
 			current = current->_parent;

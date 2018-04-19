@@ -28,6 +28,7 @@
 #include "Resource/ResourceCache.h"
 #include "IO/FileSystem.h"
 #include "Graphics/Graphics.h"
+#include "Renderer/Renderer.h"
 #include "Application/Application.h"
 using namespace std;
 
@@ -42,9 +43,14 @@ namespace Alimer
 
 		// Init modules.
 		_log = make_unique<Log>();
+#ifdef ALIMER_PROFILING
+		_profiler = make_unique<Profiler>();
+#endif
+
 		_time = make_unique<Time>();
 		_cache = make_unique<ResourceCache>();
 		_input = make_unique<Input>();
+		_renderer = make_unique<Renderer>();
 		__engineInstance = this;
 	}
 
@@ -88,13 +94,14 @@ namespace Alimer
 			//graphicsSettings.depthStencilFormat = _graphics->GetDefaultDepthStencilFormat();
 			if (!_graphics->Initialize(graphicsSettings))
 			{
-				LOGERROR("Error while initializing graphics system");
+				ALIMER_LOGERROR("Error while initializing graphics system");
 				return false;
 			}
 		}
 
 		RegisterGraphicsLibrary();
 		RegisterResourceLibrary();
+		RegisterRendererLibrary();
 
 		// Init ResourceCache.
 		const String executableDir = GetExecutableDir();
@@ -104,7 +111,10 @@ namespace Alimer
 		if (DirectoryExists(GetParentPath(executableDir) + "Data"))
 			_cache->AddResourceDir(GetParentPath(executableDir) + "Data");
 
-		LOGINFO("Engine initialized");
+		// Initialize Renderer
+		_renderer->SetupShadowMaps(1, 2048, PixelFormat::Depth16UNorm);
+
+		ALIMER_LOGINFO("Engine initialized");
 		//_time.Reset();
 		_initialized = true;
 		return true;

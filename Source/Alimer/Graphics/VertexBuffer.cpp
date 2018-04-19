@@ -46,7 +46,7 @@ namespace Alimer
 	{
 		if (!vertexCount || !elements.size())
 		{
-			LOGERROR("Can not define vertex buffer with no vertices or no elements");
+			ALIMER_LOGERROR("Can not define vertex buffer with no vertices or no elements");
 			return false;
 		}
 
@@ -70,13 +70,13 @@ namespace Alimer
 
 		if (!vertexCount || !numElements || !elements)
 		{
-			LOGERROR("Can not define vertex buffer with no vertices or no elements");
+			ALIMER_LOGERROR("Can not define vertex buffer with no vertices or no elements");
 			return false;
 		}
 
 		if (usage == ResourceUsage::Immutable && !data)
 		{
-			LOGERROR("Immutable vertex buffer must define initial data");
+			ALIMER_LOGERROR("Immutable vertex buffer must define initial data");
 			return false;
 		}
 
@@ -84,7 +84,7 @@ namespace Alimer
 		{
 			if (elements[i].type >= ELEM_MATRIX3X4)
 			{
-				LOGERROR("Matrix elements are not supported in vertex buffers");
+				ALIMER_LOGERROR("Matrix elements are not supported in vertex buffers");
 				return false;
 			}
 		}
@@ -118,19 +118,19 @@ namespace Alimer
 
 		if (!data)
 		{
-			LOGERROR("Null source data for updating vertex buffer");
+			ALIMER_LOGERROR("Null source data for updating vertex buffer");
 			return false;
 		}
 
 		if (firstVertex + vertexCount > GetVertexCount())
 		{
-			LOGERROR("Out of bounds range for updating vertex buffer");
+			ALIMER_LOGERROR("Out of bounds range for updating vertex buffer");
 			return false;
 		}
 
 		if (_handle && _resourceUsage == ResourceUsage::Immutable)
 		{
-			LOGERROR("Can not update immutable vertex buffer");
+			ALIMER_LOGERROR("Can not update immutable vertex buffer");
 			return false;
 		}
 

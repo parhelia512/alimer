@@ -23,9 +23,10 @@
 
 if (ALIMER_SDL)
 	add_subdirectory (SDL2)
+	set_target_properties(SDL2 PROPERTIES FOLDER ThirdParty)
 endif()
 
 # Add targets
-foreach (TARGET SPIRV-Cross)
+foreach (TARGET STB SPIRV-Cross)
 	add_subdirectory (${TARGET})
 endforeach ()

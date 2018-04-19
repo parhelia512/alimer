@@ -119,10 +119,10 @@ namespace Alimer
 				}
 
 				s_compiler = compiler;
-				break;
+				return;
 			}
 
-			LOGERROR("Unable to open D3DCompiler_*.dll shader compiler.");
+			OutputDebugStringW(L"Unable to find D3DCompiler module.");
 		}
 
 		~CompilerInitializer()
@@ -150,13 +150,13 @@ namespace Alimer
 
 		ComPtr<ID3D11ShaderReflection> reflection;
 		D3DReflect(
-			d3dBlob->GetBufferPointer(), 
-			d3dBlob->GetBufferSize(), 
+			d3dBlob->GetBufferPointer(),
+			d3dBlob->GetBufferSize(),
 			reflectGuid,
 			IID_PPV_ARGS_Helper(&reflection));
 		if (!reflection)
 		{
-			LOGERROR("Failed to reflect vertex shader's input signature");
+			ALIMER_LOGERROR("Failed to reflect vertex shader's input signature");
 			return elementHash;
 		}
 
@@ -234,12 +234,12 @@ namespace Alimer
 
 		if (!graphics || !graphics->IsInitialized())
 		{
-			LOGERROR("Can not compile shader without initialized Graphics subsystem");
+			ALIMER_LOGERROR("Can not compile shader without initialized Graphics subsystem");
 			return false;
 		}
 		if (!parent)
 		{
-			LOGERROR("Can not compile shader without parent shader resource");
+			ALIMER_LOGERROR("Can not compile shader without parent shader resource");
 			return false;
 		}
 
@@ -284,7 +284,7 @@ namespace Alimer
 		{
 			if (errorBlob)
 			{
-				LOGERRORF("Could not compile shader %s: %s", GetFullName().c_str(), errorBlob->GetBufferPointer());
+				ALIMER_LOGERROR("Could not compile shader {}: {}", GetFullName(), errorBlob->GetBufferPointer());
 				errorBlob->Release();
 			}
 			return false;
@@ -296,7 +296,7 @@ namespace Alimer
 			errorBlob = nullptr;
 		}
 
-		ID3D11Device1* d3dDevice = static_cast<D3D11Graphics*>( graphics.Get())->GetD3DDevice();
+		ID3D11Device1* d3dDevice = static_cast<D3D11Graphics*>(graphics.Get())->GetD3DDevice();
 		ID3DBlob* d3dBlob = (ID3DBlob*)blob;
 
 #ifdef SHOW_DISASSEMBLY
@@ -320,12 +320,14 @@ namespace Alimer
 
 		if (!shader)
 		{
-			LOGERROR("Failed to create shader " + GetFullName());
+			ALIMER_LOGERROR("Failed to create shader {}", GetFullName());
 			return false;
 		}
-		else
-			LOGDEBUGF("Compiled shader %s bytecode size %u", GetFullName().c_str(), (unsigned)d3dBlob->GetBufferSize());
 
+		ALIMER_LOGDEBUG(
+			"[D3D11] - Compiled shader {} bytecode size {}",
+			GetFullName().c_str(),
+			d3dBlob->GetBufferSize());
 		return true;
 	}
 
@@ -337,9 +339,9 @@ namespace Alimer
 	std::string ShaderVariation::GetFullName() const
 	{
 		if (parent)
-			return _defines.empty() ? parent->Name() : parent->Name() + " (" + _defines + ")";
+			return _defines.empty() ? parent->GetName() : parent->GetName() + " (" + _defines + ")";
 
-		return "";
+		return str::EMPTY;
 	}
 
 }

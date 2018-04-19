@@ -28,7 +28,7 @@
 
 namespace Alimer
 {
-	static const D3D11_FILTER filterMode[] =
+	static const D3D11_FILTER s_filterMode[] =
 	{
 		D3D11_FILTER_MIN_MAG_MIP_POINT,
 		D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
@@ -39,14 +39,27 @@ namespace Alimer
 		D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR,
 		D3D11_FILTER_COMPARISON_ANISOTROPIC
 	};
+	static_assert(
+		ecast(TextureFilterMode::Count) == _countof(s_filterMode), "TextureFilterMode miss match");
 
-	static const DXGI_FORMAT textureFormat[] =
+	static const D3D11_TEXTURE_ADDRESS_MODE s_addressMode[] =
+	{
+		D3D11_TEXTURE_ADDRESS_WRAP,			// Wrap
+		D3D11_TEXTURE_ADDRESS_MIRROR,		// Mirror,
+		D3D11_TEXTURE_ADDRESS_CLAMP,		// Clamp,
+		D3D11_TEXTURE_ADDRESS_BORDER,		// Border,
+		D3D11_TEXTURE_ADDRESS_MIRROR_ONCE	// MirrorOnce
+	};
+	static_assert(
+		ecast(SamplerAddressMode::Count) == _countof(s_addressMode), "SamplerAddressMode miss match");
+
+	static const DXGI_FORMAT s_textureFormat[] =
 	{
 		DXGI_FORMAT_UNKNOWN,
+		DXGI_FORMAT_A8_UNORM,
 		DXGI_FORMAT_R8_UNORM,
 		DXGI_FORMAT_R8G8_UNORM,
 		DXGI_FORMAT_R8G8B8A8_UNORM,
-		DXGI_FORMAT_A8_UNORM,
 		DXGI_FORMAT_R16_UNORM,
 		DXGI_FORMAT_R16G16_UNORM,
 		DXGI_FORMAT_R16G16B16A16_UNORM,
@@ -55,21 +68,29 @@ namespace Alimer
 		DXGI_FORMAT_R16G16B16A16_FLOAT,
 		DXGI_FORMAT_R32_FLOAT,
 		DXGI_FORMAT_R32G32_FLOAT,
-		DXGI_FORMAT_R32G32B32_FLOAT,
 		DXGI_FORMAT_R32G32B32A32_FLOAT,
-		DXGI_FORMAT_R16_TYPELESS,
-		DXGI_FORMAT_R32_TYPELESS,
-		DXGI_FORMAT_R24G8_TYPELESS,
+		DXGI_FORMAT_R16_TYPELESS, // Depth16UNorm
+		DXGI_FORMAT_R32_TYPELESS, // Depth32Float
+		DXGI_FORMAT_R24_UNORM_X8_TYPELESS, // Depth24UNormStencil8
+		DXGI_FORMAT_R24G8_TYPELESS,	// Stencil8
 		DXGI_FORMAT_BC1_UNORM,
 		DXGI_FORMAT_BC2_UNORM,
-		DXGI_FORMAT_BC3_UNORM
+		DXGI_FORMAT_BC3_UNORM,
+		DXGI_FORMAT_UNKNOWN, //ETC1,
+		DXGI_FORMAT_UNKNOWN, //PVRTC_RGB_2BPP,
+		DXGI_FORMAT_UNKNOWN, //PVRTC_RGBA_2BPP,
+		DXGI_FORMAT_UNKNOWN, //PVRTC_RGB_4BPP,
+		DXGI_FORMAT_UNKNOWN, //,
 	};
+	static_assert(
+		ecast(PixelFormat::Count) == _countof(s_textureFormat), "PixelFormat missmatch");
 
 	static const DXGI_FORMAT depthStencilViewFormat[] =
 	{
 		DXGI_FORMAT_D16_UNORM,
 		DXGI_FORMAT_D32_FLOAT,
-		DXGI_FORMAT_D24_UNORM_S8_UINT
+		DXGI_FORMAT_D24_UNORM_S8_UINT,
+		DXGI_FORMAT_D24_UNORM_S8_UINT // Stencil8
 	};
 
 	static const DXGI_FORMAT depthStencilResourceViewFormat[] =
@@ -163,7 +184,7 @@ namespace Alimer
 	bool Texture::Define(
 		TextureType type, 
 		const Size& size, 
-		ImageFormat format, 
+		PixelFormat format,
 		uint32_t mipLevels,
 		TextureUsage usage,
 		const ImageLevel* initialData)
@@ -174,19 +195,19 @@ namespace Alimer
 		if (type != TextureType::Type2D
 			&& type != TextureType::TypeCube)
 		{
-			LOGERROR("Only 2D textures and cube maps supported for now");
+			ALIMER_LOGERROR("Only 2D textures and cube maps supported for now");
 			return false;
 		}
 
-		if (format > FMT_DXT5)
+		if (format > PixelFormat::BC3)
 		{
-			LOGERROR("ETC1 and PVRTC formats are unsupported");
+			ALIMER_LOGERROR("ETC1 and PVRTC formats are unsupported");
 			return false;
 		}
 		if (type == TextureType::TypeCube 
 			&& size.width != size.height)
 		{
-			LOGERROR("Cube map must have square dimensions");
+			ALIMER_LOGERROR("Cube map must have square dimensions");
 			return false;
 		}
 
@@ -213,7 +234,7 @@ namespace Alimer
 			textureDesc.Height = size.height;
 			textureDesc.MipLevels = mipLevels;
 			textureDesc.ArraySize = NumFaces();
-			textureDesc.Format = textureFormat[format];
+			textureDesc.Format = s_textureFormat[ecast(format)];
 			/// \todo Support defining multisampled textures
 			textureDesc.SampleDesc.Count = 1;
 			textureDesc.SampleDesc.Quality = 0;
@@ -222,7 +243,7 @@ namespace Alimer
 
 			if (any(usage & TextureUsage::RenderTarget))
 			{
-				if (format < FMT_D16 || format > FMT_D24S8)
+				if (!IsDepthStencilFormat(format))
 				{
 					textureDesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
 				}
@@ -257,10 +278,10 @@ namespace Alimer
 			if (FAILED(hr))
 			{
 				_size = Size::Empty;
-				_format = FMT_NONE;
+				_format = PixelFormat::Undefined;
 				_mipLevels = 0;
 
-				LOGERROR("Failed to create texture");
+				ALIMER_LOGERROR("Failed to create texture");
 				return false;
 			}
 			else
@@ -269,7 +290,12 @@ namespace Alimer
 				_format = format;
 				_mipLevels = mipLevels;
 
-				LOGDEBUGF("Created texture width %d height %d format %d numLevels %d", _size.width, _size.height, (int)_format, _mipLevels);
+				ALIMER_LOGDEBUG(
+					"Created texture width {} height {} format {} numLevels {}",
+					_size.width,
+					_size.height,
+					EnumToString(_format),
+					_mipLevels);
 			}
 
 			D3D11_SHADER_RESOURCE_VIEW_DESC resourceViewDesc = {};
@@ -298,7 +324,7 @@ namespace Alimer
 				d3dDevice->CreateRenderTargetView(_texture, &renderTargetViewDesc, (ID3D11RenderTargetView**)&_renderTargetView);
 				if (!_renderTargetView)
 				{
-					LOGERROR("Failed to create rendertarget view for texture");
+					ALIMER_LOGERROR("Failed to create rendertarget view for texture");
 				}
 			}
 			else if (IsDepthStencil())
@@ -306,22 +332,22 @@ namespace Alimer
 				D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc = {};
 				// Readable depth textures are created typeless, while the actual format is specified for the depth stencil
 				// and shader resource views
-				resourceViewDesc.Format = depthStencilResourceViewFormat[_format - FMT_D16];
-				depthStencilViewDesc.Format = depthStencilViewFormat[_format - FMT_D16];
+				resourceViewDesc.Format = depthStencilResourceViewFormat[ecast(_format) - ecast(PixelFormat::Depth16UNorm)];
+				depthStencilViewDesc.Format = depthStencilViewFormat[ecast(_format) - ecast(PixelFormat::Depth16UNorm)];
 				depthStencilViewDesc.ViewDimension = dsvDimension[(uint8_t)_type];
 				depthStencilViewDesc.Flags = 0;
 
 				d3dDevice->CreateDepthStencilView(_texture, &depthStencilViewDesc, (ID3D11DepthStencilView**)&_renderTargetView);
 				if (!_renderTargetView)
 				{
-					LOGERROR("Failed to create depth-stencil view for texture");
+					ALIMER_LOGERROR("Failed to create depth-stencil view for texture");
 				}
 			}
 
 			d3dDevice->CreateShaderResourceView(_texture, &resourceViewDesc, (ID3D11ShaderResourceView**)&_resourceView);
 			if (!_resourceView)
 			{
-				LOGERROR("Failed to create shader resource view for texture");
+				ALIMER_LOGERROR("Failed to create shader resource view for texture");
 			}
 		}
 
@@ -330,9 +356,9 @@ namespace Alimer
 
 	bool Texture::DefineSampler(
 		TextureFilterMode filter,
-		TextureAddressMode u, 
-		TextureAddressMode v, 
-		TextureAddressMode w, 
+		SamplerAddressMode u, 
+		SamplerAddressMode v,
+		SamplerAddressMode w,
 		uint32_t maxAnisotropy,
 		float minLod, 
 		float maxLod, 
@@ -357,10 +383,10 @@ namespace Alimer
 		{
 			D3D11_SAMPLER_DESC samplerDesc = {};
 
-			samplerDesc.Filter = filterMode[filter];
-			samplerDesc.AddressU = (D3D11_TEXTURE_ADDRESS_MODE)u;
-			samplerDesc.AddressV = (D3D11_TEXTURE_ADDRESS_MODE)v;
-			samplerDesc.AddressW = (D3D11_TEXTURE_ADDRESS_MODE)w;
+			samplerDesc.Filter = s_filterMode[ecast(filter)];
+			samplerDesc.AddressU = s_addressMode[ecast(u)];
+			samplerDesc.AddressV = s_addressMode[ecast(v)];
+			samplerDesc.AddressW = s_addressMode[ecast(w)];
 			samplerDesc.MaxAnisotropy = maxAnisotropy;
 			samplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
 			samplerDesc.MinLOD = minLod;
@@ -372,11 +398,11 @@ namespace Alimer
 
 			if (!_sampler)
 			{
-				LOGERROR("Failed to create sampler state");
+				ALIMER_LOGERROR("Failed to create sampler state");
 				return false;
 			}
 			
-			LOGDEBUG("Created sampler state");
+			ALIMER_LOGDEBUG("Created sampler state");
 		}
 
 		return true;
@@ -390,13 +416,13 @@ namespace Alimer
 		{
 			if (face >= NumFaces())
 			{
-				LOGERROR("Face to update out of bounds");
+				ALIMER_LOGERROR("Face to update out of bounds");
 				return false;
 			}
 
 			if (level >= _mipLevels)
 			{
-				LOGERROR("Mipmap level to update out of bounds");
+				ALIMER_LOGERROR("Mipmap level to update out of bounds");
 				return false;
 			}
 
@@ -405,7 +431,7 @@ namespace Alimer
 				Max(_size.height >> level, 1));
 			if (levelRect.IsInside(rect) != INSIDE)
 			{
-				LOGERROR("Texture update region is outside level");
+				ALIMER_LOGERROR("Texture update region is outside level");
 				return false;
 			}
 
@@ -429,10 +455,10 @@ namespace Alimer
 			const bool dynamic = false;
 			if (dynamic)
 			{
-				const uint32_t pixelByteSize = Image::_pixelByteSizes[_format];
+				const uint32_t pixelByteSize = Image::_pixelByteSizes[ecast(_format)];
 				if (!pixelByteSize)
 				{
-					LOGERROR("Updating dynamic compressed texture is not supported");
+					ALIMER_LOGERROR("Updating dynamic compressed texture is not supported");
 					return false;
 				}
 
@@ -454,7 +480,7 @@ namespace Alimer
 				}
 				else
 				{
-					LOGERROR("Failed to map texture for update");
+					ALIMER_LOGERROR("Failed to map texture for update");
 					return false;
 				}
 			}

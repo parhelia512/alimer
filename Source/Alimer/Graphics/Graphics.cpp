@@ -186,14 +186,14 @@ namespace Alimer
 		{
 		case GraphicsDeviceType::Empty:
 		{
-			LOGINFO("Using empty graphics backend.");
+			ALIMER_LOGINFO("Using empty graphics backend.");
 			break;
 		}
 
 		case GraphicsDeviceType::Direct3D11:
 		{
 #ifdef ALIMER_D3D11
-			LOGINFO("Using Direct3D11 graphics backend.");
+			ALIMER_LOGINFO("Using Direct3D11 graphics backend.");
 			graphics = new D3D11Graphics(validation, applicationName);
 #else
 			LOGWARNING("Direct3D11 backend not supported on given platform.");

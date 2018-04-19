@@ -77,7 +77,7 @@ namespace Alimer
 		if (fileID != "UMDL"
 			&& fileID != "UMD2")
 		{
-			LOGERROR(source.GetName() + " is not a valid model file");
+			ALIMER_LOGERROR(source.GetName() + " is not a valid model file");
 			return false;
 		}
 
@@ -203,7 +203,7 @@ namespace Alimer
 		size_t numMorphs = source.ReadUInt();
 		if (numMorphs)
 		{
-			LOGERROR("Models with vertex morphs are not supported for now");
+			ALIMER_LOGERROR("Models with vertex morphs are not supported for now");
 			return false;
 		}
 
@@ -284,12 +284,12 @@ namespace Alimer
 				if (geomDesc.vbRef < vbs.size())
 					geom->vertexBuffer = vbs[geomDesc.vbRef];
 				else
-					LOGERROR("Out of range vertex buffer reference in " + Name());
+					ALIMER_LOGERROR("Out of range vertex buffer reference in " + GetName());
 
 				if (geomDesc.ibRef < ibs.size())
 					geom->indexBuffer = ibs[geomDesc.ibRef];
 				else
-					LOGERROR("Out of range index buffer reference in " + Name());
+					ALIMER_LOGERROR("Out of range index buffer reference in " + GetName());
 
 				geometries[i][j] = geom;
 			}
@@ -317,7 +317,7 @@ namespace Alimer
 	{
 		if (index >= geometries.size())
 		{
-			LOGERROR("Out of bounds geometry index for setting number of LOD levels");
+			ALIMER_LOGERROR("Out of bounds geometry index for setting number of LOD levels");
 			return;
 		}
 

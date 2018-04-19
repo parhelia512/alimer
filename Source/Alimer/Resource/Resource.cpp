@@ -39,7 +39,7 @@ namespace Alimer
 
 	bool Resource::Save(Stream&)
 	{
-		LOGERROR("Save not supported for " + GetTypeName());
+		ALIMER_LOGERROR("Save not supported for " + GetTypeName());
 		return false;
 	}
 

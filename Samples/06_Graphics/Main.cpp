@@ -32,7 +32,7 @@
 
 using namespace Alimer;
 
-class GraphicsTest : public Application
+class GraphicsTest final : public Application
 {
 	ALIMER_OBJECT(GraphicsTest, Application);
 

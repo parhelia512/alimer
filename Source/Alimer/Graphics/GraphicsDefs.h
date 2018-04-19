@@ -233,17 +233,19 @@ namespace Alimer
 		COMPARE_POINT,
 		COMPARE_BILINEAR,
 		COMPARE_TRILINEAR,
-		COMPARE_ANISOTROPIC
+		COMPARE_ANISOTROPIC,
+		Count
 	};
 
-	/// Texture addressing modes.
-	enum TextureAddressMode
+	/// TextureSampler addressing modes.
+	enum class SamplerAddressMode : uint32_t
 	{
-		ADDRESS_WRAP = 1,
-		ADDRESS_MIRROR,
-		ADDRESS_CLAMP,
-		ADDRESS_BORDER,
-		ADDRESS_MIRROR_ONCE
+		Wrap = 0,
+		Mirror,
+		Clamp,
+		Border,
+		MirrorOnce,
+		Count
 	};
 
 	enum class BufferUsage : uint32_t

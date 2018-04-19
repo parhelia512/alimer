@@ -19,8 +19,15 @@ Alimer is fork from [Turso3D](https://github.com/cadaver/turso3d), which is lice
 
 The engine uses the following third-party libraries:
 
-- SDL 2.0.8 (https://www.libsdl.org)
-- SPIRV-Cross (https://github.com/KhronosGroup/SPIRV-Cross)
-- stb_image 2.19 (https://nothings.org)
-- stb_image_write 1.09 (https://nothings.org)
-- JSON for Modern C++ 3.1.2 (https://github.com/nlohmann/json)
+- [SDL 2.0.8](https://www.libsdl.org)
+- [SPIRV-Cross](https://github.com/KhronosGroup/SPIRV-Cross)
+- [JSON for Modern C++ 3.1.2](https://github.com/nlohmann/json)
+- [fmt](https://github.com/fmtlib/fmt)
+- [spdlog](https://github.com/gabime/spdlog)
+- [Nothings](https://github.com/nothings/stb) single file libs.
+  - [stb_image.h 2.19](https://github.com/nothings/stb/blob/master/stb_image.h)
+  - [stb_image_write.h 1.09](https://github.com/nothings/stb/blob/master/stb_image_write.h)
+  - [stb_rect_pack.h 0.11](https://github.com/nothings/stb/blob/master/stb_rect_pack.h)
+  - [stb_truetype.h 1.19](https://github.com/nothings/stb/blob/master/stb_truetype.h)
+  - [stb_vorbis.c 1.14](https://github.com/nothings/stb/blob/master/stb_vorbis.c)
+  - [stb_textedit.h 1.12](https://github.com/nothings/stb/blob/master/stb_textedit.h)

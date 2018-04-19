@@ -30,37 +30,42 @@
 
 namespace Alimer
 {
-
-	/// Image formats.
-	enum ImageFormat
+	/// Pixel formats.
+	enum class PixelFormat : uint32_t
 	{
-		FMT_NONE = 0,
-		FMT_R8,
-		FMT_RG8,
-		FMT_RGBA8,
-		FMT_A8,
-		FMT_R16,
-		FMT_RG16,
-		FMT_RGBA16,
-		FMT_R16F,
-		FMT_RG16F,
-		FMT_RGBA16F,
-		FMT_R32F,
-		FMT_RG32F,
-		FMT_RGB32F,
-		FMT_RGBA32F,
-		FMT_D16,
-		FMT_D32,
-		FMT_D24S8,
-		FMT_DXT1,
-		FMT_DXT3,
-		FMT_DXT5,
-		FMT_ETC1,
-		FMT_PVRTC_RGB_2BPP,
-		FMT_PVRTC_RGBA_2BPP,
-		FMT_PVRTC_RGB_4BPP,
-		FMT_PVRTC_RGBA_4BPP
+		Undefined = 0,
+		A8UNorm,
+		R8UNorm,
+		RG8UNorm,
+		RGBA8UNorm,
+		R16UNorm,
+		RG16UNorm,
+		RGBA16UNorm,
+		R16Float,
+		RG16Float,
+		RGBA16Float,
+		R32Float,
+		RG32Float,
+		RGBA32Float,
+		Depth16UNorm,
+		Depth32Float,
+		Depth24UNormStencil8,
+		Stencil8,
+		BC1,
+		BC2,
+		BC3,
+		ETC1,
+		PVRTC_RGB_2BPP,
+		PVRTC_RGBA_2BPP,
+		PVRTC_RGB_4BPP,
+		PVRTC_RGBA_4BPP,
+		Count
 	};
+
+	ALIMER_API bool IsDepthFormat(PixelFormat format);
+	ALIMER_API bool IsStencilFormat(PixelFormat format);
+	ALIMER_API bool IsDepthStencilFormat(PixelFormat format);
+	ALIMER_API bool IsCompressed(PixelFormat format);
 
 	/// Description of image mip level data.
 	struct ALIMER_API ImageLevel
@@ -98,7 +103,7 @@ namespace Alimer
 		bool Save(Stream& dest) override;
 
 		/// Set new image pixel dimensions and format. Setting a compressed format is not supported.
-		void SetSize(const Size& newSize, ImageFormat newFormat);
+		void SetSize(const Size& newSize, PixelFormat newFormat);
 		/// Set new pixel data.
 		void SetData(const uint8_t* pixelData);
 
@@ -109,15 +114,15 @@ namespace Alimer
 		/// Return image height in pixels.
 		uint32_t GetHeight() const { return _size.height; }
 		/// Return number of components in a pixel. Will return 0 for formats which are not 8 bits per pixel.
-		int Components() const { return _components[format]; }
+		int Components() const { return _components[static_cast<unsigned>(_format)]; }
 		/// Return byte size of a pixel. Will return 0 for block compressed formats.
-		uint32_t GetPixelByteSize() const { return _pixelByteSizes[format]; }
+		uint32_t GetPixelByteSize() const { return _pixelByteSizes[static_cast<unsigned>(_format)]; }
 		/// Return pixel data.
 		uint8_t* Data() const { return _data.get(); }
 		/// Return the image format.
-		ImageFormat Format() const { return format; }
+		PixelFormat GetFormat() const { return _format; }
 		/// Return whether is a compressed image.
-		bool IsCompressed() const { return format >= FMT_DXT1; }
+		bool IsCompressed() const { return Alimer::IsCompressed(_format); }
 		/// Return number of mip levels contained in the image data.
 		uint32_t GetMipLevels() const { return _mipLevels; }
 		/// Calculate the next mip image with halved width and height. Supports uncompressed 8 bits per pixel images only. Return true on success.
@@ -128,7 +133,7 @@ namespace Alimer
 		bool DecompressLevel(uint8_t* dest, uint32_t levelIndex) const;
 
 		/// Calculate the data size of an image level.
-		static uint32_t CalculateDataSize(const Size& size, ImageFormat format, uint32_t* numRows = 0, uint32_t* rowSize = 0);
+		static uint32_t CalculateDataSize(const Size& size, PixelFormat format, uint32_t* numRows = 0, uint32_t* rowSize = 0);
 
 		/// Pixel components per format.
 		static const int _components[];
@@ -144,10 +149,12 @@ namespace Alimer
 		/// Image dimensions.
 		Size _size{ Size::Empty };
 		/// Image format.
-		ImageFormat format{ FMT_NONE };
+		PixelFormat _format{ PixelFormat::Undefined };
 		/// Number of mip levels. 1 for uncompressed images.
 		uint32_t _mipLevels{ 1 };
 		/// Image pixel data.
 		std::unique_ptr<uint8_t[]> _data;
 	};
+
+	ALIMER_API const char* EnumToString(PixelFormat format);
 }

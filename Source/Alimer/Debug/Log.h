@@ -23,61 +23,20 @@
 
 #pragma once
 
+#include <spdlog/spdlog.h>
 #include "../Object/Object.h"
-#include <list>
-#include <mutex>
-#include <thread>
 
 namespace Alimer
 {
-
-	/// Fictional message level to indicate a stored raw message.
-	static const int LOG_RAW = -1;
-	/// Debug message level. By default only shown in debug mode.
-	static const int LOG_DEBUG = 0;
-	/// Informative message level.
-	static const int LOG_INFO = 1;
-	/// Warning message level.
-	static const int LOG_WARNING = 2;
-	/// Error message level.
-	static const int LOG_ERROR = 3;
-	/// Disable all log messages.
-	static const int LOG_NONE = 4;
-
-	class File;
-
-	/// Stored log message from another thread.
-	struct ALIMER_API StoredLogMessage
+	enum class LogLevel : uint8_t
 	{
-		/// Construct undefined.
-		StoredLogMessage()
-		{
-		}
-
-		/// Construct with parameters.
-		StoredLogMessage(const std::string& message_, int level_, bool error_) 
-			: message(message_)
-			, level(level_)
-			, error(error_)
-		{
-		}
-
-		/// Message text.
-		std::string message;
-		/// Message level. -1 for raw messages.
-		int level;
-		/// Error flag for raw messages.
-		bool error;
-	};
-
-	/// %Log message event.
-	class ALIMER_API LogMessageEvent : public Event
-	{
-	public:
-		/// Message.
-		std::string message;
-		/// Message level.
-		int level;
+		Trace = 0,
+		Debug = 1,
+		Info = 2,
+		Warn = 3,
+		Error = 4,
+		Critical = 5,
+		Off = 6
 	};
 
 	/// Logging subsystem.
@@ -91,82 +50,35 @@ namespace Alimer
 		/// Destruct. Close the log file if open.
 		~Log();
 
-		/// Open the log file.
-		void Open(const std::string& fileName);
-		/// Close the log file.
-		void Close();
 		/// Set logging level.
-		void SetLevel(int newLevel);
-		/// Set whether to timestamp log messages.
-		void SetTimeStamp(bool enable);
-		/// Set quiet mode, ie. only output error messages to the standard error stream.
-		void SetQuiet(bool enable);
-		/// Process threaded log messages at the end of a frame.
-		void EndFrame();
+		void SetLevel(LogLevel newLevel);
 
 		/// Return logging level.
-		int Level() const { return level; }
-		/// Return whether log messages are timestamped.
-		bool HasTimeStamp() const { return timeStamp; }
-		/// Return last log message.
-		std::string LastMessage() const { return lastMessage; }
-
-		/// Write to the log. If logging level is higher than the level of the message, the message is ignored.
-		static void Write(int msgLevel, const std::string& message);
-		/// Write raw output to the log.
-		static void WriteRaw(const std::string& message, bool error = false);
-
-		/// %Log message event.
-		LogMessageEvent logMessageEvent;
+		LogLevel GetLevel() const { return _level; }
 
 	private:
-		/// Mutex for threaded operation.
-		std::mutex _logMutex;
-		/// %Log messages from other threads.
-		std::list<StoredLogMessage> _threadMessages;
-		/// %Log file.
-		UniquePtr<File> _logFile;
-		/// Last log message.
-		std::string lastMessage;
-		/// Logging level.
-		int level;
-		/// Use timestamps flag.
-		bool timeStamp;
-		/// In write flag to prevent recursion.
-		bool inWrite;
-		/// Quite mode flag.
-		bool quiet;
-
-		/// Profiler thread.
-		std::thread::id _threadId{};
+		LogLevel _level;
+		std::shared_ptr<spdlog::logger> _logger;
 	};
 
 }
 
 #ifdef ALIMER_LOGGING
 
-#	define LOGDEBUG(message) Alimer::Log::Write(Alimer::LOG_DEBUG, message)
-#	define LOGINFO(message) Alimer::Log::Write(Alimer::LOG_INFO, message)
-#	define LOGWARNING(message) Alimer::Log::Write(Alimer::LOG_WARNING, message)
-#	define LOGERROR(message) Alimer::Log::Write(Alimer::LOG_ERROR, message)
-#	define LOGRAW(message) Alimer::Log::WriteRaw(message)
-#	define LOGDEBUGF(format, ...) Alimer::Log::Write(Alimer::LOG_DEBUG, Alimer::str::Format(format, ##__VA_ARGS__))
-#	define LOGINFOF(format, ...) Alimer::Log::Write(Alimer::LOG_INFO, Alimer::str::Format(format, ##__VA_ARGS__))
-#	define LOGWARNINGF(format, ...) Alimer::Log::Write(Alimer::LOG_WARNING, Alimer::str::Format(format, ##__VA_ARGS__))
-#	define LOGERRORF(format, ...) Alimer::Log::Write(Alimer::LOG_ERROR, Alimer::str::Format(format, ##__VA_ARGS__))
-#	define LOGRAWF(format, ...) Alimer::Log::WriteRaw(Alimer::str::Format(format, ##__VA_ARGS__))
+#	define ALIMER_LOG "Log"
+#	define ALIMER_LOGTRACE(...) spdlog::get(ALIMER_LOG)->trace(__VA_ARGS__)
+#	define ALIMER_LOGDEBUG(...) spdlog::get(ALIMER_LOG)->debug(__VA_ARGS__)
+#	define ALIMER_LOGINFO(...) spdlog::get(ALIMER_LOG)->info(__VA_ARGS__)
+#	define ALIMER_LOGWARN(...) spdlog::get(ALIMER_LOG)->warn(__VA_ARGS__)
+#	define ALIMER_LOGERROR(...) spdlog::get(ALIMER_LOG)->error(__VA_ARGS__)
+#	define ALIMER_LOGCRITICAL(...) spdlog::get(ALIMER_LOG)->critical(__VA_ARGS__)
 
 #else
 
-#	define LOGDEBUG(message)
-#	define LOGINFO(message)
-#	define LOGWARNING(message)
-#	define LOGERROR(message)
-#	define LOGRAW(message)
-#	define LOGDEBUGF(format, ...)
-#	define LOGINFOF(format, ...)
-#	define LOGWARNINGF(format, ...)
-#define LOGERRORF(format, ...)
-#define LOGRAWF(format, ...)
-
+#	define ALIMER_LOGTRACE(...) ((void)0)
+#	define ALIMER_LOGDEBUG(...) ((void)0)
+#	define ALIMER_LOGINFO(...) ((void)0)
+#	define ALIMER_LOGWARN(...) ((void)0)
+#	define ALIMER_LOGERROR(...) ((void)0)
+#	define ALIMER_LOGCRITICAL(...) ((void)0)
 #endif

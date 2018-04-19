@@ -76,7 +76,7 @@ namespace Alimer
 	{
 		if (FAILED(hr))
 		{
-			LOGERRORF("Failed with code 0x%08X", hr);
+			ALIMER_LOGERROR("Failed with code {}", hr);
 			__debugbreak();
 		}
 	}

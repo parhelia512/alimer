@@ -108,11 +108,11 @@ namespace Alimer
 		/// Set number of geometries.
 		void SetNumGeometries(size_t num);
 		/// Set geometry at index.
-		void SetGeometry(size_t index, Geometry* geometry);
+		void SetGeometry(uint32_t index, Geometry* geometry);
 		/// Set material at every geometry index. Specifying null will use the default material (opaque white.)
 		void SetMaterial(Material* material);
 		/// Set material at geometry index.
-		void SetMaterial(size_t index, Material* material);
+		void SetMaterial(uint32_t index, Material* material);
 		/// Set local space bounding box.
 		void SetLocalBoundingBox(const BoundingBox& box);
 

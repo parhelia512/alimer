@@ -64,7 +64,7 @@ namespace Alimer
 	{
 		ALIMER_PROFILE(SaveScene);
 
-		LOGINFO("Saving scene to " + dest.GetName());
+		ALIMER_LOGINFO("Saving scene to " + dest.GetName());
 
 		dest.WriteFileID("SCNE");
 		Node::Save(dest);
@@ -74,12 +74,12 @@ namespace Alimer
 	{
 		ALIMER_PROFILE(LoadScene);
 
-		LOGINFO("Loading scene from " + source.GetName());
+		ALIMER_LOGINFO("Loading scene from " + source.GetName());
 
 		std::string fileId = source.ReadFileID();
 		if (fileId != "SCNE")
 		{
-			LOGERROR("File is not a binary scene file");
+			ALIMER_LOGERROR("File is not a binary scene file");
 			return false;
 		}
 
@@ -87,7 +87,7 @@ namespace Alimer
 		uint32_t ownId = source.ReadUInt();
 		if (ownType != GetTypeStatic())
 		{
-			LOGERROR("Mismatching type of scene root node in scene file");
+			ALIMER_LOGERROR("Mismatching type of scene root node in scene file");
 			return false;
 		}
 
@@ -110,7 +110,7 @@ namespace Alimer
 
 		if (ownType != GetTypeStatic())
 		{
-			LOGERROR("Mismatching type of scene root node in scene file");
+			ALIMER_LOGERROR("Mismatching type of scene root node in scene file");
 			return false;
 		}
 
@@ -126,7 +126,7 @@ namespace Alimer
 
 	bool Scene::LoadJSON(Stream& source)
 	{
-		LOGINFO("Loading scene from " + source.GetName());
+		ALIMER_LOGINFO("Loading scene from " + source.GetName());
 
 		JSONFile json;
 		bool success = json.Load(source);
@@ -138,7 +138,7 @@ namespace Alimer
 	{
 		ALIMER_PROFILE(SaveSceneJSON);
 
-		LOGINFO("Saving scene to " + dest.GetName());
+		ALIMER_LOGINFO("Saving scene to " + dest.GetName());
 
 		JSONFile json;
 		Node::SaveJSON(json.GetRoot());
@@ -194,7 +194,7 @@ namespace Alimer
 	{
 		if (index >= 32)
 		{
-			LOGERROR("Can not define more than 32 layers");
+			ALIMER_LOGERROR("Can not define more than 32 layers");
 			return;
 		}
 

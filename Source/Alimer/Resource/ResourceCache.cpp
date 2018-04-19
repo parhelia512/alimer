@@ -50,7 +50,7 @@ namespace Alimer
 
 		if (!DirectoryExists(pathName))
 		{
-			LOGERROR("Could not open directory " + pathName);
+			ALIMER_LOGERROR("Could not open directory " + pathName);
 			return false;
 		}
 
@@ -68,7 +68,7 @@ namespace Alimer
 		else
 			resourceDirs.push_back(fixedPath);
 
-		LOGINFOF("Added resource path '%s'", fixedPath.c_str());
+		ALIMER_LOGINFO("Added resource path '{}'", fixedPath);
 		return true;
 	}
 
@@ -76,17 +76,17 @@ namespace Alimer
 	{
 		if (!resource)
 		{
-			LOGERROR("Null manual resource");
+			ALIMER_LOGERROR("Null manual resource");
 			return false;
 		}
 
-		if (resource->Name().empty())
+		if (resource->GetName().empty())
 		{
-			LOGERROR("Manual resource with empty name, can not add");
+			ALIMER_LOGERROR("Manual resource with empty name, can not add");
 			return false;
 		}
 
-		resources[std::make_pair(resource->GetType(), StringHash(resource->Name()))] = resource;
+		resources[std::make_pair(resource->GetType(), StringHash(resource->GetName()))] = resource;
 		return true;
 	}
 
@@ -100,7 +100,7 @@ namespace Alimer
 			if (!str::Compare(resourceDirs[i], fixedPath, false))
 			{
 				resourceDirs.erase(resourceDirs.begin() + i);
-				LOGINFO("Removed resource path " + fixedPath);
+				ALIMER_LOGINFO("Removed resource path " + fixedPath);
 				return;
 			}
 		}
@@ -157,7 +157,7 @@ namespace Alimer
 				if (current->first.first == type)
 				{
 					Resource* resource = current->second;
-					if (str::StartsWith(resource->Name(), partialName) && (resource->Refs() == 1 || force))
+					if (str::StartsWith(resource->GetName(), partialName) && (resource->Refs() == 1 || force))
 					{
 						resources.erase(current);
 						++unloaded;
@@ -181,7 +181,7 @@ namespace Alimer
 			{
 				auto current = it++;
 				Resource* resource = current->second;
-				if (str::StartsWith(resource->Name(), partialName) && (!resource->Refs() == 1 || force))
+				if (str::StartsWith(resource->GetName(), partialName) && (!resource->Refs() == 1 || force))
 				{
 					resources.erase(current);
 					++unloaded;
@@ -221,7 +221,7 @@ namespace Alimer
 		if (!resource)
 			return false;
 
-		std::unique_ptr<Stream> stream = OpenResource(resource->Name());
+		std::unique_ptr<Stream> stream = OpenResource(resource->GetName());
 		return stream ? resource->Load(*stream) : false;
 	}
 
@@ -247,7 +247,7 @@ namespace Alimer
 
 		if (!ret->IsReadable())
 		{
-			LOGERROR("Could not open resource file " + name);
+			ALIMER_LOGERROR("Could not open resource file " + name);
 			ret.reset();
 		}
 
@@ -273,13 +273,13 @@ namespace Alimer
 		SharedPtr<Object> newObject = Create(type);
 		if (!newObject)
 		{
-			LOGERRORF("Could not load unknown resource type %s", type.ToString().c_str());
+			ALIMER_LOGERROR("Could not load unknown resource type {}", Object::GetTypeNameFromType(type));
 			return nullptr;
 		}
 		Resource* newResource = dynamic_cast<Resource*>(newObject.Get());
 		if (!newResource)
 		{
-			LOGERRORF("Type %s is not a resource", type.ToString().c_str());
+			ALIMER_LOGERROR("Type {} is not a resource", Object::GetTypeNameFromType(type));
 			return nullptr;
 		}
 
@@ -288,7 +288,7 @@ namespace Alimer
 		if (!stream)
 			return nullptr;
 
-		LOGDEBUG("Loading resource " + name);
+		ALIMER_LOGDEBUG("Loading resource {}", name);
 		newResource->SetName(name);
 		if (!newResource->Load(*stream))
 			return nullptr;

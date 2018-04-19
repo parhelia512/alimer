@@ -25,8 +25,8 @@ enable_language (C)
 set (SDL2_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set (SDL2_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-file (GLOB HEADER_FILES 
-	include/*.h 
+file (GLOB HEADER_FILES
+	include/*.h
 	src/*.h
 	src/audio/*.h
 	src/dynapi/*.h
@@ -41,7 +41,7 @@ file (GLOB HEADER_FILES
 	src/video/yuv2rgb/*.h
 	src/render/*.h
 	)
-file (GLOB  SOURCE_FILES 
+file (GLOB  SOURCE_FILES
 	src/*.c
 	src/atomic/*.c
 	src/audio/*.c
@@ -89,11 +89,13 @@ if (PLATFORM_WINDOWS)
 		)
 endif()
 
-list(APPEND HEADER_FILES ${PLATFORM_HEADER_FILES})
-list(APPEND SOURCE_FILES ${PLATFORM_SOURCE_FILES})
+add_library(SDL2 OBJECT  ${SOURCE_FILES} ${PLATFORM_SOURCE_FILES} ${HEADER_FILES} ${PLATFORM_HEADER_FILES})
+target_include_directories (SDL2
+    PUBLIC $<BUILD_INTERFACE:${SDL2_BINARY_DIR}/include/SDL/generated>
+           $<BUILD_INTERFACE:${SDL2_SOURCE_DIR}/include/SDL>
+           $<BUILD_INTERFACE:${SDL2_SOURCE_DIR}/include>
+)
 
-add_library(SDL2 STATIC ${SOURCE_FILES} ${HEADER_FILES})
-target_include_directories(SDL2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_definitions(SDL2 PRIVATE
 	-DSDL_RENDER_DISABLED)
 
@@ -101,12 +103,6 @@ if (BUILD_SHARED_LIBS)
 	target_compile_definitions(SDL2 PUBLIC -DSDL_EXPORTS)
 endif ()
 
-if (PLATFORM_WINDOWS)
-	target_link_libraries (SDL2 user32 gdi32 winmm imm32 ole32 oleaut32 version uuid advapi32 shell32)
-endif ()
-
-set_property(TARGET SDL2 PROPERTY FOLDER "ThirdParty")
-
 # Install headers for building and using the Urho3D library (install dependency for InputEvents.h)
 install (DIRECTORY include/ DESTINATION ${DEST_THIRDPARTY_HEADERS}/ FILES_MATCHING PATTERN *.h)    # Note: the trailing slash is significant
-install (FILES ${SDL2_BINARY_DIR}/include/SDL/generated/SDL_config.h DESTINATION ${DEST_THIRDPARTY_HEADERS}/SDL)
+install (FILES ${SDL2_BINARY_DIR}/include/SDL/generated/SDL_config.h DESTINATION ${DEST_THIRDPARTY_HEADERS}/SDL2)

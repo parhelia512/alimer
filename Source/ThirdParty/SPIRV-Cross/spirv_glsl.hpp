@@ -475,6 +475,7 @@ protected:
 	bool check_atomic_image(uint32_t id);
 
 	virtual void replace_illegal_names();
+	virtual void emit_entry_point_declarations();
 
 	void replace_fragment_output(SPIRVariable &var);
 	void replace_fragment_outputs();
@@ -547,7 +548,7 @@ protected:
 
 	static std::string sanitize_underscores(const std::string &str);
 
-	bool can_use_io_location(spv::StorageClass storage);
+	bool can_use_io_location(spv::StorageClass storage, bool block);
 	const Instruction *get_next_instruction_in_block(const Instruction &instr);
 	static uint32_t mask_relevant_memory_semantics(uint32_t semantics);
 

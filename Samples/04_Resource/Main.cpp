@@ -50,7 +50,13 @@ int main()
 
 	{
 		profiler.BeginFrame();
-		cache.AddResourceDir(GetExecutableDir() + "Data");
+		const String executableDir = GetExecutableDir();
+		if (DirectoryExists(executableDir + "Data"))
+			cache.AddResourceDir(executableDir + "Data");
+
+		if (DirectoryExists(GetParentPath(executableDir) + "Data"))
+			cache.AddResourceDir(GetParentPath(executableDir) + "Data");
+
 		image = cache.LoadResource<Image>("Test.png");
 		profiler.EndFrame();
 	}
@@ -62,7 +68,7 @@ int main()
 		image->Save(saveFile);
 	}
 
-	LOGRAW(profiler.OutputResults(false, false, 16));
+	ALIMER_LOGINFO(profiler.OutputResults(false, false, 16));
 
 	return 0;
 }

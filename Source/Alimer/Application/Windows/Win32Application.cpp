@@ -36,13 +36,9 @@ namespace Alimer
 
 		if (hr == S_FALSE || FAILED(hr))
 		{
-			LOGERRORF("Failed to initialize COM, error: %d", hr);
+			ALIMER_LOGDEBUG("Failed to initialize COM, error: {}", hr);
 			return false;
 		}
-
-#if ALIMER_DEBUG
-		//!AllocConsole();
-#endif
 
 		// Enable high DPI as SDL not support.
 		if (HMODULE shCoreLibrary = ::LoadLibraryW(L"Shcore.dll"))

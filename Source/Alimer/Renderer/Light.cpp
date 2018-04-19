@@ -21,8 +21,8 @@
 // THE SOFTWARE.
 //
 
-#include "../Debug/Log.h"
-#include "../Math/Ray.h"
+#include "Debug/Log.h"
+#include "Math/Ray.h"
 #include "Light.h"
 #include "Octree.h"
 #include "Renderer.h"

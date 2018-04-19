@@ -128,15 +128,15 @@ int main()
 
 		{
 			ALIMER_PROFILE(OpenLog);
-			log.Open("02_IO.log");
+			//log.Open("02_IO.log");
 		}
 
 		{
 			ALIMER_PROFILE(WriteMessages);
-			LOGDEBUG("Debug message");
-			LOGINFO("Info message");
-			LOGERROR("Error message");
-			LOGINFOF("Formatted message: %d", 100);
+			ALIMER_LOGDEBUG("Debug message");
+			ALIMER_LOGINFO("Info message");
+			ALIMER_LOGERROR("Error message");
+			ALIMER_LOGINFO("Formatted message: %d", 100);
 		}
 
 		profiler.EndFrame();

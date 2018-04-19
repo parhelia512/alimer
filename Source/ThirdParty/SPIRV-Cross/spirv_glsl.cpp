@@ -26,6 +26,45 @@ using namespace spv;
 using namespace spirv_cross;
 using namespace std;
 
+static bool is_unsigned_opcode(Op op)
+{
+	// Don't have to be exhaustive, only relevant for legacy target checking ...
+	switch (op)
+	{
+	case OpShiftRightLogical:
+	case OpUGreaterThan:
+	case OpUGreaterThanEqual:
+	case OpULessThan:
+	case OpULessThanEqual:
+	case OpUConvert:
+	case OpUDiv:
+	case OpUMod:
+	case OpUMulExtended:
+	case OpConvertUToF:
+	case OpConvertFToU:
+		return true;
+
+	default:
+		return false;
+	}
+}
+
+static bool is_unsigned_glsl_opcode(GLSLstd450 op)
+{
+	// Don't have to be exhaustive, only relevant for legacy target checking ...
+	switch (op)
+	{
+	case GLSLstd450UClamp:
+	case GLSLstd450UMin:
+	case GLSLstd450UMax:
+	case GLSLstd450FindUMsb:
+		return true;
+
+	default:
+		return false;
+	}
+}
+
 static bool packing_is_vec4_padded(BufferPackingStandard packing)
 {
 	switch (packing)
@@ -728,7 +767,7 @@ string CompilerGLSL::layout_for_member(const SPIRType &type, uint32_t index)
 	//if (flags & (1ull << DecorationColMajor))
 	//    attr.push_back("column_major");
 
-	if (dec.decoration_flags.get(DecorationLocation) && can_use_io_location(type.storage))
+	if (dec.decoration_flags.get(DecorationLocation) && can_use_io_location(type.storage, true))
 		attr.push_back(join("location = ", dec.location));
 
 	// DecorationCPacked is set by layout_for_variable earlier to mark that we need to emit offset qualifiers.
@@ -1144,14 +1183,17 @@ bool CompilerGLSL::buffer_is_packing_standard(const SPIRType &type, BufferPackin
 	return true;
 }
 
-bool CompilerGLSL::can_use_io_location(StorageClass storage)
+bool CompilerGLSL::can_use_io_location(StorageClass storage, bool block)
 {
 	// Location specifiers are must have in SPIR-V, but they aren't really supported in earlier versions of GLSL.
 	// Be very explicit here about how to solve the issue.
 	if ((get_execution_model() != ExecutionModelVertex && storage == StorageClassInput) ||
 	    (get_execution_model() != ExecutionModelFragment && storage == StorageClassOutput))
 	{
-		if (!options.es && options.version < 410 && !options.separate_shader_objects)
+		uint32_t minimum_desktop_version = block ? 440 : 410;
+		// ARB_enhanced_layouts vs ARB_separate_shader_objects ...
+
+		if (!options.es && options.version < minimum_desktop_version && !options.separate_shader_objects)
 			return false;
 		else if (options.es && options.version < 310)
 			return false;
@@ -1207,7 +1249,8 @@ string CompilerGLSL::layout_for_variable(const SPIRVariable &var)
 			attr.push_back(join("input_attachment_index = ", dec.input_attachment));
 	}
 
-	if (flags.get(DecorationLocation) && can_use_io_location(var.storage))
+	bool is_block = has_decoration(type.self, DecorationBlock);
+	if (flags.get(DecorationLocation) && can_use_io_location(var.storage, is_block))
 	{
 		Bitset combined_decoration;
 		for (uint32_t i = 0; i < meta[type.self].members.size(); i++)
@@ -1670,6 +1713,10 @@ void CompilerGLSL::emit_specialization_constant(const SPIRConstant &constant)
 	{
 		statement("const ", variable_decl(type, name), " = ", constant_expression(constant), ";");
 	}
+}
+
+void CompilerGLSL::emit_entry_point_declarations()
+{
 }
 
 void CompilerGLSL::replace_illegal_names()
@@ -2438,6 +2485,9 @@ string CompilerGLSL::constant_op_expression(const SPIRConstantOp &cop)
 	bool unary = false;
 	string op;
 
+	if (is_legacy() && is_unsigned_opcode(cop.opcode))
+		SPIRV_CROSS_THROW("Unsigned integers are not supported on legacy targets.");
+
 	// TODO: Find a clean way to reuse emit_instruction.
 	switch (cop.opcode)
 	{
@@ -3009,7 +3059,14 @@ string CompilerGLSL::constant_expression_vector(const SPIRConstant &c, uint32_t 
 		if (splat)
 		{
 			res += convert_to_string(c.scalar(vector, 0));
-			if (backend.uint32_t_literal_suffix)
+			if (is_legacy())
+			{
+				// Fake unsigned constant literals with signed ones if possible.
+				// Things like array sizes, etc, tend to be unsigned even though they could just as easily be signed.
+				if (c.scalar_i32(vector, 0) < 0)
+					SPIRV_CROSS_THROW("Tried to convert uint literal into int, but this made the literal negative.");
+			}
+			else if (backend.uint32_t_literal_suffix)
 				res += "u";
 		}
 		else
@@ -3021,7 +3078,15 @@ string CompilerGLSL::constant_expression_vector(const SPIRConstant &c, uint32_t 
 				else
 				{
 					res += convert_to_string(c.scalar(vector, i));
-					if (backend.uint32_t_literal_suffix)
+					if (is_legacy())
+					{
+						// Fake unsigned constant literals with signed ones if possible.
+						// Things like array sizes, etc, tend to be unsigned even though they could just as easily be signed.
+						if (c.scalar_i32(vector, i) < 0)
+							SPIRV_CROSS_THROW(
+							    "Tried to convert uint literal into int, but this made the literal negative.");
+					}
+					else if (backend.uint32_t_literal_suffix)
 						res += "u";
 				}
 
@@ -4040,7 +4105,10 @@ string CompilerGLSL::to_function_args(uint32_t img, const SPIRType &imgtype, boo
 
 void CompilerGLSL::emit_glsl_op(uint32_t result_type, uint32_t id, uint32_t eop, const uint32_t *args, uint32_t)
 {
-	GLSLstd450 op = static_cast<GLSLstd450>(eop);
+	auto op = static_cast<GLSLstd450>(eop);
+
+	if (is_legacy() && is_unsigned_glsl_opcode(op))
+		SPIRV_CROSS_THROW("Unsigned integers are not supported on legacy GLSL targets.");
 
 	switch (op)
 	{
@@ -4105,8 +4173,8 @@ void CompilerGLSL::emit_glsl_op(uint32_t result_type, uint32_t id, uint32_t eop,
 	}
 
 	// Minmax
-	case GLSLstd450FMin:
 	case GLSLstd450UMin:
+	case GLSLstd450FMin:
 	case GLSLstd450SMin:
 		emit_binary_func_op(result_type, id, args[0], args[1], "min");
 		break;
@@ -4526,8 +4594,7 @@ void CompilerGLSL::emit_subgroup_op(const Instruction &i)
 		{
 			require_extension_internal("GL_KHR_shader_subgroup_clustered");
 		}
-		else if (operation == GroupOperationExclusiveScan ||
-		         operation == GroupOperationInclusiveScan ||
+		else if (operation == GroupOperationExclusiveScan || operation == GroupOperationInclusiveScan ||
 		         operation == GroupOperationReduce)
 		{
 			require_extension_internal("GL_KHR_shader_subgroup_arithmetic");
@@ -4629,6 +4696,7 @@ void CompilerGLSL::emit_subgroup_op(const Instruction &i)
 		emit_unary_func_op(result_type, id, ops[3], "subgroupAllEqual");
 		break;
 
+		// clang-format off
 #define GROUP_OP(op, glsl_op) \
 case OpGroupNonUniform##op: \
 	{ \
@@ -4659,6 +4727,7 @@ case OpGroupNonUniform##op: \
 	GROUP_OP(BitwiseOr, Or)
 	GROUP_OP(BitwiseXor, Xor)
 #undef GROUP_OP
+		// clang-format on
 
 	case OpGroupNonUniformQuadSwap:
 	{
@@ -7514,8 +7583,8 @@ void CompilerGLSL::emit_instruction(const Instruction &instruction)
 		}
 		else if (memory == ScopeSubgroup)
 		{
-			const uint32_t all_barriers = MemorySemanticsWorkgroupMemoryMask | MemorySemanticsUniformMemoryMask |
-			                              MemorySemanticsImageMemoryMask;
+			const uint32_t all_barriers =
+			    MemorySemanticsWorkgroupMemoryMask | MemorySemanticsUniformMemoryMask | MemorySemanticsImageMemoryMask;
 
 			if (semantics & (MemorySemanticsCrossWorkgroupMemoryMask | MemorySemanticsSubgroupMemoryMask))
 			{
@@ -8314,6 +8383,9 @@ string CompilerGLSL::type_to_glsl(const SPIRType &type, uint32_t id)
 		break;
 	}
 
+	if (type.basetype == SPIRType::UInt && is_legacy())
+		SPIRV_CROSS_THROW("Unsigned integers are not supported on legacy targets.");
+
 	if (type.vecsize == 1 && type.columns == 1) // Scalar builtin
 	{
 		switch (type.basetype)
@@ -8649,6 +8721,9 @@ void CompilerGLSL::emit_function(SPIRFunction &func, const Bitset &return_flags)
 
 	emit_function_prototype(func, return_flags);
 	begin_scope();
+
+	if (func.self == entry_point)
+		emit_entry_point_declarations();
 
 	current_function = &func;
 	auto &entry_block = get<SPIRBlock>(func.entry_block);

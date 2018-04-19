@@ -50,7 +50,7 @@ namespace Alimer
 		_root = json::parse(pos, end);
 		if (!_root.is_object())
 		{
-			LOGERROR("Parsing JSON from " + source.GetName() + " failed; data may be partial");
+			ALIMER_LOGERROR("Parsing JSON from " + source.GetName() + " failed; data may be partial");
 			return false;
 		}
 
