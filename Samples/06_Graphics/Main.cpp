@@ -160,18 +160,18 @@ public:
 
 	void Render() override
 	{
-		if (_engine->GetInput()->IsKeyPress('F'))
-		{
+		//if (_engine->GetInput()->IsKeyPress('F'))
+		//{
 			//graphics->SetFullscreen(!graphics->GetRenderWindow()->IsFullscreen());
-		}
+		//}
 
-		if (_engine->GetInput()->IsKeyPress('M'))
-		{
+		//if (_engine->GetInput()->IsKeyPress('M'))
+		//{
 			//graphics->SetMultisample(graphics->GetMultisample() > 1 ? 1 : 4);
-		}
+		//}
 
 		// Escape.
-		if (_engine->GetInput()->IsKeyPress(27))
+		if (Input->IsKeyPress(Key::Escape))
 		{
 			Exit();
 		}

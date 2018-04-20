@@ -49,7 +49,6 @@ namespace Alimer
 
 		_time = make_unique<Time>();
 		_cache = make_unique<ResourceCache>();
-		_input = make_unique<Input>();
 		_renderer = make_unique<Renderer>();
 		__engineInstance = this;
 	}

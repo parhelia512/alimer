@@ -83,17 +83,17 @@ namespace Alimer
 		/// World space bounding box.
 		mutable BoundingBox _worldBoundingBox;
 		/// Distance from camera in the current view.
-		float _distance{};
+		float _distance;
 		/// Last frame number when was visible.
-		uint32_t _lastFrameNumber{};
+		uint32_t _lastFrameNumber;
 
 	private:
 		/// Remove from the current octree.
 		void RemoveFromOctree();
 
 		/// Current octree.
-		Octree* _octree = nullptr;
+		Octree* _octree;
 		/// Current octree octant.
-		Octant* _octant = nullptr;
+		Octant* _octant;
 	};
 }

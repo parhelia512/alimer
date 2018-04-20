@@ -28,12 +28,29 @@
 
 namespace Alimer
 {
-	/// Left mouse button index.
-	static const unsigned MOUSEB_LEFT = 0;
-	/// Middle mouse button index.
-	static const unsigned MOUSEB_MIDDLE = 1;
-	/// Right mouse button index.
-	static const unsigned MOUSEB_RIGHT = 2;
+	/// Defines Keyboard key
+	enum class Key : uint8_t
+	{
+		None,
+		Escape,
+		Return,
+		Tab,
+		Space,
+		Backspace,
+		Count
+	};
+
+	/// Defines input mouse buttons.
+	enum class MouseButton
+	{
+		None = 0,
+		Left,
+		Middle,
+		Right,
+		X1,
+		X2,
+		Count
+	};
 
 	/// Finger touch.
 	struct ALIMER_API Touch
@@ -64,9 +81,7 @@ namespace Alimer
 	{
 	public:
 		/// Key code.
-		unsigned keyCode;
-		/// Raw key code.
-		unsigned rawKeyCode;
+		Key key;
 		/// Pressed flag.
 		bool pressed;
 		/// Repeat flag.
@@ -86,9 +101,9 @@ namespace Alimer
 	{
 	public:
 		/// Button index.
-		unsigned button;
+		MouseButton button;
 		/// Bitmask of currently held down buttons.
-		unsigned buttons;
+		uint32_t buttons;
 		/// Pressed flag.
 		bool pressed;
 		/// Mouse position within window.
@@ -144,33 +159,29 @@ namespace Alimer
 	};
 
 	/// %Input subsystem for reading keyboard/mouse/etc. input. Updated from OS window messages by the Window class.
-	class ALIMER_API Input : public Object
+	class ALIMER_API Input final : public Object
 	{
 		ALIMER_OBJECT(Input, Object);
+		friend class Application;
 
-	public:
+	private:
 		/// Construct and register subsystem.
 		Input();
 		/// Destruct.
-		~Input();
+		~Input() override;
 
-		/// Poll the window (if any) for OS window messages and update input state.
-		void Update();
+	public:
+		/// Singleton Input instance.
+		static Input* GetInput();
 
 		/// Return whether key is down by key code.
-		bool IsKeyDown(unsigned keyCode) const;
-		/// Return whether key is down by raw key code.
-		bool IsKeyDownRaw(unsigned rawKeyCode) const;
-		/// Return whether key was pressed on this frame by key code.
-		bool IsKeyPress(unsigned keyCode) const;
-		/// Return whether key was pressed on this frame by raw key code.
-		bool IsKeyPressRaw(unsigned rawKeyCode) const;
+		static bool IsKeyDown(Key key);
 		/// Return current mouse position.
 		const IntVector2& MousePosition() const;
 		/// Return accumulated mouse movement since last frame.
 		IntVector2 MouseMove() const { return mouseMove; }
 		/// Return pressed down mouse buttons bitmask.
-		unsigned MouseButtons() const { return mouseButtons; }
+		unsigned GetMouseButtons() const { return _mouseButtons; }
 		/// Return whether a mouse button is down.
 		bool IsMouseButtonDown(unsigned button) const;
 		/// Return whether a mouse button was pressed on this frame.
@@ -182,14 +193,14 @@ namespace Alimer
 		/// Return all touches.
 		const std::vector<Touch>& Touches() const { return touches; }
 
-		/// React to a key press or release. Called by window message handling.
-		void OnKey(unsigned keyCode, unsigned rawKeyCode, bool pressed);
+		/// Post key event.
+		void PostKeyEvent(Key key, bool pressed);
 		/// React to char input. Called by window message handling.
 		void OnChar(unsigned unicodeChar);
 		/// React to a mouse move. Called by window message handling.
 		void OnMouseMove(const IntVector2& position, const IntVector2& delta);
 		/// React to a mouse button. Called by window message handling.
-		void OnMouseButton(unsigned button, bool pressed);
+		void OnMouse(uint32_t x, uint32_t y, MouseButton button, bool pressed);
 		/// React to a touch. Called by window message handling.
 		void OnTouch(unsigned internalId, bool pressed, const IntVector2& position, float pressure);
 		/// React to gaining focus. Called by window message handling.
@@ -213,22 +224,21 @@ namespace Alimer
 		TouchEndEvent touchEndEvent;
 
 	private:
+		void BeginFrame();
+
+		bool IsKeyState(Key key, bool down);
+
 		/// Key code held down status.
-		std::map<unsigned, bool> keyDown;
+		std::map<Key, bool> _keyDown;
 		/// Key code pressed status.
-		std::map<unsigned, bool> keyPressed;
-		/// Raw key code held down status.
-		std::map<unsigned, bool> rawKeyDown;
-		/// Raw key code pressed status.
-		std::map<unsigned, bool> rawKeyPress;
+		std::map<Key, bool> _keyPressed;
 		/// Active touches.
 		std::vector<Touch> touches;
 		/// Accumulated mouse move since last frame.
 		IntVector2 mouseMove;
 		/// Mouse buttons bitmask.
-		unsigned mouseButtons;
+		uint32_t _mouseButtons;
 		/// Mouse buttons pressed bitmask.
-		unsigned mouseButtonsPressed;
+		uint32_t _mouseButtonsPressed;
 	};
-
 }

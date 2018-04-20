@@ -29,6 +29,10 @@
 namespace Alimer
 {
 	OctreeNode::OctreeNode()
+		: _octree(nullptr)
+		, _octant(nullptr)
+		, _lastFrameNumber(0)
+		, _distance(0.0f)
 	{
 		SetFlag(NF_BOUNDING_BOX_DIRTY, true);
 	}

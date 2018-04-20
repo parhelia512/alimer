@@ -29,7 +29,6 @@ namespace Alimer
 	class Log;
 	class Time;
 	class ResourceCache;
-	class Input;
 	class Graphics;
 	class Renderer;
 	class Profiler;
@@ -95,8 +94,6 @@ namespace Alimer
 		/// ResourceCache module.
 		inline ResourceCache* GetCache() { return _cache.get(); }
 
-		/// Input module.
-		inline Input* GetInput() { return _input.get(); }
 
 		/// Graphics module.
 		inline Graphics* GetGraphics() { return _graphics.get(); }
@@ -129,9 +126,6 @@ namespace Alimer
 
 		/// ResourceCache module.
 		std::unique_ptr<ResourceCache> _cache;
-
-		/// Input module.
-		std::unique_ptr<Input> _input;
 
 		/// Graphics module.
 		std::unique_ptr<Graphics> _graphics;

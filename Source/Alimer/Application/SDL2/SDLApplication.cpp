@@ -33,6 +33,40 @@ namespace Alimer
 	extern bool Win32PlatformRun();
 #endif
 
+	static const std::unordered_map<SDL_Keycode, Key> _keyMap =
+	{
+		{ SDL_SCANCODE_ESCAPE, Key::Escape },
+		{ SDL_SCANCODE_RETURN, Key::Return },
+		{ SDL_SCANCODE_TAB, Key::Tab },
+		{ SDL_SCANCODE_SPACE, Key::Space },
+		{ SDL_SCANCODE_BACKSPACE, Key::Backspace },
+	};
+
+	static Key TranslateKey(SDL_Scancode code)
+	{
+		auto i = _keyMap.find(code);
+
+		if (i != _keyMap.end())
+		{
+			return i->second;
+		}
+
+		return Key::None;
+	}
+
+	static MouseButton TranslateMouseButton(uint32_t sdlButton)
+	{
+		switch (sdlButton)
+		{
+		case SDL_BUTTON_LEFT: return MouseButton::Left;
+		case SDL_BUTTON_MIDDLE: return MouseButton::Middle;
+		case SDL_BUTTON_RIGHT: return MouseButton::Right;
+		case SDL_BUTTON_X1: return MouseButton::X1;
+		case SDL_BUTTON_X2: return MouseButton::X2;
+		default: return MouseButton::None;
+		}
+	}
+
 	int Application::PlatformRun()
 	{
 #if ALIMER_PLATFORM_WINDOWS
@@ -66,23 +100,57 @@ namespace Alimer
 		if (_exitCode)
 			return _exitCode;
 
-		Input* input = GetSubsystem<Input>();
+		Input* input = Input::GetInput();
 
 		// Start the event loop.
 		SDL_Event evt;
 		while (!_engine->IsExiting())
 		{
+			input->BeginFrame();
+
 			while (SDL_PollEvent(&evt))
 			{
-				switch (evt.type)
-				{
+				switch (evt.type) {
 				case SDL_QUIT:
 					Exit();
 					break;
+
+				case SDL_KEYDOWN: {
+					const SDL_KeyboardEvent& keyEvent = evt.key;
+					Key key = TranslateKey(keyEvent.keysym.scancode);
+
+					input->PostKeyEvent(
+						key,
+						true);
+					break;
+				}
+
+				case SDL_KEYUP: {
+					const SDL_KeyboardEvent& keyEvent = evt.key;
+					Key key = TranslateKey(keyEvent.keysym.scancode);
+
+					input->PostKeyEvent(
+						key,
+						false);
+					break;
+				}
+
+				case SDL_MOUSEBUTTONDOWN:
+				case SDL_MOUSEBUTTONUP:
+				{
+					const SDL_MouseButtonEvent& mouseEvent = evt.button;
+					MouseButton button = TranslateMouseButton(mouseEvent.button);
+					input->OnMouse(
+						mouseEvent.x,
+						mouseEvent.y,
+						button,
+						mouseEvent.type == SDL_MOUSEBUTTONDOWN);
+				}
+				break;
 				}
 			}
 
-			input->Update();
+			
 			_engine->RunFrame();
 		}
 

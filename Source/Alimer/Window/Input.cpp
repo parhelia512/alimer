@@ -26,9 +26,9 @@
 
 namespace Alimer
 {
-	Input::Input() 
-		: mouseButtons(0)
-		, mouseButtonsPressed(0)
+	Input::Input()
+		: _mouseButtons(0)
+		, _mouseButtonsPressed(0)
 	{
 		RegisterSubsystem(this);
 	}
@@ -38,39 +38,26 @@ namespace Alimer
 		RemoveSubsystem(this);
 	}
 
-	void Input::Update()
+	Input* Input::GetInput()
+	{
+		static Input input;
+		return &input;
+	}
+
+	/*void Input::Update()
 	{
 		// Clear accumulated input from last frame
-		mouseButtonsPressed = 0;
+		_mouseButtonsPressed = 0;
 		mouseMove = IntVector2::ZERO;
 		keyPressed.clear();
 		rawKeyPress.clear();
 		for (auto it = touches.begin(); it != touches.end(); ++it)
 			it->delta = IntVector2::ZERO;
-	}
+	}*/
 
-	bool Input::IsKeyDown(unsigned keyCode) const
+	bool Input::IsKeyDown(Key key)
 	{
-		auto it = keyDown.find(keyCode);
-		return it != keyDown.end() ? it->second : false;
-	}
-
-	bool Input::IsKeyDownRaw(unsigned rawKeyCode) const
-	{
-		auto it = rawKeyDown.find(rawKeyCode);
-		return it != rawKeyDown.end() ? it->second : false;
-	}
-
-	bool Input::IsKeyPress(unsigned keyCode) const
-	{
-		auto it = keyPressed.find(keyCode);
-		return it != keyPressed.end() ? it->second : false;
-	}
-
-	bool Input::IsKeyPressRaw(unsigned rawKeyCode) const
-	{
-		auto it = rawKeyPress.find(rawKeyCode);
-		return it != rawKeyPress.end() ? it->second : false;
+		return GetInput()->IsKeyState(key, true);
 	}
 
 	const IntVector2& Input::MousePosition() const
@@ -81,12 +68,12 @@ namespace Alimer
 
 	bool Input::IsMouseButtonDown(unsigned button) const
 	{
-		return (mouseButtons & (1 << button)) != 0;
+		return (_mouseButtons & (1 << button)) != 0;
 	}
 
 	bool Input::IsMouseButtonPress(unsigned button) const
 	{
-		return (mouseButtonsPressed & (1 << button)) != 0;
+		return (_mouseButtonsPressed & (1 << button)) != 0;
 	}
 
 	const Touch* Input::FindTouch(unsigned id) const
@@ -100,20 +87,17 @@ namespace Alimer
 		return nullptr;
 	}
 
-	void Input::OnKey(unsigned keyCode, unsigned rawKeyCode, bool pressed)
+	void Input::PostKeyEvent(Key key, bool pressed)
 	{
-		bool wasDown = IsKeyDown(keyCode);
+		bool wasDown = IsKeyDown(key);
 
-		keyDown[keyCode] = pressed;
-		rawKeyDown[rawKeyCode] = pressed;
+		_keyDown[key] = pressed;
 		if (pressed)
 		{
-			keyPressed[keyCode] = true;
-			rawKeyPress[rawKeyCode] = true;
+			_keyPressed[key] = true;
 		}
 
-		keyEvent.keyCode = keyCode;
-		keyEvent.rawKeyCode = rawKeyCode;
+		keyEvent.key = key;
 		keyEvent.pressed = pressed;
 		keyEvent.repeat = wasDown;
 		SendEvent(keyEvent);
@@ -134,20 +118,20 @@ namespace Alimer
 		SendEvent(mouseMoveEvent);
 	}
 
-	void Input::OnMouseButton(unsigned button, bool pressed)
+	void Input::OnMouse(uint32_t x, uint32_t y, MouseButton button, bool pressed)
 	{
-		unsigned bit = 1 << button;
+		uint32_t bit = 1 << ecast(button);
 
 		if (pressed)
 		{
-			mouseButtons |= bit;
-			mouseButtonsPressed |= bit;
+			_mouseButtons |= bit;
+			_mouseButtonsPressed |= bit;
 		}
 		else
-			mouseButtons &= ~bit;
+			_mouseButtons &= ~bit;
 
 		mouseButtonEvent.button = button;
-		mouseButtonEvent.buttons = mouseButtons;
+		mouseButtonEvent.buttons = _mouseButtons;
 		mouseButtonEvent.pressed = pressed;
 		mouseButtonEvent.position = MousePosition();
 		SendEvent(mouseButtonEvent);
@@ -240,13 +224,28 @@ namespace Alimer
 
 	void Input::OnLoseFocus()
 	{
-		mouseButtons = 0;
-		mouseButtonsPressed = 0;
+		_mouseButtons = 0;
+		_mouseButtonsPressed = 0;
 		mouseMove = IntVector2::ZERO;
-		keyDown.clear();
-		keyPressed.clear();
-		rawKeyDown.clear();
-		rawKeyPress.clear();
+		_keyDown.clear();
+		_keyPressed.clear();
 	}
 
+	void Input::BeginFrame()
+	{
+		// Clear accumulated input from last frame
+		_mouseButtonsPressed = 0;
+		mouseMove = IntVector2::ZERO;
+		_keyPressed.clear();
+		for (auto& touch : touches)
+		{
+			touch.delta = IntVector2::ZERO;
+		}
+	}
+
+	bool Input::IsKeyState(Key key, bool down)
+	{
+		auto it = _keyDown.find(key);
+		return it != _keyDown.end() ? it->second : false;
+	}
 }

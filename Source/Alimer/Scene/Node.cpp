@@ -90,9 +90,8 @@ namespace Alimer
 		Serializable::Save(dest);
 		dest.WriteVLE(NumPersistentChildren());
 
-		for (auto it = _children.begin(); it != _children.end(); ++it)
+		for (Node* child : _children)
 		{
-			Node* child = *it;
 			if (!child->IsTemporary())
 				child->Save(dest);
 		}
@@ -130,9 +129,8 @@ namespace Alimer
 		if (NumPersistentChildren())
 		{
 			dest["children"] = json::array();
-			for (auto it = _children.begin(); it != _children.end(); ++it)
+			for (Node* child : _children)
 			{
-				Node* child = *it;
 				if (!child->IsTemporary())
 				{
 					json childJSON;
@@ -319,14 +317,15 @@ namespace Alimer
 
 	void Node::RemoveAllChildren()
 	{
-		for (auto it = _children.begin(); it != _children.end(); ++it)
+		for (size_t i = 0, count = _children.size(); i < count; ++i)
 		{
-			Node* child = *it;
+			SharedPtr<Node> child = _children[i];
 			child->_parent = nullptr;
 			child->OnParentSet(this, nullptr);
 			if (_scene)
 				_scene->RemoveNode(child);
-			it->Reset();
+
+			child.Reset();
 		}
 
 		_children.clear();

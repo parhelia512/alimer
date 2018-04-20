@@ -33,8 +33,8 @@ using namespace std;
 
 namespace Alimer
 {
-	Scene::Scene() :
-		nextNodeId(1)
+	Scene::Scene()
+		: _nextNodeId(1)
 	{
 		// Register self to allow finding by ID
 		AddNode(this);
@@ -49,7 +49,7 @@ namespace Alimer
 		// so must tear down the scene tree already here
 		RemoveAllChildren();
 		RemoveNode(this);
-		assert(nodes.empty());
+		assert(_nodesMap.empty());
 	}
 
 	void Scene::RegisterObject()
@@ -215,13 +215,13 @@ namespace Alimer
 	void Scene::Clear()
 	{
 		RemoveAllChildren();
-		nextNodeId = 1;
+		_nextNodeId = 1;
 	}
 
-	Node* Scene::FindNode(unsigned id) const
+	Node* Scene::FindNode(uint32_t id) const
 	{
-		auto it = nodes.find(id);
-		return it != nodes.end() ? it->second : nullptr;
+		auto it = _nodesMap.find(id);
+		return it != _nodesMap.end() ? it->second : nullptr;
 	}
 
 	void Scene::AddNode(Node* node)
@@ -229,24 +229,26 @@ namespace Alimer
 		if (!node || node->GetParentScene() == this)
 			return;
 
-		while (nodes.find(nextNodeId) != nodes.end())
+		while (_nodesMap.find(_nextNodeId) != _nodesMap.end())
 		{
-			++nextNodeId;
-			if (!nextNodeId)
-				++nextNodeId;
+			++_nextNodeId;
+			if (!_nextNodeId)
+			{
+				++_nextNodeId;
+			}
 		}
 
 		Scene* oldScene = node->GetParentScene();
 		if (oldScene)
 		{
 			uint32_t oldId = node->GetId();
-			oldScene->nodes.erase(oldId);
+			oldScene->_nodesMap.erase(oldId);
 		}
-		nodes[nextNodeId] = node;
+		_nodesMap[_nextNodeId] = node;
 		node->SetScene(this);
-		node->SetId(nextNodeId);
+		node->SetId(_nextNodeId);
 
-		++nextNodeId;
+		++_nextNodeId;
 
 		// If node has children, add them to the scene as well
 		if (node->NumChildren())
@@ -262,7 +264,7 @@ namespace Alimer
 		if (!node || node->GetParentScene() != this)
 			return;
 
-		nodes.erase(node->GetId());
+		_nodesMap.erase(node->GetId());
 		node->SetScene(nullptr);
 		node->SetId(0);
 

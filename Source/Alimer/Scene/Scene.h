@@ -66,7 +66,7 @@ namespace Alimer
 		void Clear();
 
 		/// Find node by id.
-		Node* FindNode(unsigned id) const;
+		Node* FindNode(uint32_t id) const;
 		/// Return the layer names.
 		const std::vector<std::string>& LayerNames() const { return _layerNames; }
 		/// Return the layer name-to-index map.
@@ -96,9 +96,9 @@ namespace Alimer
 		json GetTagNamesAttr() const;
 
 		/// Map from id's to nodes.
-		std::map<unsigned, Node*> nodes;
+		std::map<uint32_t, Node*> _nodesMap;
 		/// Next free node id.
-		uint32_t nextNodeId;
+		uint32_t _nextNodeId;
 		/// List of layer names by index.
 		std::vector<std::string> _layerNames;
 		/// Map from layer names to indices.

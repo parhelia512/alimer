@@ -108,13 +108,16 @@ void RendererTest::Render()
 	const float deltaTime = (float)_engine->GetTime()->GetElapsedSeconds();
 	auto renderer = _engine->GetRenderer();
 
-	if (input->IsKeyPress(27))
+	if (input->IsKeyPress(Key::Escape))
+	{
 		Exit();
+		return;
+	}
 
-	if (input->IsKeyPress('F'))
+	/*if (input->IsKeyPress('F'))
 	{
 		//graphics->SetFullscreen(!graphics->GetRenderWindow()->IsFullscreen());
-	}
+	}*/
 
 	static float yaw = 0.0f;
 	static float pitch = 20.0f;
@@ -122,7 +125,7 @@ void RendererTest::Render()
 	yaw += input->MouseMove().x * 0.25f;
 	pitch = Clamp(pitch, -90.0f, 90.0f);
 
-	float moveSpeed = input->IsKeyDown(VK_SHIFT) ? 50.0f : 10.0f;
+	/*float moveSpeed = input->IsKeyDown(VK_SHIFT) ? 50.0f : 10.0f;
 
 	_camera->SetRotation(Quaternion(pitch, yaw, 0.0f));
 	if (input->IsKeyDown('W'))
@@ -133,7 +136,7 @@ void RendererTest::Render()
 		_camera->Translate(Vector3::LEFT * deltaTime * moveSpeed);
 	if (input->IsKeyDown('D'))
 		_camera->Translate(Vector3::RIGHT * deltaTime * moveSpeed);
-
+	*/
 	// Update camera aspect ratio based on window size
 	_camera->SetAspectRatio((float)graphics->GetWidth() / (float)graphics->GetHeight());
 

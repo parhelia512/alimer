@@ -41,7 +41,7 @@ namespace Alimer
 	static const unsigned short NF_LIGHT = 0x100;
 	static const unsigned short NF_CASTSHADOWS = 0x200;
 	static const unsigned char LAYER_DEFAULT = 0x0;
-	static const unsigned char TAG_NONE = 0x0;
+	static const uint8_t TAG_NONE = 0x0;
 	static const unsigned LAYERMASK_ALL = 0xffffffff;
 
 	/// Base class for scene nodes.

@@ -31,6 +31,7 @@
 #include <cstdlib>
 
 using namespace Alimer;
+using namespace std;
 
 class WindowTest : public Object
 {
@@ -39,8 +40,9 @@ class WindowTest : public Object
 public:
 	void Run()
 	{
-		input = std::make_unique<Input>();
-		window = std::make_unique<Window>("Window test", 800, 600);
+		_log = make_unique<Log>();
+		_input = make_unique<Input>();
+		window = make_unique<Window>("Window test", 800, 600);
 		printf("Window opened\n");
 
 		SubscribeToEvent(window->closeRequestEvent, &WindowTest::HandleCloseRequest);
@@ -49,16 +51,16 @@ public:
 		SubscribeToEvent(window->loseFocusEvent, &WindowTest::HandleLoseFocus);
 		SubscribeToEvent(window->minimizeEvent, &WindowTest::HandleMinimize);
 		SubscribeToEvent(window->restoreEvent, &WindowTest::HandleRestore);
-		SubscribeToEvent(input->mouseButtonEvent, &WindowTest::HandleMouseButton);
-		SubscribeToEvent(input->mouseMoveEvent, &WindowTest::HandleMouseMove);
-		SubscribeToEvent(input->keyEvent, &WindowTest::HandleKey);
-		SubscribeToEvent(input->touchBeginEvent, &WindowTest::HandleTouchBegin);
-		SubscribeToEvent(input->touchMoveEvent, &WindowTest::HandleTouchMove);
-		SubscribeToEvent(input->touchEndEvent, &WindowTest::HandleTouchEnd);
+		SubscribeToEvent(_input->mouseButtonEvent, &WindowTest::HandleMouseButton);
+		SubscribeToEvent(_input->mouseMoveEvent, &WindowTest::HandleMouseMove);
+		SubscribeToEvent(_input->keyEvent, &WindowTest::HandleKey);
+		SubscribeToEvent(_input->touchBeginEvent, &WindowTest::HandleTouchBegin);
+		SubscribeToEvent(_input->touchMoveEvent, &WindowTest::HandleTouchMove);
+		SubscribeToEvent(_input->touchEndEvent, &WindowTest::HandleTouchEnd);
 
 		while (window->IsOpen())
 		{
-			input->Update();
+			_input->Update();
 			std::this_thread::sleep_for(std::chrono::seconds(1));
 		}
 
@@ -106,9 +108,13 @@ public:
 		printf("Mouse button %d state %d\n", event.button, event.pressed ? 1 : 0);
 	}
 
-	void HandleKey(KeyEvent& event)
+	void HandleKey(KeyEvent& evt)
 	{
-		printf("Key code %d rawcode %d state %d\n", event.keyCode, event.rawKeyCode, event.pressed ? 1 : 0);
+		ALIMER_LOGINFO(
+			"Key code {} rawcode {} state {}",
+			(uint32_t)evt.key,
+			evt.rawKeyCode,
+			evt.pressed);
 	}
 
 	void HandleTouchBegin(TouchBeginEvent& event)
@@ -126,7 +132,8 @@ public:
 		printf("Touch end id %d position %d %d\n", event.id, event.position.x, event.position.y);
 	}
 
-	std::unique_ptr<Input> input;
+	std::unique_ptr<Log> _log;
+	std::unique_ptr<Input> _input;
 	std::unique_ptr<Window> window;
 };
 
