@@ -41,7 +41,6 @@ public:
 	void Run()
 	{
 		_log = make_unique<Log>();
-		_input = make_unique<Input>();
 		window = make_unique<Window>("Window test", 800, 600);
 		printf("Window opened\n");
 
@@ -51,16 +50,16 @@ public:
 		SubscribeToEvent(window->loseFocusEvent, &WindowTest::HandleLoseFocus);
 		SubscribeToEvent(window->minimizeEvent, &WindowTest::HandleMinimize);
 		SubscribeToEvent(window->restoreEvent, &WindowTest::HandleRestore);
-		SubscribeToEvent(_input->mouseButtonEvent, &WindowTest::HandleMouseButton);
-		SubscribeToEvent(_input->mouseMoveEvent, &WindowTest::HandleMouseMove);
-		SubscribeToEvent(_input->keyEvent, &WindowTest::HandleKey);
-		SubscribeToEvent(_input->touchBeginEvent, &WindowTest::HandleTouchBegin);
-		SubscribeToEvent(_input->touchMoveEvent, &WindowTest::HandleTouchMove);
-		SubscribeToEvent(_input->touchEndEvent, &WindowTest::HandleTouchEnd);
+		SubscribeToEvent(Input::GetInput()->mouseButtonEvent, &WindowTest::HandleMouseButton);
+		SubscribeToEvent(Input::GetInput()->mouseMoveEvent, &WindowTest::HandleMouseMove);
+		SubscribeToEvent(Input::GetInput()->keyEvent, &WindowTest::HandleKey);
+		SubscribeToEvent(Input::GetInput()->touchBeginEvent, &WindowTest::HandleTouchBegin);
+		SubscribeToEvent(Input::GetInput()->touchMoveEvent, &WindowTest::HandleTouchMove);
+		SubscribeToEvent(Input::GetInput()->touchEndEvent, &WindowTest::HandleTouchEnd);
 
 		while (window->IsOpen())
 		{
-			_input->Update();
+			// TODO: Add PollEvents method
 			std::this_thread::sleep_for(std::chrono::seconds(1));
 		}
 
@@ -111,9 +110,8 @@ public:
 	void HandleKey(KeyEvent& evt)
 	{
 		ALIMER_LOGINFO(
-			"Key code {} rawcode {} state {}",
+			"Key code {} state {}",
 			(uint32_t)evt.key,
-			evt.rawKeyCode,
 			evt.pressed);
 	}
 
@@ -133,7 +131,6 @@ public:
 	}
 
 	std::unique_ptr<Log> _log;
-	std::unique_ptr<Input> _input;
 	std::unique_ptr<Window> window;
 };
 

@@ -103,12 +103,12 @@ void RendererTest::Stop()
 
 void RendererTest::Render()
 {
-	auto input = _engine->GetInput();
+	auto input = Input::GetInput();
 	auto graphics = _engine->GetGraphics();
 	const float deltaTime = (float)_engine->GetTime()->GetElapsedSeconds();
 	auto renderer = _engine->GetRenderer();
 
-	if (input->IsKeyPress(Key::Escape))
+	if (input->IsKeyDown(Key::Escape))
 	{
 		Exit();
 		return;

@@ -171,7 +171,7 @@ public:
 		//}
 
 		// Escape.
-		if (Input->IsKeyPress(Key::Escape))
+		if (Input::GetInput()->IsKeyDown(Key::Escape))
 		{
 			Exit();
 		}
