@@ -62,8 +62,7 @@ namespace Alimer
 
 	const IntVector2& Input::MousePosition() const
 	{
-		Window* window = GetSubsystem<Window>();
-		return window ? window->GetMousePosition() : IntVector2::ZERO;
+		return IntVector2::ZERO;
 	}
 
 	bool Input::IsMouseButtonDown(unsigned button) const
@@ -109,16 +108,16 @@ namespace Alimer
 		SendEvent(charInputEvent);
 	}
 
-	void Input::OnMouseMove(const IntVector2& position, const IntVector2& delta)
+	void Input::OnMouseMove(int32_t x, int32_t y, int32_t deltaX, int32_t deltaY)
 	{
-		mouseMove += delta;
+		_mouseMove += IntVector2(deltaX, deltaY);
 
-		mouseMoveEvent.position = position;
-		mouseMoveEvent.delta = delta;
+		mouseMoveEvent.position = IntVector2(x, y);
+		mouseMoveEvent.delta = _mouseMove;
 		SendEvent(mouseMoveEvent);
 	}
 
-	void Input::OnMouse(uint32_t x, uint32_t y, MouseButton button, bool pressed)
+	void Input::OnMouse(int32_t x, int32_t y, MouseButton button, bool pressed)
 	{
 		uint32_t bit = 1 << ecast(button);
 
@@ -128,12 +127,15 @@ namespace Alimer
 			_mouseButtonsPressed |= bit;
 		}
 		else
+		{
 			_mouseButtons &= ~bit;
+		}
 
 		mouseButtonEvent.button = button;
 		mouseButtonEvent.buttons = _mouseButtons;
 		mouseButtonEvent.pressed = pressed;
-		mouseButtonEvent.position = MousePosition();
+		mouseButtonEvent.position.x = x;
+		mouseButtonEvent.position.y = y;
 		SendEvent(mouseButtonEvent);
 	}
 
@@ -226,7 +228,7 @@ namespace Alimer
 	{
 		_mouseButtons = 0;
 		_mouseButtonsPressed = 0;
-		mouseMove = IntVector2::ZERO;
+		_mouseMove = IntVector2::ZERO;
 		_keyDown.clear();
 		_keyPressed.clear();
 	}
@@ -235,7 +237,7 @@ namespace Alimer
 	{
 		// Clear accumulated input from last frame
 		_mouseButtonsPressed = 0;
-		mouseMove = IntVector2::ZERO;
+		_mouseMove = IntVector2::ZERO;
 		_keyPressed.clear();
 		for (auto& touch : touches)
 		{
@@ -246,6 +248,6 @@ namespace Alimer
 	bool Input::IsKeyState(Key key, bool down)
 	{
 		auto it = _keyDown.find(key);
-		return it != _keyDown.end() ? it->second : false;
+		return it != _keyDown.end() ? it->second == down : false;
 	}
 }

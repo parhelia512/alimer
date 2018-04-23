@@ -71,7 +71,12 @@ namespace Alimer
 		void Finalize() override;
 
 		/// Create the D3D11 device and swap chain. Requires an open window. Can also be called again to recrease swap chain. Return true on success.
-		bool CreateD3DDevice(uint32_t multisample);
+		bool CreateD3DDevice(
+			HWND windowHandle,
+			uint32_t backbufferWidth,
+			uint32_t backbufferHeight,
+			uint32_t multisample);
+
 		/// Update swap chain state for a new mode and create views for the backbuffer & default depth buffer.
 		bool UpdateSwapChain(uint32_t width, uint32_t height);
 

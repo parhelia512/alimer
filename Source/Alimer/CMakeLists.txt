@@ -51,7 +51,8 @@ configure_file (AlimerConfig.h.in ${CMAKE_CURRENT_SOURCE_DIR}/AlimerConfig.h)
 
 # Add source files from subdirectories
 define_engine_source_files(NORECURSE . Graphics)
-define_engine_source_files (Base Debug IO JSON Math Object Renderer Resource Scene Window Application)
+define_engine_source_files (Base Debug IO Math Object Renderer Resource Scene Window Application)
+define_engine_source_files (nlohmann)
 
 if (ALIMER_SDL)
 	define_engine_source_files (Application/SDL2)

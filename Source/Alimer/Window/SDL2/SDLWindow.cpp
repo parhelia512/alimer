@@ -41,7 +41,7 @@ namespace Alimer
 		if (_fullscreen)
 			sdlFlags |= SDL_WINDOW_FULLSCREEN;
 
-		_handle =  SDL_CreateWindow(_title.c_str(),
+		_handle = SDL_CreateWindow(_title.c_str(),
 			SDL_WINDOWPOS_CENTERED,
 			SDL_WINDOWPOS_CENTERED,
 			_width,
@@ -85,15 +85,6 @@ namespace Alimer
 		SDL_SetWindowPosition(_handle, position.x, position.y);
 	}
 
-	void Window::SetMouseVisible(bool enable)
-	{
-		SDL_SetCursor(enable ? SDL_GetCursor() : nullptr);
-	}
-
-	void Window::SetMousePosition(const IntVector2& position)
-	{
-	}
-
 	void Window::Close()
 	{
 		if (_handle)
@@ -131,5 +122,29 @@ namespace Alimer
 		int w, h;
 		SDL_GetWindowSize(_handle, &w, &h);
 		return Size(w, h);
+	}
+
+	bool Window::HasFocus() const
+	{
+		return SDL_GetKeyboardFocus() == _handle
+			|| SDL_GetMouseFocus() == _handle;
+	}
+
+	bool Window::IsMinimized() const
+	{
+		return SDL_GetWindowFlags(_handle) & SDL_WINDOW_MINIMIZED;
+	}
+
+	bool Cursor::IsVisible()
+	{
+		return SDL_ShowCursor(SDL_QUERY) == SDL_ENABLE;
+	}
+
+	void Cursor::SetVisible(bool visible)
+	{
+		if (visible)
+			SDL_ShowCursor(SDL_ENABLE);
+		else
+			SDL_ShowCursor(SDL_DISABLE);
 	}
 }

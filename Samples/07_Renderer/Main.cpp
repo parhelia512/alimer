@@ -39,16 +39,16 @@ class RendererTest final : public Application
 	ALIMER_OBJECT(RendererTest, Application);
 
 private:
-	void Start() override;
-	void Stop() override;
-	void Render() override;
+	void OnStart() override;
+	void OnStop() override;
+	void OnRender() override;
 
 private:
 	std::unique_ptr<Scene> _scene;
 	Camera* _camera = nullptr;
 };
 
-void RendererTest::Start()
+void RendererTest::OnStart()
 {
 	_scene = std::make_unique<Scene>();
 
@@ -64,8 +64,8 @@ void RendererTest::Start()
 			StaticModel* object = _scene->CreateChild<StaticModel>();
 			object->SetPosition(Vector3(10.5f * x, -0.1f, 10.5f * y));
 			object->SetScale(Vector3(10.0f, 0.1f, 10.0f));
-			object->SetModel(_engine->GetCache()->LoadResource<Model>("Box.mdl"));
-			object->SetMaterial(_engine->GetCache()->LoadResource<Material>("Stone.json"));
+			object->SetModel(GetCache()->LoadResource<Model>("Box.mdl"));
+			object->SetMaterial(GetCache()->LoadResource<Material>("Stone.json"));
 		}
 	}
 
@@ -74,8 +74,8 @@ void RendererTest::Start()
 		StaticModel* object = _scene->CreateChild<StaticModel>();
 		object->SetPosition(Vector3(Random() * 100.0f - 50.0f, 1.0f, Random() * 100.0f - 50.0f));
 		object->SetScale(1.5f);
-		object->SetModel(_engine->GetCache()->LoadResource<Model>("Mushroom.mdl"));
-		object->SetMaterial(_engine->GetCache()->LoadResource<Material>("Mushroom.json"));
+		object->SetModel(GetCache()->LoadResource<Model>("Mushroom.mdl"));
+		object->SetMaterial(GetCache()->LoadResource<Material>("Mushroom.json"));
 		object->SetCastShadows(true);
 		object->SetLodBias(2.0f);
 	}
@@ -95,20 +95,19 @@ void RendererTest::Start()
 	}
 }
 
-void RendererTest::Stop()
+void RendererTest::OnStop()
 {
 	_scene.reset();
 }
 
 
-void RendererTest::Render()
+void RendererTest::OnRender()
 {
-	auto input = Input::GetInput();
-	auto graphics = _engine->GetGraphics();
-	const float deltaTime = (float)_engine->GetTime()->GetElapsedSeconds();
-	auto renderer = _engine->GetRenderer();
+	auto graphics = GetGraphics();
+	const float deltaTime = (float)GetTime()->GetElapsedSeconds();
+	auto renderer = GetRenderer();
 
-	if (input->IsKeyDown(Key::Escape))
+	if (Input::IsKeyDown(Key::Escape))
 	{
 		Exit();
 		return;
@@ -121,22 +120,22 @@ void RendererTest::Render()
 
 	static float yaw = 0.0f;
 	static float pitch = 20.0f;
-	pitch += input->MouseMove().y * 0.25f;
-	yaw += input->MouseMove().x * 0.25f;
+	pitch += Input::GetInput()->GetMouseMove().y * 0.25f;
+	yaw += Input::GetInput()->GetMouseMove().x * 0.25f;
 	pitch = Clamp(pitch, -90.0f, 90.0f);
 
-	/*float moveSpeed = input->IsKeyDown(VK_SHIFT) ? 50.0f : 10.0f;
+	float moveSpeed = /*input->IsKeyDown(VK_SHIFT) ? 50.0f :*/ 10.0f;
 
 	_camera->SetRotation(Quaternion(pitch, yaw, 0.0f));
-	if (input->IsKeyDown('W'))
+	if (Input::IsKeyDown(Key::W))
 		_camera->Translate(Vector3::FORWARD * deltaTime * moveSpeed);
-	if (input->IsKeyDown('S'))
+	if (Input::IsKeyDown(Key::S))
 		_camera->Translate(Vector3::BACK * deltaTime * moveSpeed);
-	if (input->IsKeyDown('A'))
+	if (Input::IsKeyDown(Key::A))
 		_camera->Translate(Vector3::LEFT * deltaTime * moveSpeed);
-	if (input->IsKeyDown('D'))
+	if (Input::IsKeyDown(Key::D))
 		_camera->Translate(Vector3::RIGHT * deltaTime * moveSpeed);
-	*/
+	
 	// Update camera aspect ratio based on window size
 	_camera->SetAspectRatio((float)graphics->GetWidth() / (float)graphics->GetHeight());
 

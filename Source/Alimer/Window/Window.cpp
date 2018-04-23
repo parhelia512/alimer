@@ -31,22 +31,14 @@ namespace Alimer
 		: _title(title)
 		, _width(width)
 		, _height(height)
-		, savedPosition(IntVector2(M_MIN_INT, M_MIN_INT))
-		, mousePosition(IntVector2::ZERO)
-		, minimized(false)
-		, focus(false)
 		, _resizable(resizable)
 		, _fullscreen(fullscreen)
-		, mouseVisible(true)
-		, mouseVisibleInternal(true)
 	{
-		RegisterSubsystem(this);
 		PlatformInitialize();
 	}
 
 	Window::~Window()
 	{
 		Close();
-		RemoveSubsystem(this);
 	}
 }

@@ -20,22 +20,44 @@
 // THE SOFTWARE.
 //
 
+#include "Debug/Log.h"
+#include "Debug/Profiler.h"
 #include "Application.h"
+#include "Time.h"
+#include "Window/Input.h"
+#include "Resource/ResourceCache.h"
+#include "IO/FileSystem.h"
+#include "Graphics/Graphics.h"
+#include "Renderer/Renderer.h"
+using namespace std;
 
 namespace Alimer
 {
 	static Application* __appInstance = nullptr;
 
 	Application::Application()
-		: _exitCode(EXIT_SUCCESS)
-		, _engine(new Engine())
+		: _initialized(false)
+		, _exiting(false)
+		, _headless(false)
+		, _exitCode(EXIT_SUCCESS)
 	{
+		// Init modules.
+		_log = make_unique<Log>();
+#ifdef ALIMER_PROFILING
+		_profiler = make_unique<Profiler>();
+#endif
+
+		_time = make_unique<Time>();
+		_cache = make_unique<ResourceCache>();
+		_renderer = make_unique<Renderer>();
+
 		__appInstance = this;
 		RegisterSubsystem(this);
 	}
 
 	Application::~Application()
 	{
+		_window.reset();
 		RemoveSubsystem(this);
 		__appInstance = nullptr;
 	}
@@ -45,13 +67,84 @@ namespace Alimer
 		return __appInstance;
 	}
 
+	bool Application::InitializeBeforeRun()
+	{
+		if (_initialized)
+			return true;
+
+		ALIMER_PROFILE(Application);
+
+		if (!_headless)
+		{
+			// Create main window.
+			_window.reset(new Window(_settings.title, _settings.width, _settings.height, _settings.resizable, _settings.fullscreen));
+			SubscribeToEvent(_window->resizeEvent, &Application::HandleResize);
+			SubscribeToEvent(_window->closeRequestEvent, &Application::HandleCloseRequest);
+
+			// Create and init graphics.
+			_graphics.reset(Graphics::Create(GraphicsDeviceType::Direct3D11));
+
+			// Initialize graphics backend.
+			GraphicsSettings graphicsSettings = {};
+			graphicsSettings.window = _window.get();
+			graphicsSettings.multisample = _settings.multisample;
+			graphicsSettings.verticalSync = _settings.verticalSync;
+			//graphicsSettings.depthStencilFormat = _graphics->GetDefaultDepthStencilFormat();
+			if (!_graphics->Initialize(graphicsSettings))
+			{
+				ALIMER_LOGERROR("Error while initializing graphics system");
+				return false;
+			}
+		}
+
+		RegisterGraphicsLibrary();
+		RegisterResourceLibrary();
+		RegisterRendererLibrary();
+
+		// Init ResourceCache.
+		const String executableDir = GetExecutableDir();
+		if (DirectoryExists(executableDir + "Data"))
+			_cache->AddResourceDir(GetExecutableDir() + "Data");
+
+		if (DirectoryExists(GetParentPath(executableDir) + "Data"))
+			_cache->AddResourceDir(GetParentPath(executableDir) + "Data");
+
+		// Initialize Renderer
+		_renderer->SetupShadowMaps(1, 2048, PixelFormat::Depth16UNorm);
+
+		ALIMER_LOGINFO("Application initialized.");
+		//_time.Reset();
+		_initialized = true;
+		return true;
+	}
+
+	void Application::RunFrame()
+	{
+		_time->Update();
+		Render();
+	}
+
+	void Application::Render()
+	{
+		if (_headless)
+			return;
+
+		ALIMER_PROFILE(Render);
+
+		if (!_graphics->BeginFrame())
+			return;
+
+		OnRender();
+		_graphics->Present();
+	}
+
 	int Application::Run()
 	{
 #if !defined(__GNUC__) || __EXCEPTIONS
 		try
 		{
 #endif
-			Setup();
+			OnSetup();
 			if (_exitCode)
 				return _exitCode;
 
@@ -74,9 +167,19 @@ namespace Alimer
 	void Application::ErrorExit(const std::string& /*message*/)
 	{
 		// Exit the engine.
-		_engine->Exit(); 
+		Exit(); 
 		_exitCode = EXIT_FAILURE;
 
 		// TODO: Error message.
+	}
+
+	void Application::HandleResize(WindowResizeEvent&)
+	{
+
+	}
+
+	void Application::HandleCloseRequest(Event&)
+	{
+
 	}
 }

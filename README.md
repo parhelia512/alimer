@@ -11,11 +11,15 @@
 - Modern graphics/rendering API using Vulkan/Direct3D12.
 - Extendible Asset Pipeline.
 - GLTF 2.0 support.
-- .NET Core/Standard and Xamarin scripting support.
+- .NET Core/Standard, Mono/Xamarin scripting support.
 
 ## Credits
 
-Alimer is fork from [Turso3D](https://github.com/cadaver/turso3d), which is licensed under the [MIT](https://github.com/cadaver/turso3d/blob/master/License.txt)
+Alimer is fork from [Turso3D](https://github.com/cadaver/turso3d), which is licensed under the [MIT](https://github.com/cadaver/turso3d/blob/master/License.txt).
+
+Alimer development, contributions and bugfixes by:
+
+- Amer Koleci
 
 The engine uses the following third-party libraries:
 
@@ -31,3 +35,7 @@ The engine uses the following third-party libraries:
   - [stb_truetype.h 1.19](https://github.com/nothings/stb/blob/master/stb_truetype.h)
   - [stb_vorbis.c 1.14](https://github.com/nothings/stb/blob/master/stb_vorbis.c)
   - [stb_textedit.h 1.12](https://github.com/nothings/stb/blob/master/stb_textedit.h)
+
+Additional inspiration & research used:
+
+- Vulkan examples (https://github.com/SaschaWillems/Vulkan).

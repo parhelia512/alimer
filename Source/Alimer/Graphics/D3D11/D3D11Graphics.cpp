@@ -212,31 +212,37 @@ namespace Alimer
 		if (_initialized)
 			return true;
 
-		_window = settings.window;
 		uint32_t multisample = Clamp(settings.multisample, 1, 16);
 
 		// Create D3D11 device and swap chain when setting mode for the first time, or swap chain again when changing multisample
 		if (!_d3dDevice
 			|| _multisample != multisample)
 		{
-			if (!CreateD3DDevice(multisample))
+			if (!CreateD3DDevice(
+				settings.window->GetPlatformData().hwnd,
+				settings.window->GetWidth(),
+				settings.window->GetHeight(),
+				multisample))
 				return false;
 
 			// Swap chain needs to be updated manually for the first time, otherwise window resize event takes care of it
-			UpdateSwapChain(_window->GetWidth(), _window->GetHeight());
+			UpdateSwapChain(
+				settings.window->GetWidth(), 
+				settings.window->GetHeight());
 		}
 
 		screenModeEvent.size = _backbufferSize;
-		screenModeEvent.fullscreen = _window->IsFullscreen();
-		screenModeEvent.resizable = _window->IsResizable();
+		screenModeEvent.fullscreen = settings.window->IsFullscreen();
+		screenModeEvent.resizable = settings.window->IsResizable();
 		screenModeEvent.multisample = multisample;
 		SendEvent(screenModeEvent);
 
 		ALIMER_LOGDEBUG("Set screen mode {}x{} fullscreen {} resizable {} multisample {}",
 			_backbufferSize.width,
 			_backbufferSize.height,
-			_window->IsFullscreen(), 
-			_window->IsResizable(), multisample);
+			settings.window->IsFullscreen(),
+			settings.window->IsResizable(), 
+			multisample);
 
 		_initialized = true;
 		return true;
@@ -314,7 +320,6 @@ namespace Alimer
 		_swapChain.Reset();
 		_d3dContext.Reset();
 		_d3dDevice.Reset();
-		_window->Close();
 		ResetState();
 	}
 
@@ -743,7 +748,11 @@ namespace Alimer
 			gpuObjects.erase(it);
 	}
 
-	bool D3D11Graphics::CreateD3DDevice(uint32_t multisample)
+	bool D3D11Graphics::CreateD3DDevice(
+		HWND windowHandle,
+		uint32_t backbufferWidth,
+		uint32_t backbufferHeight,
+		uint32_t multisample)
 	{
 		HRESULT hr = S_OK;
 		// Device needs only to be created once.
@@ -824,15 +833,13 @@ namespace Alimer
 		// Create swap chain. Release old if necessary
 		_swapChain.Reset();
 
-		WindowPlatformData platformData = _window->GetPlatformData();
-
 		DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
 		swapChainDesc.BufferCount = 1;
-		swapChainDesc.BufferDesc.Width = _window->GetWidth();
-		swapChainDesc.BufferDesc.Height = _window->GetHeight();
+		swapChainDesc.BufferDesc.Width = backbufferWidth;
+		swapChainDesc.BufferDesc.Height = backbufferHeight;
 		swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		swapChainDesc.OutputWindow = platformData.hwnd;
+		swapChainDesc.OutputWindow = windowHandle;
 		swapChainDesc.SampleDesc.Count = multisample;
 		swapChainDesc.SampleDesc.Quality = multisample > 1 ? 0xffffffff : 0;
 		swapChainDesc.Windowed = TRUE;
@@ -847,7 +854,7 @@ namespace Alimer
 		// After creating the swap chain, disable automatic Alt-Enter fullscreen/windowed switching
 		// (the application will switch manually if it wants to)
 		_dxgiFactory->MakeWindowAssociation(
-			platformData.hwnd,
+			windowHandle,
 			DXGI_MWA_NO_WINDOW_CHANGES | DXGI_MWA_NO_ALT_ENTER);
 #endif
 

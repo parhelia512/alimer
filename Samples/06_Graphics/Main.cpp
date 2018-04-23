@@ -47,7 +47,7 @@ public:
 
 	Texture* _texture;
 
-	void Start() override
+	void OnStart() override
 	{
 		float vertexData[] = {
 			// Position             // Texcoord
@@ -155,10 +155,10 @@ public:
 		_fragmentShader->SetName("Test.ps");
 		_fragmentShader->Define(SHADER_PS, psCode);
 		
-		_texture = _engine->GetCache()->LoadResource<Texture>("Test.png");
+		_texture = GetCache()->LoadResource<Texture>("Test.png");
 	}
 
-	void Render() override
+	void OnRender() override
 	{
 		//if (_engine->GetInput()->IsKeyPress('F'))
 		//{
@@ -186,7 +186,7 @@ public:
 		auto* vertexVariation = _vertexShader->CreateVariation();
 		auto* fragmentVariation = _fragmentShader->CreateVariation();
 
-		auto graphics = _engine->GetGraphics();
+		auto graphics = GetGraphics();
 		graphics->Clear(ClearFlags::Color | ClearFlags::Depth, Color(0.0f, 0.0f, 0.5f));
 		graphics->SetVertexBuffer(0, _vertexBuffer.get());
 		graphics->SetVertexBuffer(1, _instanceVertexBuffer.get());

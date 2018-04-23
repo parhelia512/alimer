@@ -85,10 +85,6 @@ namespace Alimer
 		void SetTitle(const std::string& newTitle);
 		/// Set window position.
 		void SetPosition(const IntVector2& position);
-		/// Set mouse cursor visible. Default is true. When hidden, the mouse cursor is confined to the window and kept centered; relative mouse motion can be read "endlessly" but absolute mouse position should not be used.
-		void SetMouseVisible(bool enable);
-		/// Move the mouse cursor to a window top-left relative position.
-		void SetMousePosition(const IntVector2& position);
 		/// Close the window.
 		void Close();
 		/// Minimize the window.
@@ -106,8 +102,6 @@ namespace Alimer
 		uint32_t GetHeight() const { return _height; }
 		/// Return window position.
 		IntVector2 GetPosition() const;
-		/// Return last known mouse cursor position relative to window top-left.
-		const IntVector2& GetMousePosition() const { return mousePosition; }
 		/// Return whether window is open.
 		bool IsOpen() const { return _handle != nullptr; }
 		/// Return whether is resizable.
@@ -115,11 +109,10 @@ namespace Alimer
 		/// Return whether is fullscren.
 		bool IsFullscreen() const { return _fullscreen; }
 		/// Return whether is currently minimized.
-		bool IsMinimized() const { return minimized; }
+		bool IsMinimized() const;
 		/// Return whether has input focus.
-		bool HasFocus() const { return focus; }
-		/// Return whether mouse cursor is visible.
-		bool IsMouseVisible() const { return mouseVisible; }
+		bool HasFocus() const;
+
 		WindowPlatformData GetPlatformData() const { return _platformData; }
 
 		/// Close requested event.
@@ -153,21 +146,9 @@ namespace Alimer
 		uint32_t _width;
 		/// Window height.
 		uint32_t _height;
-		/// Last stored windowed mode position.
-		IntVector2 savedPosition;
-		/// Current mouse cursor position.
-		IntVector2 mousePosition;
-		/// Current minimization state.
-		bool minimized;
-		/// Current focus state.
-		bool focus;
 		/// Resizable flag.
 		bool _resizable;
 		/// Fullscreen flag.
 		bool _fullscreen;
-		/// Mouse visible flag as requested by the application.
-		bool mouseVisible;
-		/// Internal mouse visible flag. The mouse is automatically shown when the window is unfocused, while mouseVisible represents the application's desired state. Used to prevent multiple calls to OS mouse visibility functions, which utilize a counter.
-		bool mouseVisibleInternal;
 	};
 }

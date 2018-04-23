@@ -31,12 +31,95 @@ namespace Alimer
 	/// Defines Keyboard key
 	enum class Key : uint8_t
 	{
-		None,
-		Escape,
+		None = 0,
+		A,
+		B,
+		C,
+		D,
+		E,
+		F,
+		G,
+		H,
+		I,
+		J,
+		K,
+		L,
+		M,
+		N,
+		O,
+		P,
+		Q,
+		R,
+		S,
+		T,
+		U,
+		V,
+		W,
+		X,
+		Y,
+		Z,
+		D0,
+		D1,
+		D2,
+		D3,
+		D4,
+		D5,
+		D6,
+		D7,
+		D8,
+		D9,
+		Numpad0,
+		Numpad1,
+		Numpad2,
+		Numpad3,
+		Numpad4,
+		Numpad5,
+		Numpad6,
+		Numpad7,
+		Numpad8,
+		Numpad9,
 		Return,
+		Escape,
+		Backspace,
 		Tab,
 		Space,
-		Backspace,
+		Up,
+		Down,
+		Left,
+		Right,
+		Insert,
+		Delete,
+		Home,
+		End,
+		PageUp,
+		PageDown,
+		Print,
+		Plus,
+		Minus,
+		F1,
+		F2,
+		F3,
+		F4,
+		F5,
+		F6,
+		F7,
+		F8,
+		F9,
+		F10,
+		F11,
+		F12,
+		F13,
+		F14,
+		F15,
+		F16,
+		F17,
+		F18,
+		F19,
+		F20,
+		F21,
+		F22,
+		F23,
+		F24,
 		Count
 	};
 
@@ -158,6 +241,14 @@ namespace Alimer
 		IntVector2 position;
 	};
 
+	/// Cursor platform API.
+	class ALIMER_API Cursor
+	{
+	public:
+		static bool IsVisible();
+		static void SetVisible(bool visible);
+	};
+
 	/// %Input subsystem for reading keyboard/mouse/etc. input. Updated from OS window messages by the Window class.
 	class ALIMER_API Input final : public Object
 	{
@@ -179,7 +270,7 @@ namespace Alimer
 		/// Return current mouse position.
 		const IntVector2& MousePosition() const;
 		/// Return accumulated mouse movement since last frame.
-		IntVector2 MouseMove() const { return mouseMove; }
+		IntVector2 GetMouseMove() const { return _mouseMove; }
 		/// Return pressed down mouse buttons bitmask.
 		unsigned GetMouseButtons() const { return _mouseButtons; }
 		/// Return whether a mouse button is down.
@@ -198,9 +289,9 @@ namespace Alimer
 		/// React to char input. Called by window message handling.
 		void OnChar(unsigned unicodeChar);
 		/// React to a mouse move. Called by window message handling.
-		void OnMouseMove(const IntVector2& position, const IntVector2& delta);
+		void OnMouseMove(int32_t x, int32_t y, int32_t deltaX, int32_t deltaY);
 		/// React to a mouse button. Called by window message handling.
-		void OnMouse(uint32_t x, uint32_t y, MouseButton button, bool pressed);
+		void OnMouse(int32_t x, int32_t y, MouseButton button, bool pressed);
 		/// React to a touch. Called by window message handling.
 		void OnTouch(unsigned internalId, bool pressed, const IntVector2& position, float pressure);
 		/// React to gaining focus. Called by window message handling.
@@ -235,7 +326,7 @@ namespace Alimer
 		/// Active touches.
 		std::vector<Touch> touches;
 		/// Accumulated mouse move since last frame.
-		IntVector2 mouseMove;
+		IntVector2 _mouseMove;
 		/// Mouse buttons bitmask.
 		uint32_t _mouseButtons;
 		/// Mouse buttons pressed bitmask.

@@ -182,8 +182,6 @@ namespace Alimer
 		uint32_t GetRenderTargetHeight() const { return _renderTargetSize.height; }
 		/// Return whether is using vertical sync.
 		bool VSync() const { return vsync; }
-		/// Return the rendering window.
-		Window* GetRenderWindow() const { return _window; }
 		/// Return the current color rendertarget by index, or null if rendering to the backbuffer.
 		Texture* GetRenderTarget(size_t index) const;
 		/// Return the current depth-stencil buffer, or null if rendering to the backbuffer.
@@ -235,8 +233,6 @@ namespace Alimer
 		bool _validation{};
 		bool _initialized{};
 
-		/// OS-level rendering window.
-		Window* _window = nullptr;
 		/// Current size of the backbuffer.
 		Size _backbufferSize{ Size::Empty };
 		/// Current size of the active rendertarget.

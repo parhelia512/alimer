@@ -72,12 +72,12 @@ namespace Alimer
 		_handle = graphics->CreateBuffer(_usage, _size, _stride, _resourceUsage, initialData);
 		if (!_handle)
 		{
-			ALIMER_LOGERROR("Failed to create %s buffer", BufferUsageToString(_usage));
+			ALIMER_LOGERROR("Failed to create {} buffer", BufferUsageToString(_usage));
 			return false;
 		}
 
 		ALIMER_LOGDEBUG(
-			"Created %s buffer [size: %u, stride %u]",
+			"Created {} buffer [size: {}, stride {}]",
 			BufferUsageToString(_usage),
 			_size,
 			_stride);

@@ -97,7 +97,7 @@ namespace Alimer
 
 		SetNumGeometries(model->NumGeometries());
 		// Start at LOD level 0
-		for (size_t i = 0; i < _batches.size(); ++i)
+		for (uint32_t i = 0, count = static_cast<uint32_t>(_batches.size()); i < count; ++i)
 		{
 			SetGeometry(i, model->GetGeometry(i, 0));
 			if (model->NumLodLevels(i) > 1)

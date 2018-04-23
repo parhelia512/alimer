@@ -181,8 +181,10 @@ namespace Alimer
 	void GeometryNode::SetMaterialsAttr(const ResourceRefList& materials)
 	{
 		ResourceCache* cache = GetSubsystem<ResourceCache>();
-		for (size_t i = 0; i < materials.names.size(); ++i)
+		for (uint32_t i = 0, count = static_cast<uint32_t>(materials.names.size()); i < count; ++i)
+		{
 			SetMaterial(i, cache->LoadResource<Material>(materials.names[i]));
+		}
 	}
 
 	ResourceRefList GeometryNode::MaterialsAttr() const
