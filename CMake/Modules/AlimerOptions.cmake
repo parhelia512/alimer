@@ -165,6 +165,7 @@ option (ALIMER_D3D11 "Enable D3D11 backend" ${ALIMER_D3D11_DEFAULT})
 option (ALIMER_D3D12 "Enable D3D12 backend" ${ALIMER_D3D12_DEFAULT})
 cmake_dependent_option (ALIMER_OPENGL "Use OpenGL instead of Direct3D11 on Windows" FALSE "WIN32" TRUE)
 option(ALIMER_PACKAGING "Package resources" ${ALIMER_RELEASE})
+option(ALIMER_CSHARP "Enable C# support" ${ALIMER_ENABLE_ALL})
 
 # Tools
 if (ANDROID OR WEB OR IOS)

@@ -49,7 +49,11 @@ namespace Alimer
 		// 
 		void SetRenderTargets(const std::vector<Texture*>& renderTargets, Texture* stencilBuffer) override;
 		void SetViewport(const IntRect& viewport) override;
-		void SetVertexBuffer(uint32_t index, VertexBuffer* buffer) override;
+		void SetVertexBuffer(
+			uint32_t index,
+			VertexBuffer* buffer,
+			uint32_t vertexOffset,
+			VertexInputRate stepRate) override;
 		void SetConstantBuffer(ShaderStage stage, uint32_t index, ConstantBuffer* buffer) override;
 		void SetTexture(size_t index, Texture* texture) override;
 		void SetShaders(ShaderVariation* vs, ShaderVariation* ps) override;
@@ -63,6 +67,11 @@ namespace Alimer
 
 		ID3D11Device1* GetD3DDevice() const { return _d3dDevice.Get(); }
 		ID3D11DeviceContext1* GetD3DDeviceContext() const { return _d3dContext.Get(); }
+
+		VertexBuffer* GetVertexBuffer(uint32_t index) const
+		{
+			return _vbo.buffers[index];
+		}
 
 		/// Return currently bound index buffer.
 		D3D11Buffer* GetIndexBuffer() const { return _currentIndexBuffer; }
@@ -107,7 +116,7 @@ namespace Alimer
 		D3D_FEATURE_LEVEL _d3dFeatureLevel{ D3D_FEATURE_LEVEL_9_1 };
 		bool _debugMode{};
 
-		using InputLayoutDesc = std::pair<uint64_t, uint32_t>;
+		using InputLayoutDesc = std::pair<uint64_t, uint64_t>;
 		using InputLayoutMap = std::map<InputLayoutDesc, ID3D11InputLayout*>;
 
 		/// Current input layout: vertex buffers' element mask and vertex shader's element mask combined.
@@ -125,6 +134,15 @@ namespace Alimer
 
 		/// Input layout dirty flag.
 		bool _inputLayoutDirty;
+
+		struct VertexBindingState {
+			VertexBuffer* buffers[MaxVertexBuffers];
+			uint32_t vertexOffsets[MaxVertexBuffers];
+			uint32_t strides[MaxVertexBuffers];
+			VertexInputRate rates[MaxVertexBuffers];
+		};
+
+		VertexBindingState _vbo = {};
 
 		/// Blend state objects.
 		HashMap<ID3D11BlendState1*> _blendStates;

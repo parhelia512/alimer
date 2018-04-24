@@ -2,14 +2,22 @@ version: '{build}'
 platform:
   - x64
 image: Visual Studio 2017
+environment:
+  global:
+    MONO_SETUP: mono-5.10.1.47-x64-0.msi
+    ALIMER_ENABLE_ALL: ON
+  matrix:
+    - BUILD_SHARED_LIBS: OFF
+    - BUILD_SHARED_LIBS: ON
 
-branches:
-  only:
-    - master
-
+cache:
+  - "%MONO_SETUP%"
 install:
-  - git submodule update --init --recursive
-
+  - ps: |
+     if (-not (test-path "$ENV:MONO_SETUP")) {
+       Start-FileDownload "https://download.mono-project.com/archive/5.10.1/windows-installer/$ENV:MONO_SETUP";
+     }
+     msiexec /quiet /qn /norestart /i $ENV:MONO_SETUP
 before_build:
  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
  - mkdir "%APPVEYOR_BUILD_FOLDER%\Build"
@@ -25,6 +33,10 @@ after_build:
 test: off
 artifacts:
   path: Alimer-SDK.7z
+
+branches:
+  only:
+    - master
 
 skip_commits:
   files:

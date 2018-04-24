@@ -58,5 +58,38 @@ namespace Alimer
 			default: return DXGI_FORMAT_UNKNOWN;
 			}
 		}
+
+		static inline DXGI_FORMAT Convert(VertexFormat format)
+		{
+			switch (format)
+			{
+			case VertexFormat::Float:
+				return DXGI_FORMAT_R32_FLOAT;
+			case VertexFormat::Float2:
+				return DXGI_FORMAT_R32G32_FLOAT;
+			case VertexFormat::Float3:
+				return DXGI_FORMAT_R32G32B32_FLOAT;
+			case VertexFormat::Float4:
+				return DXGI_FORMAT_R32G32B32A32_FLOAT;
+			case VertexFormat::Byte4:
+				return DXGI_FORMAT_R8G8B8A8_SINT;
+			case VertexFormat::Byte4N:
+				return DXGI_FORMAT_R8G8B8A8_SNORM;
+			case VertexFormat::UByte4:
+				return DXGI_FORMAT_R8G8B8A8_UINT;
+			case VertexFormat::UByte4N:
+				return DXGI_FORMAT_R8G8B8A8_UNORM;
+			case VertexFormat::Short2:
+				return DXGI_FORMAT_R16G16_SINT;
+			case VertexFormat::Short2N:
+				return DXGI_FORMAT_R16G16_SNORM;
+			case VertexFormat::Short4:
+				return DXGI_FORMAT_R16G16B16A16_SINT;
+			case VertexFormat::Short4N:
+				return DXGI_FORMAT_R16G16B16A16_SNORM;
+			default:
+				return DXGI_FORMAT_UNKNOWN;
+			}
+		}
 	}
 }

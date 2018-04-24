@@ -653,9 +653,9 @@ namespace Alimer
 
 		// Instance vertex buffer contains texcoords 4-6 which define the instances' world matrices
 		_instanceVertexBuffer = std::make_unique<VertexBuffer>();
-		_instanceVertexElements.emplace_back(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD, true);
-		_instanceVertexElements.emplace_back(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD + 1, true);
-		_instanceVertexElements.emplace_back(ELEM_VECTOR4, SEM_TEXCOORD, INSTANCE_TEXCOORD + 2, true);
+		_instanceVertexElements.emplace_back(VertexFormat::Float4, VertexElementSemantic::TEXCOORD, INSTANCE_TEXCOORD);
+		_instanceVertexElements.emplace_back(VertexFormat::Float4, VertexElementSemantic::TEXCOORD, INSTANCE_TEXCOORD + 1);
+		_instanceVertexElements.emplace_back(VertexFormat::Float4, VertexElementSemantic::TEXCOORD, INSTANCE_TEXCOORD + 2);
 
 		// Setup ambient light only -pass
 		ambientLightPass.vsBits = 0;
@@ -915,7 +915,11 @@ namespace Alimer
 			}
 
 			_instanceVertexBuffer->SetData(0, static_cast<uint32_t>(_instanceTransforms.size()), _instanceTransforms.data());
-			graphics->SetVertexBuffer(1, _instanceVertexBuffer.get());
+			graphics->SetVertexBuffer(
+				1,
+				_instanceVertexBuffer.get(),
+				0,
+				VertexInputRate::Instance);
 			_instanceTransformsDirty = false;
 		}
 

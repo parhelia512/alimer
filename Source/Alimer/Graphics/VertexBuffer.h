@@ -50,16 +50,16 @@ namespace Alimer
 		/// Return vertex elements.
 		const std::vector<VertexElement>& GetElements() const { return _elements; }
 		/// Return vertex declaration hash code.
-		uint32_t GetElementHash() const { return _elementHash; }
+		uint64_t GetElementHash() const { return _elementHash; }
 
 		/// Compute the hash code of one vertex element by index and semantic.
-		static unsigned ElementHash(size_t index, ElementSemantic semantic) { return (semantic + 1) << (index * 3); }
+		static uint64_t ElementHash(uint32_t index, const char* semanticName);
 
 	private:
 		uint32_t _vertexCount{};
 		/// Vertex elements.
 		std::vector<VertexElement> _elements;
 		/// Vertex element hash code.
-		uint32_t _elementHash;
+		uint64_t _elementHash;
 	};
 }

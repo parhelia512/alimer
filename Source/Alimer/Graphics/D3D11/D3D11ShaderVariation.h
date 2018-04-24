@@ -50,11 +50,11 @@ namespace Alimer
 		/// Return full name combined from parent resource name and compilation defines.
 		std::string GetFullName() const;
 		/// Return shader stage.
-		ShaderStage GetStage() const { return stage; }
+		ShaderStage GetStage() const { return _stage; }
 		/// Return vertex element hash code for vertex shaders.
-		unsigned ElementHash() const { return elementHash; }
+		uint32_t GetElementHash() const { return _elementHash; }
 		/// Return whether compile attempted.
-		bool IsCompiled() const { return compiled; }
+		bool IsCompiled() const { return _compiled; }
 
 		/// Return the D3D11 shader byte blob. Null if not compiled yet or compile failed. Used internally and should not be called by portable application code.
 		void* BlobObject() const { return blob; }
@@ -65,7 +65,7 @@ namespace Alimer
 		/// Parent shader resource.
 		WeakPtr<Shader> parent;
 		/// Shader stage.
-		ShaderStage stage;
+		ShaderStage _stage;
 		/// Compilation defines.
 		std::string _defines;
 		/// D3D11 shader byte blob.
@@ -73,9 +73,9 @@ namespace Alimer
 		/// D3D11 shader.
 		void* shader = nullptr;
 		/// Vertex shader element hash code.
-		uint32_t elementHash{};
+		uint32_t _elementHash{};
 		/// Compile attempted flag.
-		bool compiled{};
+		bool _compiled{};
 	};
 
 }

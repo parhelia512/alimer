@@ -101,52 +101,52 @@ namespace Alimer
 			size_t vertexSize = 0;
 			if (elementMask & 1)
 			{
-				vbDesc.vertexElements.push_back(VertexElement(ELEM_VECTOR3, SEM_POSITION));
+				vbDesc.vertexElements.push_back(VertexElement(VertexFormat::Float3, VertexElementSemantic::POSITION));
 				vertexSize += sizeof(Vector3);
 			}
 			if (elementMask & 2)
 			{
-				vbDesc.vertexElements.push_back(VertexElement(ELEM_VECTOR3, SEM_NORMAL));
+				vbDesc.vertexElements.push_back(VertexElement(VertexFormat::Float3, VertexElementSemantic::NORMAL));
 				vertexSize += sizeof(Vector3);
 			}
 			if (elementMask & 4)
 			{
-				vbDesc.vertexElements.push_back(VertexElement(ELEM_UBYTE4, SEM_COLOR));
+				vbDesc.vertexElements.push_back(VertexElement(VertexFormat::UByte4, VertexElementSemantic::COLOR));
 				vertexSize += 4;
 			}
 			if (elementMask & 8)
 			{
-				vbDesc.vertexElements.push_back(VertexElement(ELEM_VECTOR2, SEM_TEXCOORD));
+				vbDesc.vertexElements.push_back(VertexElement(VertexFormat::Float2, VertexElementSemantic::TEXCOORD));
 				vertexSize += sizeof(Vector2);
 			}
 			if (elementMask & 16)
 			{
-				vbDesc.vertexElements.push_back(VertexElement(ELEM_VECTOR2, SEM_TEXCOORD, 1));
+				vbDesc.vertexElements.push_back(VertexElement(VertexFormat::Float2, VertexElementSemantic::TEXCOORD, 1));
 				vertexSize += sizeof(Vector2);
 			}
 			if (elementMask & 32)
 			{
-				vbDesc.vertexElements.push_back(VertexElement(ELEM_VECTOR3, SEM_TEXCOORD));
+				vbDesc.vertexElements.push_back(VertexElement(VertexFormat::Float3, VertexElementSemantic::TEXCOORD));
 				vertexSize += sizeof(Vector3);
 			}
 			if (elementMask & 64)
 			{
-				vbDesc.vertexElements.push_back(VertexElement(ELEM_VECTOR3, SEM_TEXCOORD, 1));
+				vbDesc.vertexElements.push_back(VertexElement(VertexFormat::Float3, VertexElementSemantic::TEXCOORD, 1));
 				vertexSize += sizeof(Vector3);
 			}
 			if (elementMask & 128)
 			{
-				vbDesc.vertexElements.push_back(VertexElement(ELEM_VECTOR4, SEM_TANGENT));
+				vbDesc.vertexElements.push_back(VertexElement(VertexFormat::Float4, VertexElementSemantic::TANGENT));
 				vertexSize += sizeof(Vector4);
 			}
 			if (elementMask & 256)
 			{
-				vbDesc.vertexElements.push_back(VertexElement(ELEM_VECTOR4, SEM_BLENDWEIGHT));
+				vbDesc.vertexElements.push_back(VertexElement(VertexFormat::Float4, VertexElementSemantic::BLENDWEIGHT));
 				vertexSize += sizeof(Vector4);
 			}
 			if (elementMask & 512)
 			{
-				vbDesc.vertexElements.push_back(VertexElement(ELEM_UBYTE4, SEM_BLENDINDICES));
+				vbDesc.vertexElements.push_back(VertexElement(VertexFormat::UByte4, VertexElementSemantic::BLENDINDICES));
 				vertexSize += 4;
 			}
 

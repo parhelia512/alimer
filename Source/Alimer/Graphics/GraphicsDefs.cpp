@@ -39,19 +39,6 @@ namespace Alimer
 		sizeof(Matrix4)
 	};
 
-	extern ALIMER_API const char* elementSemanticNames[] =
-	{
-		"POSITION",
-		"NORMAL",
-		"BINORMAL",
-		"TANGENT",
-		"TEXCOORD",
-		"COLOR",
-		"BLENDWEIGHT",
-		"BLENDINDICES",
-		nullptr
-	};
-
 	extern ALIMER_API const char* resourceUsageNames[] =
 	{
 		"default",
@@ -174,4 +161,29 @@ namespace Alimer
 		BlendModeDesc(true, BLEND_SRC_ALPHA, BLEND_ONE, BLEND_OP_REV_SUBTRACT, BLEND_SRC_ALPHA, BLEND_ONE, BLEND_OP_REV_SUBTRACT)
 	};
 
+	uint32_t GetVertexFormatSize(VertexFormat format)
+	{
+		switch (format)
+		{
+		case VertexFormat::Float:
+		case VertexFormat::Byte4:
+		case VertexFormat::Byte4N:
+		case VertexFormat::UByte4:
+		case VertexFormat::UByte4N:
+		case VertexFormat::Short2:
+		case VertexFormat::Short2N:
+			return 4;
+		case VertexFormat::Float2:
+		case VertexFormat::Short4:
+		case VertexFormat::Short4N:
+			return 8;
+		case VertexFormat::Float3:
+			return 12;
+		case VertexFormat::Float4:
+			return 16;
+
+		default:
+			return static_cast<uint32_t>(-1);
+		}
+	}
 }

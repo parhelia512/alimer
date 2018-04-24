@@ -124,7 +124,12 @@ namespace Alimer
 		/// Set the viewport rectangle. On window resize the viewport will automatically revert to the entire backbuffer.
 		virtual void SetViewport(const IntRect& viewport) = 0;
 		/// Bind a vertex buffer.
-		virtual void SetVertexBuffer(uint32_t index, VertexBuffer* buffer) = 0;
+		virtual void SetVertexBuffer(
+			uint32_t index,
+			VertexBuffer* buffer,
+			uint32_t vertexOffset = 0,
+			VertexInputRate stepRate = VertexInputRate::Vertex) = 0;
+
 		/// Bind an index buffer.
 		void SetIndexBuffer(IndexBuffer* buffer);
 		/// Bind a constant buffer.
@@ -188,8 +193,6 @@ namespace Alimer
 		Texture* GetDepthStencil() const { return _depthStencil; }
 		/// Return the current viewport rectangle.
 		const IntRect& Viewport() const { return viewport; }
-		/// Return currently bound vertex buffer by index.
-		VertexBuffer* GetVertexBuffer(size_t index) const;
 		
 		/// Return currently bound constant buffer by shader stage and index.
 		ConstantBuffer* GetConstantBuffer(ShaderStage stage, size_t index) const;
@@ -229,6 +232,7 @@ namespace Alimer
 		GraphicsImpl* impl = nullptr;
 
 	protected:
+		
 		GraphicsDeviceType _deviceType;
 		bool _validation{};
 		bool _initialized{};
@@ -238,7 +242,7 @@ namespace Alimer
 		/// Current size of the active rendertarget.
 		Size _renderTargetSize{ Size::Empty };
 		/// Bound vertex buffers.
-		VertexBuffer* vertexBuffers[MAX_VERTEX_STREAMS];
+		VertexBuffer* _vertexBuffers[MaxVertexBuffers];
 		
 		/// Bound constant buffers by shader stage.
 		ConstantBuffer* constantBuffers[MAX_SHADER_STAGES][MAX_CONSTANT_BUFFERS];

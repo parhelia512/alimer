@@ -161,19 +161,12 @@ namespace Alimer
 		}
 
 		reflection->GetDesc(&shaderDesc);
-		for (size_t i = 0; i < shaderDesc.InputParameters; ++i)
+		for (UINT i = 0; i < shaderDesc.InputParameters; ++i)
 		{
 			D3D11_SIGNATURE_PARAMETER_DESC paramDesc;
-			reflection->GetInputParameterDesc((unsigned)i, &paramDesc);
+			reflection->GetInputParameterDesc(i, &paramDesc);
 
-			for (size_t j = 0; elementSemanticNames[j]; ++j)
-			{
-				if (!str::Compare(paramDesc.SemanticName, elementSemanticNames[j]))
-				{
-					elementHash |= VertexBuffer::ElementHash(i, (ElementSemantic)j);
-					break;
-				}
-			}
+			elementHash |= VertexBuffer::ElementHash(i, paramDesc.SemanticName);
 		}
 
 		return elementHash;
@@ -181,7 +174,7 @@ namespace Alimer
 
 	ShaderVariation::ShaderVariation(Shader* parent_, const std::string& defines)
 		: parent(parent_)
-		, stage(parent->Stage())
+		, _stage(parent->Stage())
 		, _defines(defines)
 	{
 	}
@@ -205,7 +198,7 @@ namespace Alimer
 
 		if (shader)
 		{
-			if (stage == SHADER_VS)
+			if (_stage == SHADER_VS)
 			{
 				ID3D11VertexShader* d3dShader = (ID3D11VertexShader*)shader;
 				d3dShader->Release();
@@ -218,19 +211,19 @@ namespace Alimer
 			shader = nullptr;
 		}
 
-		elementHash = 0;
-		compiled = false;
+		_elementHash = 0;
+		_compiled = false;
 	}
 
 	bool ShaderVariation::Compile()
 	{
-		if (compiled)
+		if (_compiled)
 			return shader != nullptr;
 
 		ALIMER_PROFILE(CompileShaderVariation);
 
 		// Do not retry without a Release() inbetween
-		compiled = true;
+		_compiled = true;
 
 		if (!graphics || !graphics->IsInitialized())
 		{
@@ -280,7 +273,7 @@ namespace Alimer
 			macros.data(),
 			0,
 			"main",
-			stage == SHADER_VS ? "vs_4_0" : "ps_4_0", flags, 0, (ID3DBlob**)&blob, &errorBlob)))
+			_stage == SHADER_VS ? "vs_4_0" : "ps_4_0", flags, 0, (ID3DBlob**)&blob, &errorBlob)))
 		{
 			if (errorBlob)
 			{
@@ -310,13 +303,15 @@ namespace Alimer
 		}
 #endif
 
-		if (stage == SHADER_VS)
+		if (_stage == SHADER_VS)
 		{
-			elementHash = InspectInputSignature(d3dBlob);
+			_elementHash = InspectInputSignature(d3dBlob);
 			d3dDevice->CreateVertexShader(d3dBlob->GetBufferPointer(), d3dBlob->GetBufferSize(), 0, (ID3D11VertexShader**)&shader);
 		}
 		else
+		{
 			d3dDevice->CreatePixelShader(d3dBlob->GetBufferPointer(), d3dBlob->GetBufferSize(), 0, (ID3D11PixelShader**)&shader);
+		}
 
 		if (!shader)
 		{

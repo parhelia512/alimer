@@ -57,14 +57,14 @@ public:
 		};
 
 		std::vector<VertexElement> vertexDeclaration;
-		vertexDeclaration.push_back(VertexElement(ELEM_VECTOR3, SEM_POSITION));
-		vertexDeclaration.push_back(VertexElement(ELEM_VECTOR2, SEM_TEXCOORD));
+		vertexDeclaration.emplace_back(VertexFormat::Float3, VertexElementSemantic::POSITION);
+		vertexDeclaration.emplace_back(VertexFormat::Float2, VertexElementSemantic::TEXCOORD);
 
 		_vertexBuffer = std::make_unique<VertexBuffer>();
 		_vertexBuffer->Define(ResourceUsage::Immutable, 3, vertexDeclaration, true, vertexData);
 
 		std::vector<VertexElement> instanceVertexDeclaration;
-		instanceVertexDeclaration.push_back(VertexElement(ELEM_VECTOR3, SEM_TEXCOORD, 1, true));
+		instanceVertexDeclaration.emplace_back(VertexFormat::Float3, VertexElementSemantic::TEXCOORD, 1);
 		_instanceVertexBuffer = std::make_unique<VertexBuffer>();
 		_instanceVertexBuffer->Define(ResourceUsage::Dynamic, ObjectsCount, instanceVertexDeclaration, true);
 
@@ -189,7 +189,7 @@ public:
 		auto graphics = GetGraphics();
 		graphics->Clear(ClearFlags::Color | ClearFlags::Depth, Color(0.0f, 0.0f, 0.5f));
 		graphics->SetVertexBuffer(0, _vertexBuffer.get());
-		graphics->SetVertexBuffer(1, _instanceVertexBuffer.get());
+		graphics->SetVertexBuffer(1, _instanceVertexBuffer.get(), 0, VertexInputRate::Instance);
 		graphics->SetIndexBuffer(_indexBuffer.get());
 		graphics->SetConstantBuffer(SHADER_PS, 0, _constantBuffer.get());
 		graphics->SetShaders(vertexVariation, fragmentVariation);

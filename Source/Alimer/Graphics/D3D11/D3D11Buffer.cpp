@@ -26,6 +26,7 @@
 #include "D3D11Buffer.h"
 #include "D3D11Graphics.h"
 #include "D3D11Convert.h"
+#include "../VertexBuffer.h"
 
 namespace Alimer
 {
@@ -73,10 +74,13 @@ namespace Alimer
 		if (_graphics && _graphics->GetIndexBuffer() == this)
 			_graphics->SetIndexBuffer(nullptr);
 
-		for (size_t i = 0; i < MAX_VERTEX_STREAMS; ++i)
+		for (uint32_t i = 0; i < MaxVertexBuffers; ++i)
 		{
-			//if (_graphics->GetVertexBuffer(i) == this)
-			//	_graphics->SetVertexBuffer(i, 0);
+			auto boundVbo = _graphics->GetVertexBuffer(i);
+			if (boundVbo && boundVbo->GetHandle() == this)
+			{
+				_graphics->SetVertexBuffer(i, nullptr, 0, VertexInputRate::Vertex);
+			}
 		}
 	}
 

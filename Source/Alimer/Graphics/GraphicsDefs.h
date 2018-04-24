@@ -30,8 +30,10 @@
 
 namespace Alimer
 {
+	/// Maximum vertex attributes.
+	static constexpr uint32_t MaxVertexAttributes = 16u;
 	/// Maximum simultaneous vertex buffers.
-	static const uint32_t MAX_VERTEX_STREAMS = 4;
+	static constexpr uint32_t MaxVertexBuffers = 4;
 	/// Maximum simultaneous constant buffers.
 	static const uint32_t MAX_CONSTANT_BUFFERS = 15;
 	/// Maximum number of textures in use at once.
@@ -102,18 +104,42 @@ namespace Alimer
 		MAX_ELEMENT_TYPES
 	};
 
-	/// Element semantics for vertex elements.
-	enum ElementSemantic
+	/// Format for VertexElement
+	enum class VertexFormat : uint8_t
 	{
-		SEM_POSITION = 0,
-		SEM_NORMAL,
-		SEM_BINORMAL,
-		SEM_TANGENT,
-		SEM_TEXCOORD,
-		SEM_COLOR,
-		SEM_BLENDWEIGHT,
-		SEM_BLENDINDICES,
-		MAX_ELEMENT_SEMANTICS
+		Float,
+		Float2,
+		Float3,
+		Float4,
+		Byte4,
+		Byte4N,
+		UByte4,
+		UByte4N,
+		Short2,
+		Short2N,
+		Short4,
+		Short4N,
+		Count
+	};
+
+	enum class VertexInputRate : uint8_t
+	{
+		Vertex,
+		Instance
+	};
+
+	/// Element semantics for vertex elements.
+	class ALIMER_API VertexElementSemantic
+	{
+	public:
+		static constexpr const char* POSITION = "POSITION";
+		static constexpr const char* NORMAL = "NORMAL";
+		static constexpr const char* BINORMAL = "BINORMAL";
+		static constexpr const char* TANGENT = "TANGENT";
+		static constexpr const char* TEXCOORD = "TEXCOORD";
+		static constexpr const char* COLOR = "COLOR";
+		static constexpr const char* BLENDWEIGHT = "BLENDWEIGHT";
+		static constexpr const char* BLENDINDICES = "BLENDINDICES";
 	};
 
 	/// Primitive types.
@@ -270,37 +296,35 @@ namespace Alimer
 	struct ALIMER_API VertexElement
 	{
 		/// Default-construct.
-		VertexElement() :
-			type(ELEM_VECTOR3),
-			semantic(SEM_POSITION),
-			index(0),
-			perInstance(false)
+		VertexElement()
+			: semanticName(VertexElementSemantic::POSITION)
+			, semanticIndex(0)
+			, format(VertexFormat::Float3)
+			, offset(0)
 		{
 		}
 
 		/// Construct with type, semantic, index and whether is per-instance data.
 		VertexElement(
-			ElementType type_, 
-			ElementSemantic semantic_, 
-			uint32_t index_ = 0,
-			bool perInstance_ = false) 
-			: type(type_)
-			, semantic(semantic_)
-			, index(index_)
-			, perInstance(perInstance_)
+			VertexFormat format_,
+			const char* semanticName_,
+			uint32_t semanticIndex_ = 0,
+			uint32_t offset_ = 0)
+			: format(format_)
+			, semanticName(semanticName_)
+			, semanticIndex(semanticIndex_)
+			, offset(offset_)
 		{
 		}
 
-		/// Data type of element.
-		ElementType type;
 		/// Semantic of element.
-		ElementSemantic semantic;
+		const char* semanticName;
 		/// Semantic index of element, for example multi-texcoords.
-		uint32_t index;
-		/// Per-instance flag.
-		bool perInstance;
-		/// Offset of element from vertex start. Filled by VertexBuffer.
-		uint32_t offset = 0;
+		uint32_t semanticIndex;
+		/// Format of element.
+		VertexFormat format;
+		/// Offset of element from vertex start.
+		uint32_t offset;
 	};
 
 	/// Description of a shader constant.
@@ -501,14 +525,14 @@ namespace Alimer
 		StencilTestDesc stencilTest;
 	};
 
+	ALIMER_API uint32_t GetVertexFormatSize(VertexFormat format);
+
 	/// Vertex element sizes by element type.
 	extern ALIMER_API const uint32_t elementSizes[];
 	/// Resource usage names.
 	extern ALIMER_API const char* resourceUsageNames[];
 	/// Element type names.
 	extern ALIMER_API const char* elementTypeNames[];
-	/// Vertex element semantic names.
-	extern ALIMER_API const char* elementSemanticNames[];
 	/// Blend factor names.
 	extern ALIMER_API const char* blendFactorNames[];
 	/// Blend operation names.

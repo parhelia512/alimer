@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 //
 
+#include "../Base/HashMap.h"
 #include "../Debug/Log.h"
 #include "../Debug/Profiler.h"
 #include "VertexBuffer.h"
@@ -80,15 +81,6 @@ namespace Alimer
 			return false;
 		}
 
-		for (size_t i = 0; i < numElements; ++i)
-		{
-			if (elements[i].type >= ELEM_MATRIX3X4)
-			{
-				ALIMER_LOGERROR("Matrix elements are not supported in vertex buffers");
-				return false;
-			}
-		}
-
 		Release();
 		_vertexCount = vertexCount;
 		_resourceUsage = usage;
@@ -97,12 +89,28 @@ namespace Alimer
 		_stride = 0;
 		_elementHash = 0;
 		_elements.resize(numElements);
+
+		// Check if we need to auto offset.
+		bool useAutoOffset = true;
+		for (uint32_t i = 0; i < numElements; ++i)
+		{
+			if (elements[i].offset != 0)
+			{
+				useAutoOffset = false;
+				break;
+			}
+		}
+
+		uint32_t autoOffset = 0;
 		for (uint32_t i = 0; i < numElements; ++i)
 		{
 			_elements[i] = elements[i];
-			_elements[i].offset = _stride;
-			_stride += elementSizes[elements[i].type];
-			_elementHash |= ElementHash(i, elements[i].semantic);
+			autoOffset = _stride;
+			if (useAutoOffset)
+				_elements[i].offset = _stride;
+
+			_stride += GetVertexFormatSize(elements[i].format);
+			_elementHash |= ElementHash(i, elements[i].semanticName);
 		}
 
 		_size = _stride * _vertexCount;
@@ -138,5 +146,14 @@ namespace Alimer
 			firstVertex * _stride, 
 			vertexCount * _stride, 
 			data);
+	}
+
+	uint64_t VertexBuffer::ElementHash(uint32_t index, const char* semanticName)
+	{
+		Hasher h;
+		h.UInt32(index);
+		h.String(semanticName);
+		uint64_t hash = h.GetValue();
+		return hash;
 	}
 }

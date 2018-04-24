@@ -47,16 +47,7 @@ namespace Alimer
 	static_assert(static_cast<uint32_t>(ResourceUsage::Immutable) == D3D11_USAGE_IMMUTABLE, "D3D11: Wrong ResourceUsage map");
 	static_assert(static_cast<uint32_t>(ResourceUsage::Dynamic) == D3D11_USAGE_DYNAMIC, "D3D11: Wrong ResourceUsage map");
 
-	static const DXGI_FORMAT d3dElementFormats[] = {
-		DXGI_FORMAT_R32_SINT,
-		DXGI_FORMAT_R32_FLOAT,
-		DXGI_FORMAT_R32G32_FLOAT,
-		DXGI_FORMAT_R32G32B32_FLOAT,
-		DXGI_FORMAT_R32G32B32A32_FLOAT,
-		DXGI_FORMAT_R8G8B8A8_UINT,
-		DXGI_FORMAT_R32G32B32A32_FLOAT, // Incorrect, but included to not cause out-of-range indexing
-		DXGI_FORMAT_R32G32B32A32_FLOAT  //                          --||--
-	};
+	
 
 #if ALIMER_PLATFORM_WINDOWS && !ALIMER_PLATFORM_UWP
 	typedef HRESULT(WINAPI* PFN_CREATE_DXGI_FACTORY)(REFIID riid, _COM_Outptr_ void **ppFactory);
@@ -415,20 +406,48 @@ namespace Alimer
 		_d3dContext->RSSetViewports(1, &d3dViewport);
 	}
 
-	void D3D11Graphics::SetVertexBuffer(uint32_t index, VertexBuffer* buffer)
+	void D3D11Graphics::SetVertexBuffer(
+		uint32_t index,
+		VertexBuffer* buffer,
+		uint32_t vertexOffset,
+		VertexInputRate stepRate)
 	{
-		if (index < MAX_VERTEX_STREAMS
-			&& buffer != vertexBuffers[index])
+		if (index >= MaxVertexBuffers)
 		{
-			vertexBuffers[index] = buffer;
-			ID3D11Buffer* d3dBuffer = buffer ? static_cast<D3D11Buffer*>(buffer->GetHandle())->GetD3DBuffer() : nullptr;
-			UINT stride = buffer ? buffer->GetStride() : 0;
+			ALIMER_LOGERROR("SetVertexBuffer index out of bound");
+			return;
+		}
+
+		
+		if (_vbo.buffers[index] != buffer
+			|| _vbo.vertexOffsets[index] != vertexOffset
+			|| _vbo.rates[index] != stepRate)
+		{
+			_vbo.buffers[index] = buffer;
+
+			ID3D11Buffer* d3dBuffer = nullptr;
 			UINT offset = 0;
+			if (buffer)
+			{
+				_vbo.vertexOffsets[index] = vertexOffset;
+				_vbo.strides[index] = buffer->GetStride();
+				_vbo.rates[index] = stepRate;
+
+				offset = vertexOffset * buffer->GetStride();
+				d3dBuffer = static_cast<D3D11Buffer*>(buffer->GetHandle())->GetD3DBuffer();
+			}
+			else
+			{
+				_vbo.vertexOffsets[index] = 0;
+				_vbo.strides[index] = 0;
+				_vbo.rates[index] = VertexInputRate::Vertex;
+			}
+
 			_d3dContext->IASetVertexBuffers(
 				index,
 				1,
 				&d3dBuffer,
-				&stride,
+				&_vbo.strides[index],
 				&offset);
 
 			_inputLayoutDirty = true;
@@ -620,8 +639,10 @@ namespace Alimer
 
 	void Graphics::ResetVertexBuffers()
 	{
-		for (uint32_t i = 0; i < MAX_VERTEX_STREAMS; ++i)
+		for (uint32_t i = 0; i < MaxVertexBuffers; ++i)
+		{
 			SetVertexBuffer(i, nullptr);
+		}
 	}
 
 	void Graphics::ResetConstantBuffers()
@@ -718,11 +739,6 @@ namespace Alimer
 	Texture* Graphics::GetRenderTarget(size_t index) const
 	{
 		return index < MAX_RENDERTARGETS ? _renderTargets[index] : nullptr;
-	}
-
-	VertexBuffer* Graphics::GetVertexBuffer(size_t index) const
-	{
-		return index < MAX_VERTEX_STREAMS ? vertexBuffers[index] : nullptr;
 	}
 
 	ConstantBuffer* Graphics::GetConstantBuffer(ShaderStage stage, size_t index) const
@@ -991,12 +1007,12 @@ namespace Alimer
 
 			InputLayoutDesc newInputLayout;
 			newInputLayout.first = 0;
-			newInputLayout.second = vertexShader->ElementHash();
-			for (size_t i = 0; i < MAX_VERTEX_STREAMS; ++i)
+			newInputLayout.second = vertexShader->GetElementHash();
+			for (uint32_t i = 0; i < MaxVertexBuffers; ++i)
 			{
-				if (vertexBuffers[i])
+				if (_vbo.buffers[i])
 				{
-					newInputLayout.first |= (uint64_t)vertexBuffers[i]->GetElementHash() << (i * 16);
+					newInputLayout.first |= _vbo.buffers[i]->GetElementHash() << (i * 16);
 				}
 			}
 
@@ -1012,27 +1028,31 @@ namespace Alimer
 				else
 				{
 					// Not found, create new
-					std::vector<D3D11_INPUT_ELEMENT_DESC> elementDescs;
+					D3D11_INPUT_ELEMENT_DESC d3dElementDescs[MaxVertexAttributes];
+					memset(d3dElementDescs, 0, sizeof(d3dElementDescs));
 
-					for (uint32_t i = 0; i < MAX_VERTEX_STREAMS; ++i)
+					UINT attributeCount = 0;
+					VertexInputRate inputRate = VertexInputRate::Vertex;
+					for (uint32_t i = 0; i < MaxVertexBuffers; ++i)
 					{
-						if (vertexBuffers[i])
+						if (_vbo.buffers[i])
 						{
-							const std::vector<VertexElement>& elements = vertexBuffers[i]->GetElements();
+							const std::vector<VertexElement>& elements = _vbo.buffers[i]->GetElements();
+							inputRate = _vbo.rates[i];
 
 							for (const VertexElement& element : elements)
 							{
-								D3D11_INPUT_ELEMENT_DESC newDesc;
-								newDesc.SemanticName = elementSemanticNames[element.semantic];
-								newDesc.SemanticIndex = element.index;
-								newDesc.Format = (element.semantic == SEM_COLOR && element.type == ELEM_UBYTE4) ?
-									DXGI_FORMAT_R8G8B8A8_UNORM : d3dElementFormats[element.type];
-								newDesc.InputSlot = (unsigned)i;
-								newDesc.AlignedByteOffset = element.offset;
-								newDesc.InputSlotClass = element.perInstance ? D3D11_INPUT_PER_INSTANCE_DATA :
-									D3D11_INPUT_PER_VERTEX_DATA;
-								newDesc.InstanceDataStepRate = element.perInstance ? 1 : 0;
-								elementDescs.push_back(newDesc);
+								D3D11_INPUT_ELEMENT_DESC* d3d11ElementDesc = &d3dElementDescs[attributeCount++];
+								d3d11ElementDesc->SemanticName = element.semanticName;
+								d3d11ElementDesc->SemanticIndex = element.semanticIndex;
+								d3d11ElementDesc->Format = d3d11::Convert(element.format);
+								d3d11ElementDesc->InputSlot = i;
+								d3d11ElementDesc->AlignedByteOffset = element.offset;
+								if (inputRate == VertexInputRate::Instance)
+								{
+									d3d11ElementDesc->InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
+									d3d11ElementDesc->InstanceDataStepRate = 1;
+								}
 							}
 						}
 					}
@@ -1040,8 +1060,8 @@ namespace Alimer
 					ID3DBlob* d3dBlob = (ID3DBlob*)vertexShader->BlobObject();
 					ID3D11InputLayout* d3dInputLayout = nullptr;
 					hr = _d3dDevice->CreateInputLayout(
-						elementDescs.data(),
-						static_cast<UINT>(elementDescs.size()),
+						d3dElementDescs,
+						attributeCount,
 						d3dBlob->GetBufferPointer(),
 						d3dBlob->GetBufferSize(), &d3dInputLayout);
 
@@ -1238,8 +1258,13 @@ namespace Alimer
 
 	void D3D11Graphics::ResetState()
 	{
-		for (size_t i = 0; i < MAX_VERTEX_STREAMS; ++i)
-			vertexBuffers[i] = nullptr;
+		for (uint32_t i = 0; i < MaxVertexBuffers; ++i)
+		{
+			_vbo.buffers[i] = nullptr;
+			_vbo.vertexOffsets[i] = 0;
+			_vbo.strides[i] = 0;
+			_vbo.rates[i] = VertexInputRate::Vertex;
+		}
 
 		for (size_t i = 0; i < MAX_SHADER_STAGES; ++i)
 		{
