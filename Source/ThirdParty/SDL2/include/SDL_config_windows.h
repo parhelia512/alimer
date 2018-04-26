@@ -180,10 +180,10 @@ typedef unsigned int uintptr_t;
 
 /* Enable various audio drivers */
 #define SDL_AUDIO_DRIVER_WASAPI 1
-#define SDL_AUDIO_DRIVER_DSOUND 0
-#define SDL_AUDIO_DRIVER_WINMM  0
+#define SDL_AUDIO_DRIVER_DSOUND 1
+#define SDL_AUDIO_DRIVER_WINMM  1
 #define SDL_AUDIO_DRIVER_DISK   1
-#define SDL_AUDIO_DRIVER_DUMMY  0
+#define SDL_AUDIO_DRIVER_DUMMY  1
 
 /* Enable various input drivers */
 #define SDL_JOYSTICK_DINPUT 1
@@ -201,7 +201,7 @@ typedef unsigned int uintptr_t;
 #define SDL_TIMER_WINDOWS   1
 
 /* Enable various video drivers */
-#define SDL_VIDEO_DRIVER_DUMMY		0
+#define SDL_VIDEO_DRIVER_DUMMY  1
 #define SDL_VIDEO_DRIVER_WINDOWS    1
 
 #ifndef SDL_VIDEO_RENDER_D3D

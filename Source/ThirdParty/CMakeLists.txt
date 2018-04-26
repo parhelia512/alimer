@@ -22,8 +22,23 @@
 #
 
 if (ALIMER_SDL)
-	add_subdirectory (SDL2)
-	set_target_properties(SDL PROPERTIES FOLDER ThirdParty)
+	# Setup SDL2.
+	set (SDL_SHARED OFF)
+	set (SDL_STATIC ON)
+
+	if( PLATFORM_WINDOWS )
+		# set (FORCE_STATIC_VCRT ON)
+	endif ()
+
+	add_subdirectory (SDL2 EXCLUDE_FROM_ALL)
+
+	if (SDL_SHARED)
+		set_target_properties(SDL2 PROPERTIES FOLDER ThirdParty)
+	endif ()
+
+	if (SDL_STATIC)
+		set_target_properties(SDL2-static PROPERTIES FOLDER ThirdParty)
+	endif()
 endif()
 
 # Add targets

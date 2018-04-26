@@ -46,10 +46,6 @@ if (APPLE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 endif ()
 
-set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set (CMAKE_INCLUDE_CURRENT_DIR ON)
-set (CMAKE_POSITION_INDEPENDENT_CODE ON)
-
 # Enable the creation of folders for Visual Studio projects
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 

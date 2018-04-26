@@ -99,7 +99,7 @@ if( PLATFORM_WINDOWS OR PLATFORM_UWP )
 
 	# Disable specific link libraries
 	if( PLATFORM_WINDOWS )
-		add_linker_flags(/NODEFAULTLIB:"MSVCRT.lib")
+		# add_linker_flags(/NODEFAULTLIB:"MSVCRT.lib")
 	endif()
 
 	# Use security checks only in debug

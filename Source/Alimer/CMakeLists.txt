@@ -78,7 +78,13 @@ group_sources()
 
 set (THIRD_PARTY_DEPENDENCIES)
 if (ALIMER_SDL)
-	list(APPEND THIRD_PARTY_DEPENDENCIES SDL)
+	if (SDL_SHARED)
+		list(APPEND THIRD_PARTY_DEPENDENCIES SDL2)
+	endif ()
+
+	if (SDL_STATIC)
+		list(APPEND THIRD_PARTY_DEPENDENCIES SDL2-static)
+	endif()
 endif()
 
 foreach (dep ${THIRD_PARTY_DEPENDENCIES})
@@ -105,7 +111,14 @@ target_include_directories(Alimer PRIVATE
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty>
 )
 
+if (ALIMER_SDL)
+	target_include_directories(Alimer PRIVATE
+		$<BUILD_INTERFACE:${ALIMER_THIRD_PARTY_DIR}/SDL2/include>
+	)
+endif ()
+
 if (BUILD_SHARED_LIBS OR EMSCRIPTEN)
+	set_property(TARGET Alimer PROPERTY POSITION_INDEPENDENT_CODE ON)
 	target_compile_definitions (Alimer PUBLIC -DALIMER_SHARED)
 	target_compile_definitions (Alimer PRIVATE -DALIMER_EXPORTS)
 endif ()
@@ -139,7 +152,8 @@ endforeach()
 
 # Add OS-specific library dependencies
 if (WIN32)
-	target_link_libraries (Alimer winmm user32 gdi32 winmm imm32 ole32 oleaut32 version uuid)
+	target_compile_definitions (Alimer PRIVATE -D_UNICODE)
+	target_link_libraries (Alimer winmm user32 gdi32 imm32 ole32 oleaut32 version uuid)
 else ()
 	target_link_libraries (Alimer pthread)
 endif ()
