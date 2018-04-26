@@ -58,29 +58,29 @@ namespace Alimer
 		/// Parent block.
 		ProfilerBlock* parent;
 		/// Child blocks.
-		std::vector<UniquePtr<ProfilerBlock>> _children;
+		std::vector<ProfilerBlock*> _children;
 		/// Current frame's accumulated time.
-		long long time;
+		uint64_t _time{};
 		/// Current frame's longest call.
-		long long maxTime;
+		uint64_t _maxTime{};
 		/// Current frame's call count.
 		unsigned count;
 		/// Previous frame's accumulated time.
-		long long frameTime;
+		uint64_t _frameTime;
 		/// Previous frame's longest call.
-		long long frameMaxTime;
+		uint64_t _frameMaxTime;
 		/// Previous frame's call count.
 		unsigned frameCount;
 		/// Current interval's accumulated time.
 		long long intervalTime;
 		/// Current interval's longest call.
-		long long intervalMaxTime;
+		uint64_t _intervalMaxTime{};
 		/// Current interval's call count.
 		unsigned intervalCount;
 		/// Accumulated time since start.
-		long long totalTime;
+		uint64_t _totalTime{};
 		/// Longest call since start.
-		long long totalMaxTime;
+		uint64_t _totalMaxTime{};
 		/// Call count since start.
 		unsigned totalCount;
 	};
@@ -110,22 +110,22 @@ namespace Alimer
 		/// Output results into a string.
 		std::string OutputResults(bool showUnused = false, bool showTotal = false, size_t maxDepth = M_MAX_UNSIGNED) const;
 		/// Return the current profiling block.
-		const ProfilerBlock* CurrentBlock() const { return current; }
+		const ProfilerBlock* GetCurrentBlock() const { return _current; }
 		/// Return the root profiling block.
-		const ProfilerBlock* GetRootBlock() const { return _root.get(); }
+		const ProfilerBlock* GetRootBlock() const { return _root; }
 
 	private:
 		/// Output results recursively.
 		void OutputResults(ProfilerBlock* block, std::string& output, size_t depth, size_t maxDepth, bool showUnused, bool showTotal) const;
 
 		/// Current profiling block.
-		ProfilerBlock* current;
+		ProfilerBlock* _current;
 		/// Root profiling block.
-		std::unique_ptr<ProfilerBlock> _root;
+		ProfilerBlock* _root;
 		/// Frames in the current interval.
-		size_t intervalFrames;
+		uint32_t _intervalFrames{};
 		/// Total frames since start.
-		size_t totalFrames;
+		uint32_t _totalFrames{};
 
 		/// Profiler thread.
 		std::thread::id _threadId{};

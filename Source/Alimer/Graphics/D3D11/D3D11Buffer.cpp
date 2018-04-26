@@ -1,5 +1,4 @@
 //
-// Alimer is based on the Turso3D codebase.
 // Copyright (c) 2018 Amer Koleci and contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy

@@ -69,42 +69,6 @@ set (ALIMER_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set (ALIMER_SDK_SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Source/Alimer)
 set (ALIMER_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/ThirdParty)
 
-# Compiler-specific setup
-if (MSVC)
-	if (ALIMER_STATIC_RUNTIME)
-		set (RELEASE_RUNTIME /MT)
-		set (DEBUG_RUNTIME /MTd)
-	else ()
-		set (RELEASE_RUNTIME "")
-		set (DEBUG_RUNTIME "")
-	endif ()
-	add_definitions (-D_CRT_SECURE_NO_WARNINGS)
-	# Enable parallel builds
-	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
-	set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${DEBUG_RUNTIME}")
-	set (CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELEASE} ${RELEASE_RUNTIME} /fp:fast /Zi /GS-")
-	set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
-
-	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
-	set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${DEBUG_RUNTIME} /W4")
-	set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} ${RELEASE_RUNTIME} /W4 /fp:fast /Zi /GS- ")
-	set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
-
-	set (CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /OPT:REF /OPT:ICF /DEBUG")
-	set (CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /OPT:REF /OPT:ICF")
-elseif (NOT XCODE)
-	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffast-math")
-	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-invalid-offsetof -ffast-math")
-	if (WIN32)
-		set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc -static")
-		set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libstdc++ -static-libgcc -static")
-		set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g -DNDEBUG")
-		set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g -DNDEBUG")
-		set (CMAKE_C_FLAGS_RELEASE "-O2 -DNDEBUG")
-		set (CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
-	endif ()
-endif ()
-
 # Source
 add_subdirectory (Source)
 
@@ -143,12 +107,6 @@ endif ()
 # Print current build configuration
 message(STATUS "Alimer Configuration:")
 message(STATUS "  Platform        ${PLATFORM_NAME}")
-
-if (ALIMER_STATIC_RUNTIME)
-	message(STATUS "  Runtime         STATIC")
-else ()
-	message(STATUS "  Runtime         SHARED")
-endif ()
 
 message(STATUS "  Library         ${ALIMER_LIBRARY_TYPE}")
 message(STATUS "  SIMD            ${ALIMER_SIMD}")

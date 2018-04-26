@@ -1,5 +1,4 @@
 #
-# Alimer is based on the Turso3D codebase.
 # Copyright (c) 2018 Amer Koleci and contributors.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,12 +20,12 @@
 # THE SOFTWARE.
 #
 
-if (ALIMER_SDL)
-	add_subdirectory (SDL2)
-	set_target_properties(SDL PROPERTIES FOLDER ThirdParty)
-endif()
+# Define source files
+file (GLOB SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.h ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+source_group ("" FILES ${SOURCE_FILES})
 
-# Add targets
-foreach (TARGET STB SPIRV-Cross)
-	add_subdirectory (${TARGET})
-endforeach ()
+add_library (libAlimerSharp SHARED ${SOURCE_FILES})
+target_link_libraries (libAlimerSharp Alimer)
+
+# Set Solution folder
+set_target_properties(libAlimerSharp PROPERTIES FOLDER Managed)

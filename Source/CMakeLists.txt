@@ -1,5 +1,4 @@
 #
-# Alimer is based on the Turso3D codebase.
 # Copyright (c) 2018 Amer Koleci and contributors.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,6 +25,10 @@ add_subdirectory(ThirdParty)
 
 # Engine
 add_subdirectory (Alimer)
+
+if (NOT CMAKE_CROSS_COMPILING AND ALIMER_CSHARP)
+	add_subdirectory (Managed)
+endif ()
 
 if (NOT CMAKE_CROSS_COMPILING AND ALIMER_TOOLS)
     add_subdirectory (Tools)

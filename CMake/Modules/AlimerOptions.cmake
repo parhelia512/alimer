@@ -154,7 +154,7 @@ endif ()
 
 set (ALIMER_TOOLS_DEFAULT ${ALIMER_DEVELOPER})
 
-cmake_dependent_option (ALIMER_STATIC_RUNTIME "Use static C/C++ runtime library with MSVC" FALSE "MSVC" FALSE)
+set (ALIMER_AVX OFF CACHE BOOL "Enable AVX instructions set support.")
 
 option (ALIMER_SDL "USE SDL2" ${ALIMER_SDL_DEFAULT})
 option (ALIMER_LOGGING "Enable logging" ${ALIMER_LOGGING_DEFAULT})
@@ -173,3 +173,13 @@ if (ANDROID OR WEB OR IOS)
 else ()
     option(ALIMER_TOOLS "Tools enabled" ${ALIMER_TOOLS_DEFAULT})
 endif ()
+
+# Unset any default config variables so they do not pollute namespace
+get_cmake_property(__cmake_variables VARIABLES)
+foreach (var ${__cmake_variables})
+    if ("${var}" MATCHES "^ALIMER_.*_DEFAULT")
+        if (${${var}})
+            set(${var})
+        endif ()
+    endif ()
+endforeach()

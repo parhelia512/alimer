@@ -21,8 +21,6 @@
 # THE SOFTWARE.
 #
 
-set (TARGET_NAME Alimer)
-
 macro (define_engine_source_files)
 	cmake_parse_arguments(DEFINE_SRC_FILES "NORECURSE" "" "" ${ARGN} )
 	if (DEFINE_SRC_FILES_NORECURSE)
@@ -50,35 +48,37 @@ endmacro()
 configure_file (AlimerConfig.h.in ${CMAKE_CURRENT_SOURCE_DIR}/AlimerConfig.h)
 
 # Add source files from subdirectories
-define_engine_source_files(NORECURSE . Graphics)
-define_engine_source_files (Base Debug IO Math Object Renderer Resource Scene Window Application)
-define_engine_source_files (nlohmann)
+define_engine_source_files(Base Debug IO Math Object Renderer Resource Scene)
+define_engine_source_files(NORECURSE . Window Application Graphics)
+define_engine_source_files(nlohmann)
 
 if (ALIMER_SDL)
-	define_engine_source_files (Application/SDL2)
-	define_engine_source_files  (Window/SDL2)
+	define_engine_source_files(Application/SDL2)
+	define_engine_source_files(Window/SDL2)
 endif ()
 
 if (ALIMER_D3D11)
-	define_engine_source_files  (Graphics/D3D11)
+	define_engine_source_files(Graphics/D3D11)
 endif ()
 
 if (ALIMER_OPENGL)
-	define_engine_source_files  (Graphics/GL)
+	define_engine_source_files(Graphics/GL)
 endif ()
 
 if (PLATFORM_WINDOWS)
-	define_engine_source_files  (Application/Windows)
-	define_engine_source_files  (IO/Windows)
-	define_engine_source_files  (Window/Win32)
+	define_engine_source_files(Application/Windows)
+	define_engine_source_files(IO/Windows)
+	define_engine_source_files(Window/Win32)
 endif ()
+
+define_engine_source_files(ThirdParty/STB)
 
 # Group source code in VS solution
 group_sources()
 
-set (THIRD_PARTY_DEPENDENCIES STB spirv_cross SDL2)
+set (THIRD_PARTY_DEPENDENCIES)
 if (ALIMER_SDL)
-	list(APPEND THIRD_PARTY_DEPENDENCIES SDL2)
+	list(APPEND THIRD_PARTY_DEPENDENCIES SDL)
 endif()
 
 foreach (dep ${THIRD_PARTY_DEPENDENCIES})
@@ -91,37 +91,38 @@ foreach (dep ${THIRD_PARTY_DEPENDENCIES})
 endforeach()
 
 # Define the library target.
-add_library (${TARGET_NAME} ${ALIMER_LIBRARY_TYPE} ${SOURCE_FILES} ${HEADER_FILES})
+add_library (Alimer ${ALIMER_LIBRARY_TYPE} ${SOURCE_FILES} ${HEADER_FILES})
 
-target_include_directories(${TARGET_NAME} PUBLIC
-	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/..>        # For parent projects to find auto-generated engine headers
-	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>        # For parent projects to find engine headers
+target_include_directories(Alimer PUBLIC
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 	$<INSTALL_INTERFACE:${DEST_BASE_INCLUDE_DIR}>
 	$<INSTALL_INTERFACE:${DEST_THIRDPARTY_HEADERS_DIR}>
 	$<BUILD_INTERFACE:${ALIMER_THIRD_PARTY_DIR}/spdlog/include>
-	PRIVATE
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+)
+
+target_include_directories(Alimer PRIVATE
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty>
 )
 
 if (BUILD_SHARED_LIBS OR EMSCRIPTEN)
-	target_compile_definitions (${TARGET_NAME} PRIVATE -DALIMER_EXPORTS)
-else ()
-	target_compile_definitions (${TARGET_NAME} PUBLIC -DALIMER_STATIC)
+	target_compile_definitions (Alimer PUBLIC -DALIMER_SHARED)
+	target_compile_definitions (Alimer PRIVATE -DALIMER_EXPORTS)
 endif ()
 
 if (ALIMER_SDL)
-	target_compile_definitions (${TARGET_NAME} PRIVATE -DALIMER_SDL)
+	target_compile_definitions (Alimer PRIVATE -DALIMER_SDL)
 endif ()
 
 # Add rendering API specific includes and library dependencies
 if (ALIMER_D3D11)
-	target_compile_definitions (${TARGET_NAME} PRIVATE -DNOMINMAX)
+	target_compile_definitions (Alimer PRIVATE -DNOMINMAX)
 endif ()
 
 if (ALIMER_OPENGL)
 	include_directories (ThirdParty/FlextGL)
 	find_package (OpenGL REQUIRED)
-	target_link_libraries (${TARGET_NAME} ${OPENGL_gl_LIBRARY})
+	target_link_libraries (Alimer ${OPENGL_gl_LIBRARY})
 endif ()
 
 # Link dependencies
@@ -129,18 +130,18 @@ foreach (dep ${THIRD_PARTY_DEPENDENCIES})
 	if (TARGET "${dep}")
 		get_target_property(_TARGET_TYPE ${dep} TYPE)
 		if(_TARGET_TYPE STREQUAL "OBJECT_LIBRARY")
-			target_link_objects(${TARGET_NAME} "${dep}")
+			target_link_objects(Alimer "${dep}")
 		else ()
-			target_link_libraries(${TARGET_NAME} "${dep}")
+			target_link_libraries(Alimer "${dep}")
 		endif ()
 	endif ()
 endforeach()
 
 # Add OS-specific library dependencies
 if (WIN32)
-	target_link_libraries (${TARGET_NAME} user32 gdi32 winmm imm32 ole32 oleaut32 version uuid advapi32 shell32)
+	target_link_libraries (Alimer winmm user32 gdi32 winmm imm32 ole32 oleaut32 version uuid)
 else ()
-	target_link_libraries (${TARGET_NAME} pthread)
+	target_link_libraries (Alimer pthread)
 endif ()
 
 install(TARGETS Alimer
@@ -149,3 +150,23 @@ install(TARGETS Alimer
 	RUNTIME DESTINATION ${DEST_BIN_DIR}
 	ARCHIVE DESTINATION ${DEST_ARCHIVE_DIR}
 )
+
+# Generate platform specific pkg-config file for the benefit of Alimer library users via SDK without CMake
+get_property(ALIMER_LIBS TARGET Alimer PROPERTY INTERFACE_LINK_LIBRARIES)
+foreach (lib ${ALIMER_LIBS})
+	string(REPLACE ".lib" "" cleaned_lib "${lib}")
+	if (TARGET ${cleaned_lib} OR "${cleaned_lib}" STREQUAL AlimerBase)
+		list (REMOVE_ITEM ALIMER_LIBS ${lib})
+	endif ()
+endforeach ()
+set (LIB_NAME Alimer)
+if (MSVC)
+	set (DASH /)
+	set (LIB_DIR "/LIBPATH:\"\${libdir}\"")
+	string (REPLACE ";" ".lib\" \"" ALIMER_LIBS "\"${LIB_NAME}.lib\" \"${ALIMER_LIBS}.lib\"")
+	set (PC_SUFFIX .msvc)
+else ()
+	set (DASH -)
+	set (LIB_DIR "-L\"\${libdir}\"")
+	string (REPLACE ";" " -l" ALIMER_LIBS "-l${LIB_NAME};${ALIMER_LIBS}")
+endif ()

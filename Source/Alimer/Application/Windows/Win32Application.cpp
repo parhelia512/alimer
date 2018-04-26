@@ -20,7 +20,9 @@
 // THE SOFTWARE.
 //
 
-#ifdef ALIMER_STATIC
+#include "../../PlatformDef.h"
+
+#if ALIMER_PLATFORM_WINDOWS
 #include <windows.h>
 #include "../Application.h"
 #include "../../Debug/Log.h"
@@ -68,6 +70,19 @@ namespace Alimer
 
 		return true;
 	}
+
+#if !defined(ALIMER_SDL)
+	int Application::PlatformRun()
+	{
+		Win32PlatformRun();
+
+		return EXIT_SUCCESS;
+	}
+
+	void Application::PlatformExit()
+	{
+	}
+#endif
 }
 
 #endif
