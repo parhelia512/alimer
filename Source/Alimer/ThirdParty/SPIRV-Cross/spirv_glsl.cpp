@@ -3609,6 +3609,14 @@ void CompilerGLSL::emit_mix_op(uint32_t result_type, uint32_t id, uint32_t left,
 
 string CompilerGLSL::to_combined_image_sampler(uint32_t image_id, uint32_t samp_id)
 {
+	// Keep track of the array indices we have used to load the image.
+	// We'll need to use the same array index into the combined image sampler array.
+	auto image_expr = to_expression(image_id);
+	string array_expr;
+	auto array_index = image_expr.find_first_of('[');
+	if (array_index != string::npos)
+		array_expr = image_expr.substr(array_index, string::npos);
+
 	auto &args = current_function->arguments;
 
 	// For GLSL and ESSL targets, we must enumerate all possible combinations for sampler2D(texture2D, sampler) and redirect
@@ -3641,7 +3649,7 @@ string CompilerGLSL::to_combined_image_sampler(uint32_t image_id, uint32_t samp_
 		});
 
 		if (itr != end(combined))
-			return to_expression(itr->id);
+			return to_expression(itr->id) + array_expr;
 		else
 		{
 			SPIRV_CROSS_THROW(
@@ -3658,7 +3666,7 @@ string CompilerGLSL::to_combined_image_sampler(uint32_t image_id, uint32_t samp_
 		});
 
 		if (itr != end(combined_image_samplers))
-			return to_expression(itr->combined_id);
+			return to_expression(itr->combined_id) + array_expr;
 		else
 		{
 			SPIRV_CROSS_THROW("Cannot find mapping for combined sampler, was build_combined_image_samplers() used "
@@ -3673,9 +3681,15 @@ void CompilerGLSL::emit_sampled_image_op(uint32_t result_type, uint32_t result_i
 	{
 		emit_binary_func_op(result_type, result_id, image_id, samp_id,
 		                    type_to_glsl(get<SPIRType>(result_type)).c_str());
+
+		// Make sure to suppress usage tracking. It is illegal to create temporaries of opaque types.
+		forwarded_temporaries.erase(result_id);
 	}
 	else
-		emit_op(result_type, result_id, to_combined_image_sampler(image_id, samp_id), true);
+	{
+		// Make sure to suppress usage tracking. It is illegal to create temporaries of opaque types.
+		emit_op(result_type, result_id, to_combined_image_sampler(image_id, samp_id), true, true);
+	}
 }
 
 void CompilerGLSL::emit_texture_op(const Instruction &i)
@@ -6157,15 +6171,6 @@ void CompilerGLSL::emit_instruction(const Instruction &instruction)
 		{
 			uint32_t image_id = combined.global_image ? combined.image_id : arg[combined.image_id];
 			uint32_t sampler_id = combined.global_sampler ? combined.sampler_id : arg[combined.sampler_id];
-
-			auto *image = maybe_get_backing_variable(image_id);
-			if (image)
-				image_id = image->self;
-
-			auto *samp = maybe_get_backing_variable(sampler_id);
-			if (samp)
-				sampler_id = samp->self;
-
 			arglist.push_back(to_combined_image_sampler(image_id, sampler_id));
 		}
 
@@ -7188,7 +7193,9 @@ void CompilerGLSL::emit_instruction(const Instruction &instruction)
 	{
 		uint32_t result_type = ops[0];
 		uint32_t id = ops[1];
-		auto &e = emit_op(result_type, id, to_expression(ops[2]), true);
+
+		// Suppress usage tracking.
+		auto &e = emit_op(result_type, id, to_expression(ops[2]), true, true);
 
 		// When using the image, we need to know which variable it is actually loaded from.
 		auto *var = maybe_get_backing_variable(ops[2]);

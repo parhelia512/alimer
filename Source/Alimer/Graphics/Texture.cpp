@@ -100,7 +100,7 @@ namespace Alimer
 			image->GetSize(),
 			image->GetFormat(),
 			static_cast<uint32_t>(initialData.size()),
-			TextureUsage::ShaderRead,
+			TextureUsageBits::ShaderRead,
 			initialData.data());
 
 		/// \todo Read a parameter file for the sampling parameters

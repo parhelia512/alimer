@@ -37,12 +37,30 @@ namespace Alimer
 
 		D3D11_BUFFER_DESC desc;
 		ZeroMemory(&desc, sizeof(D3D11_BUFFER_DESC));
-		desc.BindFlags = d3d11::Convert(usage);
+
+		UINT bindFlags = 0;
+		if (usage & BufferUsageBits::Uniform)
+		{
+			bindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		}
+		else
+		{
+			if (usage & BufferUsageBits::Vertex)
+				bindFlags |= D3D11_BIND_VERTEX_BUFFER;
+
+			if (usage & BufferUsageBits::Index)
+				bindFlags |= D3D11_BIND_INDEX_BUFFER;
+
+			if (usage & BufferUsageBits::Storage)
+				bindFlags |= D3D11_BIND_UNORDERED_ACCESS;
+		}
+
+		desc.BindFlags = bindFlags;
 		desc.CPUAccessFlags = _isDynamic ? D3D11_CPU_ACCESS_WRITE : 0;
 		desc.Usage = static_cast<D3D11_USAGE>(resourceUsage);
 		desc.ByteWidth = size;
 
-		if (any(usage & BufferUsage::Indirect))
+		if (usage & BufferUsageBits::Indirect)
 		{
 			desc.StructureByteStride = stride;
 			desc.MiscFlags = D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS;

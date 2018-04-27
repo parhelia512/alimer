@@ -28,7 +28,7 @@
 namespace Alimer
 {
 	IndexBuffer::IndexBuffer()
-		: Buffer(BufferUsage::Index)
+		: Buffer(BufferUsageBits::Index)
 	{
 
 	}

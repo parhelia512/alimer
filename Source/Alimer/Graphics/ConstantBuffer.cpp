@@ -47,7 +47,7 @@ namespace Alimer
 	};
 
 	ConstantBuffer::ConstantBuffer()
-		: Buffer(BufferUsage::Uniform)
+		: Buffer(BufferUsageBits::Uniform)
 	{
 	}
 

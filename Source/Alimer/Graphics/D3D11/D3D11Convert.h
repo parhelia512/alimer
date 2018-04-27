@@ -30,24 +30,6 @@ namespace Alimer
 {
 	namespace d3d11
 	{
-		static inline UINT Convert(BufferUsage usage)
-		{
-			if (any(usage & BufferUsage::Uniform))
-				return D3D11_BIND_CONSTANT_BUFFER;
-
-			UINT d3dUsage = 0;
-			if (any(usage & BufferUsage::Vertex))
-				d3dUsage |= D3D11_BIND_VERTEX_BUFFER;
-
-			if (any(usage & BufferUsage::Index))
-				d3dUsage |= D3D11_BIND_INDEX_BUFFER;
-
-			if (any(usage & BufferUsage::Storage))
-				d3dUsage |= D3D11_BIND_UNORDERED_ACCESS;
-
-			return d3dUsage;
-		}
-
 		static inline DXGI_FORMAT Convert(IndexType type)
 		{
 			switch (type)

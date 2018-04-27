@@ -104,7 +104,7 @@ namespace Alimer
 				Size(size, size),
 				format, 
 				1,
-				TextureUsage::ShaderRead | TextureUsage::RenderTarget))
+				TextureUsageBits::ShaderRead | TextureUsageBits::RenderTarget))
 			{
 				// Setup shadow map sampling with hardware depth compare
 				it->texture->DefineSampler(
@@ -701,11 +701,11 @@ namespace Alimer
 			faces2.push_back(level);
 		}
 
-		_faceSelectionTexture1->Define(TextureType::TypeCube, Size(1, 1), PixelFormat::RGBA32Float, 1, TextureUsage::ShaderRead, &faces1[0]);
+		_faceSelectionTexture1->Define(TextureType::TypeCube, Size(1, 1), PixelFormat::RGBA32Float, 1, TextureUsageBits::ShaderRead, &faces1[0]);
 		_faceSelectionTexture1->DefineSampler(FILTER_POINT, SamplerAddressMode::Clamp, SamplerAddressMode::Clamp, SamplerAddressMode::Clamp);
 		_faceSelectionTexture1->SetDataLost(false);
 
-		_faceSelectionTexture2->Define(TextureType::TypeCube, Size(1, 1), PixelFormat::RGBA32Float, 1, TextureUsage::ShaderRead, &faces2[0]);
+		_faceSelectionTexture2->Define(TextureType::TypeCube, Size(1, 1), PixelFormat::RGBA32Float, 1, TextureUsageBits::ShaderRead, &faces2[0]);
 		_faceSelectionTexture2->DefineSampler(FILTER_POINT, SamplerAddressMode::Clamp, SamplerAddressMode::Clamp, SamplerAddressMode::Clamp);
 		_faceSelectionTexture2->SetDataLost(false);
 	}

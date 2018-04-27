@@ -183,6 +183,37 @@
 #	define ALIMER_DLL_IMPORT
 #endif
 
+/**
+* noinline macro
+*/
+#if ALIMER_MICROSOFT_FAMILY
+#	define ALIMER_NOINLINE __declspec(noinline)
+#elif ALIMER_GCC_FAMILY
+#	define ALIMER_NOINLINE __attribute__((noinline))
+#else
+#	define ALIMER_NOINLINE
+#endif
+
+/**
+* noalias macro
+*/
+#if ALIMER_MICROSOFT_FAMILY
+#	define ALIMER_NOALIAS __declspec(noalias)
+#else
+#	define ALIMER_NOALIAS
+#endif
+
+/**
+* Inline macro
+*/
+#define ALIMER_INLINE inline
+#if ALIMER_MICROSOFT_FAMILY
+#	pragma inline_depth( 255 )
+#endif
+
+/**
+* Force inline macro
+*/
 #if !defined(ALIMER_FORCE_INLINE)
 #	if defined(__clang___)
 #		if __has_attribute(always_inline)
@@ -204,3 +235,15 @@
 #else
 #	define ALIMER_CONSTEXPR constexpr
 #endif
+
+#if ALIMER_GCC_FAMILY && !ALIMER_SNC && !ALIMER_GHS
+#	define ALIMER_OFFSET_OF(X, Y) __builtin_offsetof(X, Y)
+#else
+#	define ALIMER_OFFSET_OF(X, Y) offsetof(X, Y)
+#endif
+
+#define ALIMER_STRINGIZE_HELPER(X) #X
+#define ALIMER_STRINGIZE(X) ALIMER_STRINGIZE_HELPER(X)
+
+#define ALIMER_CONCAT_HELPER(X, Y) X##Y
+#define ALIMER_CONCAT(X, Y) ALIMER_CONCAT_HELPER(X, Y)

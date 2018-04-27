@@ -32,7 +32,7 @@ namespace Alimer
 {
 	template <typename FlagBitsType> struct FlagTraits
 	{
-		enum { allFlags = 0 };
+		enum { AllFlags = 0 };
 	};
 
 	template <typename BitType, typename MaskType = uint32_t>
@@ -112,7 +112,7 @@ namespace Alimer
 		Flags<BitType> operator~() const
 		{
 			Flags<BitType> result(*this);
-			result._mask ^= FlagTraits<BitType>::allFlags;
+			result._mask ^= FlagTraits<BitType>::AllFlags;
 			return result;
 		}
 
@@ -165,46 +165,10 @@ namespace Alimer
 	{
 	}
 
-	template <typename T, unsigned int N>
-	void SafeRelease(T(&resourceBlock)[N])
-	{
-		for (unsigned int i = 0; i < N; i++)
-		{
-			SafeRelease(resourceBlock[i]);
-		}
-	}
-
-	template <typename T>
-	void SafeRelease(T& resource)
-	{
-		if (resource)
-		{
-			resource->Release();
-			resource = nullptr;
-		}
-	}
-
 	template <typename T>
 	void SafeDelete(T *&resource)
 	{
 		delete resource;
-		resource = nullptr;
-	}
-
-	template <typename T>
-	void SafeDeleteContainer(T& resource)
-	{
-		for (auto &element : resource)
-		{
-			SafeDelete(element);
-		}
-		resource.clear();
-	}
-
-	template <typename T>
-	void SafeDeleteArray(T*& resource)
-	{
-		delete[] resource;
 		resource = nullptr;
 	}
 
@@ -227,55 +191,3 @@ namespace Alimer
 	TypeName& operator=(const TypeName&) = delete; \
 	TypeName(const TypeName&&) = delete; \
 	TypeName& operator=(const TypeName&&) = delete;
-
-// Utility to enable bitmask operators on enum classes.
-// To use define an enum class with valid bitmask values and an underlying type
-// then use the macro to enable support:
-//  enum class MyBitmask : uint32_t {
-//    Foo = 1 << 0,
-//    Bar = 1 << 1,
-//  };
-//  ALIMER_BITMASK(MyBitmask);
-//  MyBitmask value = ~(MyBitmask::Foo | MyBitmask::Bar);
-#define ALIMER_BITMASK(enum_class) \
-  inline enum_class operator|(enum_class lhs, enum_class rhs) { \
-	typedef typename std::underlying_type<enum_class>::type enum_type; \
-	return static_cast<enum_class>(static_cast<enum_type>(lhs) |       \
-								   static_cast<enum_type>(rhs));       \
-  }                                                                    \
-  inline enum_class& operator|=(enum_class& lhs, enum_class rhs) {     \
-	typedef typename std::underlying_type<enum_class>::type enum_type; \
-	lhs = static_cast<enum_class>(static_cast<enum_type>(lhs) |        \
-								  static_cast<enum_type>(rhs));        \
-	return lhs;                                                        \
-  }                                                                    \
-  inline enum_class operator&(enum_class lhs, enum_class rhs) {        \
-	typedef typename std::underlying_type<enum_class>::type enum_type; \
-	return static_cast<enum_class>(static_cast<enum_type>(lhs) &       \
-								   static_cast<enum_type>(rhs));       \
-  }                                                                    \
-  inline enum_class& operator&=(enum_class& lhs, enum_class rhs) {     \
-	typedef typename std::underlying_type<enum_class>::type enum_type; \
-	lhs = static_cast<enum_class>(static_cast<enum_type>(lhs) &        \
-								  static_cast<enum_type>(rhs));        \
-	return lhs;                                                        \
-  }                                                                    \
-  inline enum_class operator^(enum_class lhs, enum_class rhs) {        \
-	typedef typename std::underlying_type<enum_class>::type enum_type; \
-	return static_cast<enum_class>(static_cast<enum_type>(lhs) ^       \
-								   static_cast<enum_type>(rhs));       \
-  }                                                                    \
-  inline enum_class& operator^=(enum_class& lhs, enum_class rhs) {     \
-	typedef typename std::underlying_type<enum_class>::type enum_type; \
-	lhs = static_cast<enum_class>(static_cast<enum_type>(lhs) ^        \
-								  static_cast<enum_type>(rhs));        \
-	return lhs;                                                        \
-  }                                                                    \
-  inline enum_class operator~(enum_class lhs) {                        \
-	typedef typename std::underlying_type<enum_class>::type enum_type; \
-	return static_cast<enum_class>(~static_cast<enum_type>(lhs));      \
-  }                                                                    \
-  inline bool any(enum_class lhs) {                                    \
-	typedef typename std::underlying_type<enum_class>::type enum_type; \
-	return static_cast<enum_type>(lhs) != 0;                           \
-  }

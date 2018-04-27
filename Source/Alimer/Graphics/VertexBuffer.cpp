@@ -29,7 +29,7 @@
 namespace Alimer
 {
 	VertexBuffer::VertexBuffer() 
-		: Buffer(BufferUsage::Vertex)
+		: Buffer(BufferUsageBits::Vertex)
 	{
 	}
 

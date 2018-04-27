@@ -134,7 +134,7 @@ namespace Alimer
 					graphics->SetTexture(i, 0);
 			}
 
-			if (any(_usage & TextureUsage::RenderTarget))
+			if (_usage & TextureUsageBits::RenderTarget)
 			{
 				bool clear = false;
 
@@ -219,10 +219,10 @@ namespace Alimer
 
 		D3D11_USAGE textureUsage = D3D11_USAGE_DEFAULT;
 		UINT d3dUsage = 0;
-		if (any(usage & TextureUsage::ShaderRead))
+		if (usage & TextureUsageBits::ShaderRead)
 			d3dUsage |= D3D11_BIND_SHADER_RESOURCE;
 
-		if (any(usage & TextureUsage::ShaderWrite))
+		if (usage & TextureUsageBits::ShaderWrite)
 			d3dUsage |= D3D11_BIND_UNORDERED_ACCESS;
 
 		if (graphics && graphics->IsInitialized())
@@ -241,7 +241,7 @@ namespace Alimer
 			textureDesc.Usage = textureUsage;
 			textureDesc.BindFlags = d3dUsage;
 
-			if (any(usage & TextureUsage::RenderTarget))
+			if (usage & TextureUsageBits::RenderTarget)
 			{
 				if (!IsDepthStencilFormat(format))
 				{

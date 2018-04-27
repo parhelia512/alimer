@@ -47,13 +47,15 @@ namespace Alimer
 
 	static const char* BufferUsageToString(BufferUsage usage)
 	{
-		switch (usage)
-		{
-		case BufferUsage::Vertex:	return "vertex";
-		case BufferUsage::Index:	return "index";
-		case BufferUsage::Uniform:	return "uniform";
-		default: return "unknown";
-		}
+		if(usage & BufferUsageBits::Vertex)
+			return "vertex";
+
+		if (usage & BufferUsageBits::Index)
+			return "index";
+		if (usage & BufferUsageBits::Uniform)
+			return "uniform";
+
+		return "unknown";
 	}
 
 	bool Buffer::Create(bool useShadowData, const void* initialData)

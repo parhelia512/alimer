@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "../Base/Utils.h"
 #include "../Math/Color.h"
 #include "../Math/Size.h"
 #include "../Resource/Image.h"
@@ -46,8 +47,9 @@ namespace Alimer
 		TypeCube,
 	};
 
-	enum class TextureUsage : uint32_t
+	enum class TextureUsageBits : uint32_t
 	{
+		/// Unknown invalid usage.
 		Unknown = 0,
 		/// An option that enables reading or sampling from the texture.
 		ShaderRead = 1 << 0,
@@ -56,7 +58,16 @@ namespace Alimer
 		///An option that enables using the texture as a color, depth, or stencil render target in a RenderPass.
 		RenderTarget = 1 << 2,
 	};
-	ALIMER_BITMASK(TextureUsage);
+	using TextureUsage = Flags<TextureUsageBits>;
+	ALIMER_FORCE_INLINE TextureUsage operator|(TextureUsageBits bit0, TextureUsageBits bit1)
+	{
+		return TextureUsage(bit0) | bit1;
+	}
+
+	ALIMER_FORCE_INLINE TextureUsage operator~(TextureUsageBits bits)
+	{
+		return ~(TextureUsage(bits));
+	}
 
 	class TextureHandle;
 
@@ -87,7 +98,7 @@ namespace Alimer
 			const Size& size,
 			PixelFormat format,
 			uint32_t mipLevels,
-			TextureUsage usage = TextureUsage::ShaderRead,
+			TextureUsage usage = TextureUsageBits::ShaderRead,
 			const ImageLevel* initialData = 0);
 
 		/// Define sampling parameters. Return true on success.
@@ -124,9 +135,9 @@ namespace Alimer
 		/// Return resource usage type.
 		TextureUsage GetUsage() const { return _usage; }
 		/// Return whether is a color rendertarget texture.
-		bool IsRenderTarget() const { return any(_usage & TextureUsage::RenderTarget) && !Alimer::IsDepthStencilFormat(_format); }
+		bool IsRenderTarget() const { return (_usage & TextureUsageBits::RenderTarget) && !Alimer::IsDepthStencilFormat(_format); }
 		/// Return whether is a depth-stencil texture.
-		bool IsDepthStencil() const { return any(_usage & TextureUsage::RenderTarget) && Alimer::IsDepthStencilFormat(_format); }
+		bool IsDepthStencil() const { return (_usage & TextureUsageBits::RenderTarget) && Alimer::IsDepthStencilFormat(_format); }
 
 		TextureHandle* GetHandle() { return _handle; }
 
@@ -146,7 +157,7 @@ namespace Alimer
 		/// Texture type.
 		TextureType _type{ TextureType::Type2D };
 		/// Texture usage mode.
-		TextureUsage _usage{ TextureUsage::ShaderRead };
+		TextureUsage _usage{ TextureUsageBits::ShaderRead };
 		/// Texture dimensions in pixels.
 		Size _size = Size::One;
 

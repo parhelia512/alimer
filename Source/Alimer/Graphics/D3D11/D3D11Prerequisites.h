@@ -72,6 +72,16 @@
 
 namespace Alimer
 {
+	template <typename T>
+	void SafeRelease(T& resource)
+	{
+		if (resource)
+		{
+			resource->Release();
+			resource = nullptr;
+		}
+	}
+
 	inline void ThrowIfFailed(HRESULT hr)
 	{
 		if (FAILED(hr))

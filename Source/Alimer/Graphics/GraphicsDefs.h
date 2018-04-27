@@ -81,7 +81,6 @@ namespace Alimer
 		Indirect = 0x10
 	};
 	using ClearFlags = Flags<ClearFlagsBits>;
-
 	ALIMER_FORCE_INLINE ClearFlags operator|(ClearFlagsBits bit0, ClearFlagsBits bit1)
 	{
 		return ClearFlags(bit0) | bit1;
@@ -284,7 +283,7 @@ namespace Alimer
 		Count
 	};
 
-	enum class BufferUsage : uint32_t
+	enum class BufferUsageBits : uint32_t
 	{
 		None = 0,
 		Vertex = 0x1,
@@ -293,7 +292,16 @@ namespace Alimer
 		Storage = 0x8,
 		Indirect = 0x10
 	};
-	ALIMER_BITMASK(BufferUsage);
+	using BufferUsage = Flags<BufferUsageBits>;
+	ALIMER_FORCE_INLINE BufferUsage operator|(BufferUsageBits bit0, BufferUsageBits bit1)
+	{
+		return BufferUsage(bit0) | bit1;
+	}
+
+	ALIMER_FORCE_INLINE BufferUsage operator~(BufferUsageBits bits)
+	{
+		return ~(BufferUsage(bits));
+	}
 
 	/// Texture types.
 	enum class IndexType : uint8_t

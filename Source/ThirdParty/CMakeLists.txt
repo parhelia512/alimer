@@ -36,10 +36,5 @@ if (ALIMER_SDL)
 	endif ()
 
 	add_subdirectory (SDL2 EXCLUDE_FROM_ALL)
-
-	if (SDL_SHARED)
-		set_target_properties(SDL2 PROPERTIES FOLDER ThirdParty)
-	else ()
-		set_target_properties(SDL2-static PROPERTIES FOLDER ThirdParty)
-	endif()
+	set_target_properties(SDL2-static PROPERTIES FOLDER ThirdParty)
 endif()
