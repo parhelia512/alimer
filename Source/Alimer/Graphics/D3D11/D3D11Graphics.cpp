@@ -456,20 +456,20 @@ namespace Alimer
 
 	void D3D11Graphics::SetConstantBuffer(ShaderStage stage, uint32_t index, ConstantBuffer* buffer)
 	{
-		if (stage < MAX_SHADER_STAGES
+		if (stage < ShaderStage::Count
 			&& index < MAX_CONSTANT_BUFFERS
-			&& buffer != constantBuffers[stage][index])
+			&& buffer != _constantBuffers[ecast(stage)][index])
 		{
-			constantBuffers[stage][index] = buffer;
+			_constantBuffers[ecast(stage)][index] = buffer;
 			ID3D11Buffer* d3dBuffer = buffer ? static_cast<D3D11Buffer*>(buffer->GetHandle())->GetD3DBuffer() : nullptr;
 
 			switch (stage)
 			{
-			case SHADER_VS:
+			case ShaderStage::Vertex:
 				_d3dContext->VSSetConstantBuffers(index, 1, &d3dBuffer);
 				break;
 
-			case SHADER_PS:
+			case ShaderStage::Fragment:
 				_d3dContext->PSSetConstantBuffers(index, 1, &d3dBuffer);
 				break;
 
@@ -526,7 +526,7 @@ namespace Alimer
 	{
 		if (vs != vertexShader)
 		{
-			if (vs && vs->GetStage() == SHADER_VS)
+			if (vs && vs->GetStage() == ShaderStage::Vertex)
 			{
 				if (!vs->IsCompiled())
 					vs->Compile();
@@ -541,7 +541,7 @@ namespace Alimer
 
 		if (ps != pixelShader)
 		{
-			if (ps && ps->GetStage() == SHADER_PS)
+			if (ps && ps->GetStage() == ShaderStage::Fragment)
 			{
 				if (!ps->IsCompiled())
 					ps->Compile();
@@ -647,7 +647,7 @@ namespace Alimer
 
 	void Graphics::ResetConstantBuffers()
 	{
-		for (uint32_t i = 0; i < MAX_SHADER_STAGES; ++i)
+		for (uint32_t i = 0; i < static_cast<unsigned>(ShaderStage::Count); ++i)
 		{
 			for (uint32_t j = 0; i < MAX_CONSTANT_BUFFERS; ++j)
 			{
@@ -666,19 +666,19 @@ namespace Alimer
 	{
 		PrepareTextures();
 
-		if (any(clearFlags & ClearFlags::Color)
+		if (clearFlags & ClearFlagsBits::Color
 			&& impl->renderTargetViews[0])
 		{
 			_d3dContext->ClearRenderTargetView(impl->renderTargetViews[0], clearColor.Data());
 		}
 
-		if (any(clearFlags & (ClearFlags::Depth | ClearFlags::Stencil))
+		if (clearFlags & (ClearFlagsBits::Depth | ClearFlagsBits::Stencil)
 			&& impl->depthStencilView)
 		{
 			UINT depthClearFlags = 0;
-			if (any(clearFlags & ClearFlags::Depth))
+			if (clearFlags & ClearFlagsBits::Depth)
 				depthClearFlags |= D3D11_CLEAR_DEPTH;
-			if (any(clearFlags & ClearFlags::Stencil))
+			if (clearFlags & ClearFlagsBits::Stencil)
 				depthClearFlags |= D3D11_CLEAR_STENCIL;
 			_d3dContext->ClearDepthStencilView(impl->depthStencilView, depthClearFlags, clearDepth, clearStencil);
 		}
@@ -739,11 +739,6 @@ namespace Alimer
 	Texture* Graphics::GetRenderTarget(size_t index) const
 	{
 		return index < MAX_RENDERTARGETS ? _renderTargets[index] : nullptr;
-	}
-
-	ConstantBuffer* Graphics::GetConstantBuffer(ShaderStage stage, size_t index) const
-	{
-		return (stage < MAX_SHADER_STAGES && index < MAX_CONSTANT_BUFFERS) ? constantBuffers[stage][index] : nullptr;
 	}
 
 	Texture* Graphics::GetTexture(size_t index) const
@@ -1266,10 +1261,12 @@ namespace Alimer
 			_vbo.rates[i] = VertexInputRate::Vertex;
 		}
 
-		for (size_t i = 0; i < MAX_SHADER_STAGES; ++i)
+		for (uint32_t i = 0; i < ecast(ShaderStage::Count); ++i)
 		{
-			for (size_t j = 0; j < MAX_CONSTANT_BUFFERS; ++j)
-				constantBuffers[i][j] = nullptr;
+			for (uint32_t j = 0; j < MAX_CONSTANT_BUFFERS; ++j)
+			{
+				_constantBuffers[i][j] = nullptr;
+			}
 		}
 
 		for (size_t i = 0; i < MAX_TEXTURE_UNITS; ++i)

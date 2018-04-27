@@ -30,19 +30,19 @@ namespace Alimer
 	class Scene;
 	class ObjectResolver;
 
-	static const unsigned short NF_ENABLED = 0x1;
-	static const unsigned short NF_TEMPORARY = 0x2;
-	static const unsigned short NF_SPATIAL = 0x4;
-	static const unsigned short NF_SPATIAL_PARENT = 0x8;
-	static const unsigned short NF_WORLD_TRANSFORM_DIRTY = 0x10;
-	static const unsigned short NF_BOUNDING_BOX_DIRTY = 0x20;
-	static const unsigned short NF_OCTREE_UPDATE_QUEUED = 0x40;
-	static const unsigned short NF_GEOMETRY = 0x80;
-	static const unsigned short NF_LIGHT = 0x100;
-	static const unsigned short NF_CASTSHADOWS = 0x200;
-	static const unsigned char LAYER_DEFAULT = 0x0;
+	static const uint16_t NF_ENABLED = 0x1;
+	static const uint16_t NF_TEMPORARY = 0x2;
+	static const uint16_t NF_SPATIAL = 0x4;
+	static const uint16_t NF_SPATIAL_PARENT = 0x8;
+	static const uint16_t NF_WORLD_TRANSFORM_DIRTY = 0x10;
+	static const uint16_t NF_BOUNDING_BOX_DIRTY = 0x20;
+	static const uint16_t NF_OCTREE_UPDATE_QUEUED = 0x40;
+	static const uint16_t NF_GEOMETRY = 0x80;
+	static const uint16_t NF_LIGHT = 0x100;
+	static const uint16_t NF_CASTSHADOWS = 0x200;
+	static const uint8_t LAYER_DEFAULT = 0x0;
 	static const uint8_t TAG_NONE = 0x0;
-	static const unsigned LAYERMASK_ALL = 0xffffffff;
+	static const uint32_t LAYERMASK_ALL = 0xffffffff;
 
 	/// Base class for scene nodes.
 	class ALIMER_API Node : public Serializable

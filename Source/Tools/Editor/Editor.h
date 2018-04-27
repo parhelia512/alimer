@@ -33,5 +33,7 @@ namespace Alimer
 
 	public:
 		explicit Editor();
+
+	private:
 	};
 }

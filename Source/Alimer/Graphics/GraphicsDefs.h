@@ -67,7 +67,7 @@ namespace Alimer
 		Vulkan
 	};
 
-	enum class ClearFlags : uint32_t
+	enum class ClearFlagsBits : uint32_t
 	{
 		None = 0,
 		/// Clear rendertarget color.
@@ -80,14 +80,24 @@ namespace Alimer
 		All = Color | Depth | Stencil,
 		Indirect = 0x10
 	};
-	ALIMER_BITMASK(ClearFlags);
+	using ClearFlags = Flags<ClearFlagsBits>;
+
+	ALIMER_FORCE_INLINE ClearFlags operator|(ClearFlagsBits bit0, ClearFlagsBits bit1)
+	{
+		return ClearFlags(bit0) | bit1;
+	}
+
+	ALIMER_FORCE_INLINE ClearFlags operator~(ClearFlagsBits bits)
+	{
+		return ~(ClearFlags(bits));
+	}
 
 	/// Shader stages.
-	enum ShaderStage
+	enum class ShaderStage : uint32_t
 	{
-		SHADER_VS = 0,
-		SHADER_PS,
-		MAX_SHADER_STAGES
+		Vertex = 0,
+		Fragment,
+		Count
 	};
 
 	/// Element types for constant buffers and vertex elements.

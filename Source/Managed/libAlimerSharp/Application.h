@@ -21,26 +21,28 @@
 // THE SOFTWARE.
 //
 
+
+#pragma once
 #include "Alimer.h"
 using namespace Alimer;
 
-extern "C"
+class ApplicationProxy;
+typedef void(*ApplicationCallback_T)(ApplicationProxy*);
+
+class ApplicationProxy : public Alimer::Application
 {
-	ALIMER_DLL_EXPORT uint32_t RefCounted_Refs(RefCounted* _this)
-	{
-		return _this->Refs();
-	}
+public:
+	ApplicationProxy(
+		ApplicationCallback_T setup,
+		ApplicationCallback_T start,
+		ApplicationCallback_T stop);
 
-	ALIMER_DLL_EXPORT uint32_t RefCounted_WeakRefs(RefCounted* _this)
-	{
-		return _this->WeakRefs();
-	}
+private:
+	void OnSetup() override;
+	void OnStart() override;
+	void OnStop() override;
 
-	ALIMER_DLL_EXPORT void Ref_TryDelete(RefCounted* _this)
-	{
-		if (_this && _this->RefCountPtr() && !_this->Refs()) {
-			delete _this;
-		}
-	}
-}
-
+	ApplicationCallback_T _setupCallback;
+	ApplicationCallback_T _startCallback;
+	ApplicationCallback_T _stopCallback;
+};

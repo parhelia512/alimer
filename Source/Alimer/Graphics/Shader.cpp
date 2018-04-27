@@ -44,7 +44,7 @@ namespace Alimer
 	bool Shader::BeginLoad(Stream& source)
 	{
 		std::string extension = GetExtension(source.GetName());
-		_stage = (extension == ".vs" || extension == ".vert") ? SHADER_VS : SHADER_PS;
+		_stage = (extension == ".vs" || extension == ".vert") ? ShaderStage::Vertex : ShaderStage::Fragment;
 		_sourceCode.clear();
 		return ProcessIncludes(_sourceCode, source);
 	}

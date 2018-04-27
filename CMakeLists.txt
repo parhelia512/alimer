@@ -49,12 +49,6 @@ endif ()
 # Enable the creation of folders for Visual Studio projects
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-if (ALIMER_SIMD AND NOT MSVC)
-	# Build engine and it's dependencies with SSE/SSE2 enabled.
-	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse -msse2")
-	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse -msse2")
-endif ()
-
 # Set default configuration to Release for single-configuration generators
 if (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 	set (CMAKE_BUILD_TYPE Release)

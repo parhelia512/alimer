@@ -22,3 +22,28 @@
 
 # Native .NET bindings
 add_subdirectory(libAlimerSharp)
+
+# Fix dotnet program
+find_program(DOTNET_BINARY dotnet)
+if (NOT DOTNET_BINARY)
+    message (FATAL_ERROR "Please make sure dotnet is on the PATH.")
+  endif (NOT DOTNET_BINARY)
+
+# Restore and pack packages.
+execute_process(COMMAND ${DOTNET_BINARY} restore ${CMAKE_CURRENT_SOURCE_DIR}/AlimerSharp/AlimerSharp.csproj)
+
+if (CMAKE_BUILD_TYPE MATCHES Release)
+	execute_process(COMMAND ${DOTNET_BINARY} pack -c Release ${CMAKE_CURRENT_SOURCE_DIR}/AlimerSharp/AlimerSharp.csproj)
+endif ()
+
+if (NOT ALIMER_SKIP_CSHARP_INSTALL)
+	if (MSVC)
+		# AlimerSharp
+		include_external_msproject(AlimerSharp ${CMAKE_CURRENT_SOURCE_DIR}/AlimerSharp/AlimerSharp.csproj PLATFORM "Any CPU")
+		set_target_properties(AlimerSharp PROPERTIES FOLDER Managed)
+
+		if (ALIMER_DESKTOP)
+			add_subdirectory (Editor)
+		endif ()
+	endif ()
+endif ()

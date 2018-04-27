@@ -38,6 +38,5 @@ int main(int argc, char** argv)
 #endif
 {
 	auto app = std::make_shared<Alimer::Editor>();
-	app->Run();
-	return 0;
+	return app->Run();
 }

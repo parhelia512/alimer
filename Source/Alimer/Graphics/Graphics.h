@@ -194,8 +194,6 @@ namespace Alimer
 		/// Return the current viewport rectangle.
 		const IntRect& Viewport() const { return viewport; }
 		
-		/// Return currently bound constant buffer by shader stage and index.
-		ConstantBuffer* GetConstantBuffer(ShaderStage stage, size_t index) const;
 		/// Return currently bound texture by texture unit.
 		Texture* GetTexture(size_t index) const;
 		/// Return currently bound vertex shader.
@@ -244,9 +242,7 @@ namespace Alimer
 		/// Bound vertex buffers.
 		VertexBuffer* _vertexBuffers[MaxVertexBuffers];
 		
-		/// Bound constant buffers by shader stage.
-		ConstantBuffer* constantBuffers[MAX_SHADER_STAGES][MAX_CONSTANT_BUFFERS];
-		/// Bound textures by texture unit.
+			/// Bound textures by texture unit.
 		Texture* textures[MAX_TEXTURE_UNITS];
 		/// Bound rendertarget textures.
 		Texture* _renderTargets[MAX_RENDERTARGETS] = {};

@@ -182,3 +182,25 @@
 #	define ALIMER_DLL_EXPORT ALIMER_UNIX_EXPORT
 #	define ALIMER_DLL_IMPORT
 #endif
+
+#if !defined(ALIMER_FORCE_INLINE)
+#	if defined(__clang___)
+#		if __has_attribute(always_inline)
+#			define ALIMER_FORCE_INLINE __attribute__((always_inline)) __inline__
+#		else
+#			define ALIMER_FORCE_INLINE inline
+#		endif
+#	elif defined(__GNUC__)
+#		define ALIMER_FORCE_INLINE __attribute__((always_inline)) __inline__
+#	elif defined(_MSC_VER)
+#		define ALIMER_FORCE_INLINE __forceinline
+#	else
+#		define ALIMER_FORCE_INLINE inline
+#	endif
+#endif
+
+#if defined(_MSC_VER) && (_MSC_VER <= 1800)
+#	define ALIMER_CONSTEXPR
+#else
+#	define ALIMER_CONSTEXPR constexpr
+#endif

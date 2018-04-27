@@ -149,7 +149,7 @@ void RendererTest::OnRender()
 		renderer->RenderShadowMaps();
 		graphics->ResetRenderTargets();
 		graphics->ResetViewport();
-		graphics->Clear(ClearFlags::Color | ClearFlags::Depth, Color::BLACK);
+		graphics->Clear(ClearFlagsBits::Color | ClearFlagsBits::Depth, Color::BLACK);
 		renderer->RenderBatches(passes);
 	}
 }

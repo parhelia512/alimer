@@ -27,5 +27,7 @@ source_group ("" FILES ${SOURCE_FILES})
 add_library (libAlimerSharp SHARED ${SOURCE_FILES})
 target_link_libraries (libAlimerSharp Alimer)
 
-# Set Solution folder
+set_property(TARGET libAlimerSharp PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+# Set Solution folder.
 set_target_properties(libAlimerSharp PROPERTIES FOLDER Managed)

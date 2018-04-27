@@ -55,10 +55,12 @@ namespace Alimer
 		RefCount* RefCountPtr();
 
 	private:
-		/// Prevent copy construction.
-		RefCounted(const RefCounted& rhs);
-		/// Prevent assignment.
-		RefCounted& operator = (const RefCounted& rhs);
+		/// Prevent copy construction and assignment.
+		RefCounted(const RefCounted&) = delete;
+		RefCounted& operator=(const RefCounted&) = delete;
+		/// Prevent move construction and assignment.
+		RefCounted(const RefCounted&&) = delete;
+		RefCounted& operator=(const RefCounted&&) = delete;
 
 		/// Reference count structure, allocated on demand.
 		RefCount* refCount;

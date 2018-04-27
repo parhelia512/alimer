@@ -174,7 +174,7 @@ namespace Alimer
 
 	ShaderVariation::ShaderVariation(Shader* parent_, const std::string& defines)
 		: parent(parent_)
-		, _stage(parent->Stage())
+		, _stage(parent->GetStage())
 		, _defines(defines)
 	{
 	}
@@ -198,7 +198,7 @@ namespace Alimer
 
 		if (shader)
 		{
-			if (_stage == SHADER_VS)
+			if (_stage == ShaderStage::Vertex)
 			{
 				ID3D11VertexShader* d3dShader = (ID3D11VertexShader*)shader;
 				d3dShader->Release();
@@ -213,6 +213,22 @@ namespace Alimer
 
 		_elementHash = 0;
 		_compiled = false;
+	}
+
+	static inline std::string GetShaderTarget(
+		ShaderStage stage, 
+		uint32_t major, uint32_t minor)
+	{
+		switch (stage)
+		{
+		case ShaderStage::Vertex:
+			return fmt::format("vs_{}_{}", major, minor);
+
+		case ShaderStage::Fragment:
+			return fmt::format("ps_{}_{}", major, minor);
+		default:
+			return nullptr;
+		}
 	}
 
 	bool ShaderVariation::Compile()
@@ -263,30 +279,30 @@ namespace Alimer
 		D3D_SHADER_MACRO endMacro = { nullptr, nullptr };
 		macros.push_back(endMacro);
 
+		const auto& target = GetShaderTarget(_stage, 4, 0);
+
 		/// \todo Level 3 could be used, but can lead to longer shader compile times, considering there is no binary caching yet
 		DWORD flags = D3DCOMPILE_OPTIMIZATION_LEVEL2 | D3DCOMPILE_PREFER_FLOW_CONTROL;
-		ID3DBlob* errorBlob = nullptr;
+		ComPtr<ID3DBlob> errorBlob;
 		if (FAILED(D3DCompile(
 			parent->GetSourceCode().c_str(),
-			(SIZE_T)parent->GetSourceCode().length(),
+			static_cast<SIZE_T>(parent->GetSourceCode().length()),
 			"",
 			macros.data(),
 			0,
 			"main",
-			_stage == SHADER_VS ? "vs_4_0" : "ps_4_0", flags, 0, (ID3DBlob**)&blob, &errorBlob)))
+			target.c_str(), 
+			flags, 
+			0, 
+			(ID3DBlob**)&blob, 
+			errorBlob.ReleaseAndGetAddressOf())))
 		{
 			if (errorBlob)
 			{
 				ALIMER_LOGERROR("Could not compile shader {}: {}", GetFullName(), errorBlob->GetBufferPointer());
-				errorBlob->Release();
 			}
-			return false;
-		}
 
-		if (errorBlob)
-		{
-			errorBlob->Release();
-			errorBlob = nullptr;
+			return false;
 		}
 
 		ID3D11Device1* d3dDevice = static_cast<D3D11Graphics*>(graphics.Get())->GetD3DDevice();
@@ -303,7 +319,7 @@ namespace Alimer
 		}
 #endif
 
-		if (_stage == SHADER_VS)
+		if (_stage == ShaderStage::Vertex)
 		{
 			_elementHash = InspectInputSignature(d3dBlob);
 			d3dDevice->CreateVertexShader(d3dBlob->GetBufferPointer(), d3dBlob->GetBufferSize(), 0, (ID3D11VertexShader**)&shader);

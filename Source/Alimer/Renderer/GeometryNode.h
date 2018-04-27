@@ -61,7 +61,7 @@ namespace Alimer
 		/// %Geometry index buffer.
 		SharedPtr<IndexBuffer> indexBuffer;
 		/// Constant buffers.
-		SharedPtr<ConstantBuffer> constantBuffers[MAX_SHADER_STAGES];
+		SharedPtr<ConstantBuffer> constantBuffers[static_cast<unsigned>(ShaderStage::Count)];
 		/// %Geometry's primitive type.
 		PrimitiveType primitiveType;
 		/// Draw range start. Specifies index start if index buffer defined, vertex start otherwise.

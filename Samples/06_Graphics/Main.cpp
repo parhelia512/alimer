@@ -117,7 +117,7 @@ public:
 
 		_vertexShader = std::make_unique<Shader>();
 		_vertexShader->SetName("Test.vs");
-		_vertexShader->Define(SHADER_VS, vsCode);
+		_vertexShader->Define(ShaderStage::Vertex, vsCode);
 
 		std::string psCode =
 #ifndef ALIMER_OPENGL
@@ -153,7 +153,7 @@ public:
 
 		_fragmentShader = std::make_unique<Shader>();
 		_fragmentShader->SetName("Test.ps");
-		_fragmentShader->Define(SHADER_PS, psCode);
+		_fragmentShader->Define(ShaderStage::Fragment, psCode);
 		
 		_texture = GetCache()->LoadResource<Texture>("Test.png");
 	}
@@ -187,11 +187,11 @@ public:
 		auto* fragmentVariation = _fragmentShader->CreateVariation();
 
 		auto graphics = GetGraphics();
-		graphics->Clear(ClearFlags::Color | ClearFlags::Depth, Color(0.0f, 0.0f, 0.5f));
+		graphics->Clear(ClearFlagsBits::Color | ClearFlagsBits::Depth, Color(0.0f, 0.0f, 0.5f));
 		graphics->SetVertexBuffer(0, _vertexBuffer.get());
 		graphics->SetVertexBuffer(1, _instanceVertexBuffer.get(), 0, VertexInputRate::Instance);
 		graphics->SetIndexBuffer(_indexBuffer.get());
-		graphics->SetConstantBuffer(SHADER_PS, 0, _constantBuffer.get());
+		graphics->SetConstantBuffer(ShaderStage::Fragment, 0, _constantBuffer.get());
 		graphics->SetShaders(vertexVariation, fragmentVariation);
 		graphics->SetTexture(0, _texture);
 		graphics->SetDepthState(CMP_LESS_EQUAL, true);

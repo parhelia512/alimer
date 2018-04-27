@@ -55,7 +55,7 @@ namespace Alimer
 		ShaderVariation* CreateVariation(const std::string& defines = "");
 
 		/// Return shader stage.
-		ShaderStage Stage() const { return _stage; }
+		ShaderStage GetStage() const { return _stage; }
 		/// Return shader source code.
 		const std::string& GetSourceCode() const { return _sourceCode; }
 
@@ -66,11 +66,11 @@ namespace Alimer
 		/// Process include statements in the shader source code recursively. Return true if successful.
 		bool ProcessIncludes(std::string& code, Stream& source);
 
-		/// %Shader variations.
+		/// Shader variations.
 		UnorderedMap<StringHash, SharedPtr<ShaderVariation> > _variations;
-		/// %Shader stage.
-		ShaderStage _stage{ SHADER_VS };
-		/// %Shader source code.
+		/// Shader stage.
+		ShaderStage _stage{ ShaderStage::Vertex };
+		/// Shader source code.
 		std::string _sourceCode;
 	};
 }

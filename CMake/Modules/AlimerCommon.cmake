@@ -23,6 +23,11 @@
 
 include (AlimerMacros)
 
+# Define standard configurations
+if ( CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_CONFIGURATION_TYPES MATCHES "Debug;Dev;Release" )
+    set (CMAKE_CONFIGURATION_TYPES "Debug;Dev;Release" CACHE STRING "List of supported configurations." FORCE)
+endif()
+
 # Set compiler variable
 set ("${CMAKE_CXX_COMPILER_ID}" ON)
 
@@ -96,10 +101,9 @@ if( PLATFORM_WINDOWS OR PLATFORM_UWP )
 		add_compile_options($<$<CONFIG:DEBUG>:/MDd> $<$<NOT:$<CONFIG:DEBUG>>:/MD>)
 	endif()
 
-
 	# Disable specific link libraries
 	if( PLATFORM_WINDOWS )
-		# add_linker_flags(/NODEFAULTLIB:"MSVCRT.lib")
+		add_linker_flags(/NODEFAULTLIB:"MSVCRT.lib")
 	endif()
 
 	# Use security checks only in debug
@@ -127,5 +131,32 @@ if( PLATFORM_WINDOWS OR PLATFORM_UWP )
 	add_compile_options(/fp:fast)
 
 	# Enable multi-processor compilation for Visual Studio 2012 and above
-    add_compile_options(/MP)
+	add_compile_options(/MP)
+
+	# Set warning level 3
+	add_compile_options(/W3)
+
+	# Disable specific warnings
+	add_compile_options(/wd4351 /wd4005)
+
+	# Disable specific warnings for MSVC14 and above
+	if( (PLATFORM_WINDOWS OR PLATFORM_UWP) AND (NOT MSVC_VERSION LESS 1900) )
+		add_compile_options(/wd4838 /wd4312 /wd4477 /wd4244 /wd4091 /wd4311 /wd4302 /wd4476 /wd4474)
+		add_compile_options(/wd4309)	# truncation of constant value
+	endif()
+
+	# Force specific warnings as errors
+	add_compile_options(/we4101)
 endif ()
+
+# Initialize the development configuration using release configuration
+copy_release_build_flags(DEV)
+
+set(DEBUG_COMPILE_OPTIONS "-DALIMER_DEV=1" "-DRMT_ENABLED=1")
+add_compile_options("$<$<CONFIG:Debug>:${DEBUG_COMPILE_OPTIONS}>")
+
+set(DEV_COMPILE_OPTIONS "-DALIMER_DEV=1" "-DRMT_ENABLED=1")
+add_compile_options("$<$<CONFIG:Dev>:${DEV_COMPILE_OPTIONS}>")
+
+set(RELEASE_COMPILE_OPTIONS "-DALIMER_DEV=0" "-DRMT_ENABLED=0")
+add_compile_options("$<$<CONFIG:Release>:${RELEASE_COMPILE_OPTIONS}>")

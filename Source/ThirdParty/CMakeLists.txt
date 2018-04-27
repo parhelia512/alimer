@@ -25,23 +25,21 @@ if (ALIMER_SDL)
 	# Setup SDL2.
 	set (SDL_SHARED OFF)
 	set (SDL_STATIC ON)
+	set (VIDEO_OPENGL OFF)
+	set (VIDEO_OPENGLES OFF)
+	set (VIDEO_VULKAN OFF)
+	set (SDL_RENDER_ENABLED_BY_DEFAULT OFF)
 
 	if( PLATFORM_WINDOWS )
-		# set (FORCE_STATIC_VCRT ON)
+		set (EXTRA_CFLAGS "-MT -Z7 -DSDL_MAIN_HANDLED -DHAVE_LIBC -D_USE_MATH_DEFINES -D_UNICODE -DALIMER_DISABLE_DYNAPI")
+		set (LIBC ON)
 	endif ()
 
 	add_subdirectory (SDL2 EXCLUDE_FROM_ALL)
 
 	if (SDL_SHARED)
 		set_target_properties(SDL2 PROPERTIES FOLDER ThirdParty)
-	endif ()
-
-	if (SDL_STATIC)
+	else ()
 		set_target_properties(SDL2-static PROPERTIES FOLDER ThirdParty)
 	endif()
 endif()
-
-# Add targets
-foreach (TARGET STB SPIRV-Cross)
-	add_subdirectory (${TARGET})
-endforeach ()

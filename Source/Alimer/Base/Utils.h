@@ -30,6 +30,134 @@
 
 namespace Alimer
 {
+	template <typename FlagBitsType> struct FlagTraits
+	{
+		enum { allFlags = 0 };
+	};
+
+	template <typename BitType, typename MaskType = uint32_t>
+	class Flags
+	{
+	public:
+		ALIMER_CONSTEXPR Flags()
+			: _mask(0)
+		{
+		}
+
+		Flags(BitType bit)
+			: _mask(static_cast<MaskType>(bit))
+		{
+		}
+
+		Flags(Flags<BitType> const& rhs)
+			: _mask(rhs._mask)
+		{
+		}
+
+		explicit Flags(MaskType flags)
+			: _mask(flags)
+		{
+		}
+
+		Flags<BitType> & operator=(Flags<BitType> const& rhs)
+		{
+			_mask = rhs._mask;
+			return *this;
+		}
+
+		Flags<BitType> & operator|=(Flags<BitType> const& rhs)
+		{
+			_mask |= rhs._mask;
+			return *this;
+		}
+
+		Flags<BitType> & operator&=(Flags<BitType> const& rhs)
+		{
+			_mask &= rhs._mask;
+			return *this;
+		}
+
+		Flags<BitType> & operator^=(Flags<BitType> const& rhs)
+		{
+			_mask ^= rhs._mask;
+			return *this;
+		}
+
+		Flags<BitType> operator|(Flags<BitType> const& rhs) const
+		{
+			Flags<BitType> result(*this);
+			result |= rhs;
+			return result;
+		}
+
+		Flags<BitType> operator&(Flags<BitType> const& rhs) const
+		{
+			Flags<BitType> result(*this);
+			result &= rhs;
+			return result;
+		}
+
+		Flags<BitType> operator^(Flags<BitType> const& rhs) const
+		{
+			Flags<BitType> result(*this);
+			result ^= rhs;
+			return result;
+		}
+
+		bool operator!() const
+		{
+			return !_mask;
+		}
+
+		Flags<BitType> operator~() const
+		{
+			Flags<BitType> result(*this);
+			result._mask ^= FlagTraits<BitType>::allFlags;
+			return result;
+		}
+
+		bool operator==(Flags<BitType> const& rhs) const
+		{
+			return _mask == rhs._mask;
+		}
+
+		bool operator!=(Flags<BitType> const& rhs) const
+		{
+			return _mask != rhs._mask;
+		}
+
+		explicit operator bool() const
+		{
+			return !!_mask;
+		}
+
+		explicit operator MaskType() const
+		{
+			return _mask;
+		}
+
+	private:
+		MaskType _mask;
+	};
+
+	template <typename BitType>
+	Flags<BitType> operator|(BitType bit, Flags<BitType> const& flags)
+	{
+		return flags | bit;
+	}
+
+	template <typename BitType>
+	Flags<BitType> operator&(BitType bit, Flags<BitType> const& flags)
+	{
+		return flags & bit;
+	}
+
+	template <typename BitType>
+	Flags<BitType> operator^(BitType bit, Flags<BitType> const& flags)
+	{
+		return flags ^ bit;
+	}
+
 	// avoid unreferenced parameter warning
 	// preferred solution: omit the parameter's name from the declaration
 	template <class T>

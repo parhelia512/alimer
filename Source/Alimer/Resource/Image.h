@@ -66,6 +66,8 @@ namespace Alimer
 	ALIMER_API bool IsStencilFormat(PixelFormat format);
 	ALIMER_API bool IsDepthStencilFormat(PixelFormat format);
 	ALIMER_API bool IsCompressed(PixelFormat format);
+	ALIMER_API const char* EnumToString(PixelFormat format);
+	ALIMER_API uint32_t GetPixelFormatSize(PixelFormat format);
 
 	/// Description of image mip level data.
 	struct ALIMER_API ImageLevel
@@ -113,10 +115,6 @@ namespace Alimer
 		uint32_t GetWidth() const { return _size.width; }
 		/// Return image height in pixels.
 		uint32_t GetHeight() const { return _size.height; }
-		/// Return number of components in a pixel. Will return 0 for formats which are not 8 bits per pixel.
-		int Components() const { return _components[static_cast<unsigned>(_format)]; }
-		/// Return byte size of a pixel. Will return 0 for block compressed formats.
-		uint32_t GetPixelByteSize() const { return _pixelByteSizes[static_cast<unsigned>(_format)]; }
 		/// Return pixel data.
 		uint8_t* Data() const { return _data.get(); }
 		/// Return the image format.
@@ -135,11 +133,6 @@ namespace Alimer
 		/// Calculate the data size of an image level.
 		static uint32_t CalculateDataSize(const Size& size, PixelFormat format, uint32_t* numRows = 0, uint32_t* rowSize = 0);
 
-		/// Pixel components per format.
-		static const int _components[];
-		/// Pixel byte sizes per format.
-		static const uint32_t _pixelByteSizes[];
-
 	private:
 		/// Decode image pixel data using the stb_image library.
 		static uint8_t* DecodePixelData(Stream& source, int& width, int& height, unsigned& components);
@@ -152,9 +145,8 @@ namespace Alimer
 		PixelFormat _format{ PixelFormat::Undefined };
 		/// Number of mip levels. 1 for uncompressed images.
 		uint32_t _mipLevels{ 1 };
+
 		/// Image pixel data.
 		std::unique_ptr<uint8_t[]> _data;
 	};
-
-	ALIMER_API const char* EnumToString(PixelFormat format);
 }

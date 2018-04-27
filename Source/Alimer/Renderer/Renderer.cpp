@@ -575,7 +575,7 @@ namespace Alimer
 				continue;
 
 			graphics->SetRenderTarget(nullptr, it->texture);
-			graphics->Clear(ClearFlags::Depth, Color::BLACK, 1.0f);
+			graphics->Clear(ClearFlagsBits::Depth, Color::BLACK, 1.0f);
 
 			for (auto vIt = it->shadowViews.begin(); vIt < it->shadowViews.end(); ++vIt)
 			{
@@ -691,7 +691,7 @@ namespace Alimer
 
 		std::vector<ImageLevel> faces1;
 		std::vector<ImageLevel> faces2;
-		for (size_t i = 0; i < MAX_CUBE_FACES; ++i)
+		for (uint32_t i = 0; i < MAX_CUBE_FACES; ++i)
 		{
 			ImageLevel level;
 			level.rowSize = 4 * sizeof(float);
@@ -854,8 +854,11 @@ namespace Alimer
 		int depthBias, 
 		float slopeScaledDepthBias)
 	{
-		if (_faceSelectionTexture1->IsDataLost() || _faceSelectionTexture2->IsDataLost())
+		if (_faceSelectionTexture1->IsDataLost()
+			|| _faceSelectionTexture2->IsDataLost())
+		{
 			DefineFaceSelectionTextures();
+		}
 
 		// Bind point light shadow face selection textures
 		graphics->SetTexture(MAX_MATERIAL_TEXTURE_UNITS + MAX_LIGHTS_PER_PASS, _faceSelectionTexture1.get());
@@ -899,8 +902,8 @@ namespace Alimer
 			psFrameConstantBuffer->SetConstant(PS_FRAME_AMBIENT_COLOR, camera_->AmbientColor());
 			psFrameConstantBuffer->Apply();
 
-			graphics->SetConstantBuffer(SHADER_VS, CB_FRAME, vsFrameConstantBuffer);
-			graphics->SetConstantBuffer(SHADER_PS, CB_FRAME, psFrameConstantBuffer);
+			graphics->SetConstantBuffer(ShaderStage::Vertex, CB_FRAME, vsFrameConstantBuffer);
+			graphics->SetConstantBuffer(ShaderStage::Fragment, CB_FRAME, psFrameConstantBuffer);
 		}
 
 		if (_instanceTransformsDirty 
@@ -940,12 +943,13 @@ namespace Alimer
 				}
 
 				// Check that pass is legal
-				if (pass->shaders[SHADER_VS].Get() && pass->shaders[SHADER_PS].Get())
+				if (pass->shaders[ecast(ShaderStage::Vertex)].Get() 
+					&& pass->shaders[ecast(ShaderStage::Fragment)].Get())
 				{
 					// Get the shader variations
 					LightPass* lights = batch.lights;
-					ShaderVariation* vs = FindShaderVariation(SHADER_VS, pass, (unsigned short)batch.type | (lights ? lights->vsBits : 0));
-					ShaderVariation* ps = FindShaderVariation(SHADER_PS, pass, lights ? lights->psBits : 0);
+					ShaderVariation* vs = FindShaderVariation(ShaderStage::Vertex, pass, (uint16_t)batch.type | (lights ? lights->vsBits : 0));
+					ShaderVariation* ps = FindShaderVariation(ShaderStage::Fragment, pass, lights ? lights->psBits : 0);
 					graphics->SetShaders(vs, ps);
 
 					Geometry* geometry = batch.geometry;
@@ -978,22 +982,24 @@ namespace Alimer
 							if (material->textures[i])
 								graphics->SetTexture(i, material->textures[i]);
 						}
-						graphics->SetConstantBuffer(SHADER_VS, CB_MATERIAL, material->constantBuffers[SHADER_VS].Get());
-						graphics->SetConstantBuffer(SHADER_PS, CB_MATERIAL, material->constantBuffers[SHADER_PS].Get());
+						graphics->SetConstantBuffer(ShaderStage::Vertex, CB_MATERIAL, material->constantBuffers[ecast(ShaderStage::Vertex)].Get());
+						graphics->SetConstantBuffer(ShaderStage::Fragment, CB_MATERIAL, material->constantBuffers[ecast(ShaderStage::Fragment)].Get());
 
 						lastMaterial = material;
 					}
 
 					// Apply object render state
-					if (geometry->constantBuffers[SHADER_VS])
-						graphics->SetConstantBuffer(SHADER_VS, CB_OBJECT, geometry->constantBuffers[SHADER_VS].Get());
+					if (geometry->constantBuffers[ecast(ShaderStage::Vertex)])
+					{
+						graphics->SetConstantBuffer(ShaderStage::Vertex, CB_OBJECT, geometry->constantBuffers[ecast(ShaderStage::Vertex)].Get());
+					}
 					else if (!instanced)
 					{
 						vsObjectConstantBuffer->SetConstant(VS_OBJECT_WORLD_MATRIX, *batch.worldMatrix);
 						vsObjectConstantBuffer->Apply();
-						graphics->SetConstantBuffer(SHADER_VS, CB_OBJECT, vsObjectConstantBuffer.Get());
+						graphics->SetConstantBuffer(ShaderStage::Vertex, CB_OBJECT, vsObjectConstantBuffer.Get());
 					}
-					graphics->SetConstantBuffer(SHADER_PS, CB_OBJECT, geometry->constantBuffers[SHADER_PS].Get());
+					graphics->SetConstantBuffer(ShaderStage::Fragment, CB_OBJECT, geometry->constantBuffers[ecast(ShaderStage::Fragment)].Get());
 
 					// Apply light constant buffers and shadow maps
 					if (lights && lights != lastLights)
@@ -1004,11 +1010,11 @@ namespace Alimer
 							if (lights->vsBits & LVS_NUMSHADOWCOORDS)
 							{
 								vsLightConstantBuffer->SetData(lights->shadowMatrices);
-								graphics->SetConstantBuffer(SHADER_VS, CB_LIGHTS, vsLightConstantBuffer.Get());
+								graphics->SetConstantBuffer(ShaderStage::Vertex, CB_LIGHTS, vsLightConstantBuffer.Get());
 							}
 
 							psLightConstantBuffer->SetData(lights->lightPositions);
-							graphics->SetConstantBuffer(SHADER_PS, CB_LIGHTS, psLightConstantBuffer.Get());
+							graphics->SetConstantBuffer(ShaderStage::Fragment, CB_LIGHTS, psLightConstantBuffer.Get());
 
 							for (size_t i = 0; i < MAX_LIGHTS_PER_PASS; ++i)
 								graphics->SetTexture(MAX_MATERIAL_TEXTURE_UNITS + i, lights->shadowMaps[i]);
@@ -1042,11 +1048,11 @@ namespace Alimer
 		ResourceCache* cache = GetSubsystem<ResourceCache>();
 		// Use different extensions for GLSL & HLSL shaders
 #ifdef ALIMER_OPENGL
-		pass->shaders[SHADER_VS] = cache->LoadResource<Shader>(pass->GetShaderName(SHADER_VS) + ".vert");
-		pass->shaders[SHADER_PS] = cache->LoadResource<Shader>(pass->GetShaderName(SHADER_PS) + ".frag");
+		pass->shaders[ecast(ShaderStage::Vertex)] = cache->LoadResource<Shader>(pass->GetShaderName(ShaderStage::Vertex) + ".vert");
+		pass->shaders[ecast(ShaderStage::Fragment)] = cache->LoadResource<Shader>(pass->GetShaderName(ShaderStage::Fragment) + ".frag");
 #else
-		pass->shaders[SHADER_VS] = cache->LoadResource<Shader>(pass->GetShaderName(SHADER_VS) + ".vs");
-		pass->shaders[SHADER_PS] = cache->LoadResource<Shader>(pass->GetShaderName(SHADER_PS) + ".ps");
+		pass->shaders[ecast(ShaderStage::Vertex)] = cache->LoadResource<Shader>(pass->GetShaderName(ShaderStage::Vertex) + ".vs");
+		pass->shaders[ecast(ShaderStage::Fragment)] = cache->LoadResource<Shader>(pass->GetShaderName(ShaderStage::Fragment) + ".ps");
 #endif
 
 		pass->shadersLoaded = true;
@@ -1055,25 +1061,25 @@ namespace Alimer
 	ShaderVariation* Renderer::FindShaderVariation(ShaderStage stage, Pass* pass, unsigned short bits)
 	{
 		/// \todo Evaluate whether the hash lookup is worth the memory save vs using just straightforward vectors
-		auto& variations = pass->shaderVariations[stage];
+		auto& variations = pass->shaderVariations[ecast(stage)];
 		auto it = variations.find(bits);
 
 		if (it != variations.end())
 			return it->second.Get();
 
-		if (stage == SHADER_VS)
+		if (stage == ShaderStage::Vertex)
 		{
-			std::string vsString = pass->CombinedShaderDefines(stage) + " " + geometryDefines[bits & LVS_GEOMETRY];
+			std::string vsString = pass->GetCombinedShaderDefines(stage) + " " + geometryDefines[bits & LVS_GEOMETRY];
 			if (bits & LVS_NUMSHADOWCOORDS)
 				vsString += " " + lightDefines[1] + "=" + std::to_string((bits & LVS_NUMSHADOWCOORDS) >> 2);
 
-			auto vsVariation = pass->shaders[stage]->CreateVariation(str::Trim(vsString));
+			auto vsVariation = pass->shaders[ecast(stage)]->CreateVariation(str::Trim(vsString));
 			variations.insert(std::make_pair(bits, WeakPtr<ShaderVariation>(vsVariation)));
 			return vsVariation;
 		}
 		else
 		{
-			std::string psString = pass->CombinedShaderDefines(stage);
+			std::string psString = pass->GetCombinedShaderDefines(stage);
 			if (bits & LPS_AMBIENT)
 				psString += " " + lightDefines[0];
 			if (bits & LPS_NUMSHADOWCOORDS)
@@ -1087,7 +1093,7 @@ namespace Alimer
 					psString += " " + lightDefines[5] + std::to_string((int)i);
 			}
 
-			auto fsVariation = pass->shaders[stage]->CreateVariation(str::Trim(psString));
+			auto fsVariation = pass->shaders[ecast(stage)]->CreateVariation(str::Trim(psString));
 			variations.insert(std::make_pair(bits, WeakPtr<ShaderVariation>(fsVariation)));
 			return fsVariation;
 		}

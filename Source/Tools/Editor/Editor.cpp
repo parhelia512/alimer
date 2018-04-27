@@ -21,6 +21,7 @@
 //
 
 #include "Editor.h"
+
 namespace Alimer
 {
 	Editor::Editor()

@@ -49,67 +49,6 @@
 
 namespace Alimer
 {
-
-	const int Image::_components[] =
-	{
-		0,      // Undefined
-		1,      // FMT_R8
-		2,      // FMT_RG8
-		4,      // FMT_RGBA8
-		1,      // FMT_A8
-		0,      // FMT_R16
-		0,      // FMT_RG16
-		0,      // FMT_RGBA16
-		0,      // FMT_R16F
-		0,      // FMT_RG16F
-		0,      // FMT_RGBA16F
-		0,      // FMT_R32F
-		0,      // FMT_RG32F
-		0,      // FMT_RGB32F
-		0,      // FMT_RGBA32F
-		0,      // FMT_D16
-		0,      // FMT_D32
-		0,      // FMT_D24S8
-		0,      // FMT_DXT1
-		0,      // FMT_DXT3
-		0,      // FMT_DXT5
-		0,      // FMT_ETC1
-		0,      // FMT_PVRTC_RGB_2BPP
-		0,      // FMT_PVRTC_RGBA_2BPP
-		0,      // FMT_PVRTC_RGB_4BPP
-		0       // FMT_PVRTC_RGBA_4BPP
-	};
-
-	const uint32_t Image::_pixelByteSizes[] =
-	{
-		0,      // Undefined
-		1,      // FMT_R8
-		2,      // FMT_RG8
-		4,      // FMT_RGBA8
-		1,      // FMT_A8
-		2,      // FMT_R16
-		4,      // FMT_RG16
-		8,      // FMT_RGBA16
-		2,      // FMT_R16F
-		4,      // FMT_RG16F
-		8,      // FMT_RGBA16F
-		4,      // FMT_R32F
-		8,      // FMT_RG32F
-		12,     // FMT_RGB32F
-		16,     // FMT_RGBA32F
-		2,      // FMT_D16
-		4,      // FMT_D32
-		4,      // FMT_D24S8
-		0,      // FMT_DXT1
-		0,      // FMT_DXT3
-		0,      // FMT_DXT5
-		0,      // FMT_ETC1
-		0,      // FMT_PVRTC_RGB_2BPP
-		0,      // FMT_PVRTC_RGBA_2BPP
-		0,      // FMT_PVRTC_RGB_4BPP
-		0       // FMT_PVRTC_RGBA_4BPP
-	};
-
 	static const PixelFormat componentsToFormat[] =
 	{
 		PixelFormat::Undefined,
@@ -491,8 +430,8 @@ namespace Alimer
 			{
 				// Convert RGB to RGBA as for example Direct3D 11 does not support 24-bit formats
 				std::unique_ptr<uint8_t[]> rgbaData(new uint8_t[4 * imageWidth * imageHeight]);
-				unsigned char* src = pixelData;
-				unsigned char* dest = rgbaData.get();
+				uint8_t* src = pixelData;
+				uint8_t* dest = rgbaData.get();
 				for (int i = 0; i < imageWidth * imageHeight; ++i)
 				{
 					*dest++ = *src++;
@@ -532,7 +471,7 @@ namespace Alimer
 			return false;
 		}
 
-		int components = (int)GetPixelByteSize();
+		uint32_t components = GetPixelFormatSize(_format);
 		if (components < 1 || components > 4)
 		{
 			ALIMER_LOGERROR("Unsupported pixel format for PNG save on image " + GetName());
@@ -544,7 +483,7 @@ namespace Alimer
 			&dest,
 			static_cast<int>(_size.width),
 			static_cast<int>(_size.height),
-			components,
+			static_cast<int>(components),
 			_data.get(),
 			0) != 0;
 		return success;
@@ -561,13 +500,14 @@ namespace Alimer
 			return;
 		}
 
-		if (_pixelByteSizes[static_cast<uint32_t>(newFormat)] == 0)
+		const uint32_t pixelFormatSize = GetPixelFormatSize(newFormat);
+		if (pixelFormatSize == 0)
 		{
 			ALIMER_LOGERROR("Can not set image size with unspecified pixel byte size (including compressed formats)");
 			return;
 		}
 
-		_data.reset(new uint8_t[newSize.width * newSize.height * _pixelByteSizes[static_cast<uint32_t>(newFormat)]]);
+		_data.reset(new uint8_t[newSize.width * newSize.height * pixelFormatSize]);
 		_size = newSize;
 		_format = newFormat;
 		_mipLevels = 1;
@@ -577,10 +517,12 @@ namespace Alimer
 	{
 		if (!IsCompressed())
 		{
-			memcpy(_data.get(), pixelData, _size.width * _size.height * GetPixelByteSize());
+			memcpy(_data.get(), pixelData, _size.width * _size.height * GetPixelFormatSize(_format));
 		}
 		else
+		{
 			ALIMER_LOGERROR("Can not set pixel data of a compressed image");
+		}
 	}
 
 	uint8_t* Image::DecodePixelData(Stream& source, int& width, int& height, unsigned& components)
@@ -604,7 +546,25 @@ namespace Alimer
 	{
 		ALIMER_PROFILE(GenerateMipImage);
 
-		int components = Components();
+		uint32_t components = 0;
+		switch (_format)
+		{
+		case PixelFormat::A8UNorm:
+		case PixelFormat::R8UNorm:
+			components = 1;
+			break;
+
+		case PixelFormat::RG8UNorm:
+			components = 2;
+			break;
+
+		case PixelFormat::RGBA8UNorm:
+			components = 4;
+			break;
+
+		default:
+			break;
+		}
 		if (components < 1 || components > 4)
 		{
 			ALIMER_LOGERROR("Unsupported format for calculating the next mip level");
@@ -745,7 +705,7 @@ namespace Alimer
 		if (format < PixelFormat::BC1)
 		{
 			rows = size.height;
-			rowSize = size.width * _pixelByteSizes[ecast(format)];
+			rowSize = size.width * GetPixelFormatSize(format);
 			dataSize = rows * rowSize;
 		}
 		else if (format < PixelFormat::PVRTC_RGB_2BPP)
@@ -855,5 +815,53 @@ namespace Alimer
 
 #undef CASE_STRING
 		return "";
+	}
+
+	uint32_t GetPixelFormatSize(PixelFormat format)
+	{
+		switch (format)
+		{
+		case PixelFormat::A8UNorm:
+		case PixelFormat::R8UNorm:
+			return 1;
+
+		case PixelFormat::RG8UNorm:
+		case PixelFormat::R16UNorm:
+		case PixelFormat::R16Float:
+		case PixelFormat::Depth16UNorm:
+			return 2;
+
+		case PixelFormat::RGBA8UNorm:
+		case PixelFormat::RG16UNorm:
+		case PixelFormat::RG16Float:
+		case PixelFormat::R32Float:
+		case PixelFormat::Depth32Float:
+		case PixelFormat::Depth24UNormStencil8:
+			return 4;
+
+		case PixelFormat::RGBA16UNorm:
+		case PixelFormat::RGBA16Float:
+		case PixelFormat::RG32Float:
+			return 8;
+		case PixelFormat::RGBA32Float:
+			return 16;
+
+		case PixelFormat::Stencil8:
+			return 1;
+
+		case PixelFormat::BC1:
+		case PixelFormat::BC2:
+		case PixelFormat::BC3:
+		case PixelFormat::ETC1:
+		case PixelFormat::PVRTC_RGB_2BPP:
+		case PixelFormat::PVRTC_RGBA_2BPP:
+		case PixelFormat::PVRTC_RGB_4BPP:
+		case PixelFormat::PVRTC_RGBA_4BPP:
+			return 0;
+
+		default:
+			ALIMER_LOGERROR("Invalid PixelFormat value {}", EnumToString(format));
+			return 0;
+		}
 	}
 }

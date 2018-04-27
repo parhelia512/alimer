@@ -256,7 +256,9 @@ namespace Alimer
 			const bool dynamic = false;
 			textureDesc.CPUAccessFlags = dynamic ? D3D11_CPU_ACCESS_WRITE : 0;
 			if (_type == TextureType::TypeCube)
+			{
 				textureDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+			}
 
 			std::vector<D3D11_SUBRESOURCE_DATA> subResourceData;
 			if (initialData)
@@ -455,7 +457,7 @@ namespace Alimer
 			const bool dynamic = false;
 			if (dynamic)
 			{
-				const uint32_t pixelByteSize = Image::_pixelByteSizes[ecast(_format)];
+				const uint32_t pixelByteSize = GetPixelFormatSize(_format);
 				if (!pixelByteSize)
 				{
 					ALIMER_LOGERROR("Updating dynamic compressed texture is not supported");

@@ -144,6 +144,9 @@ namespace Alimer
 
 		VertexBindingState _vbo = {};
 
+		/// Bound constant buffers by shader stage.
+		ConstantBuffer* _constantBuffers[ecast(ShaderStage::Count)][MAX_CONSTANT_BUFFERS];
+
 		/// Blend state objects.
 		HashMap<ID3D11BlendState1*> _blendStates;
 		/// Depth state objects.

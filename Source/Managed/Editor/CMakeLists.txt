@@ -20,32 +20,7 @@
 # THE SOFTWARE.
 #
 
-set(SPIRV_CROSS_SOURCES
-	${CMAKE_CURRENT_SOURCE_DIR}/GLSL.std.450.h
-	${CMAKE_CURRENT_SOURCE_DIR}/spirv_common.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/spirv_cfg.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/spirv_cfg.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/spirv_cross.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/spirv_cross.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/spirv.hpp
-)
-
-if (ALIMER_D3D11 OR ALIMER_D3D12)
-	list(APPEND SPIRV_CROSS_SOURCES
-		${CMAKE_CURRENT_SOURCE_DIR}/spirv_hlsl.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/spirv_hlsl.hpp
-	)
-endif()
-
-if (ALIMER_VULKAN OR ALIMER_OPENGL)
-	list(APPEND SPIRV_CROSS_SOURCES
-		${CMAKE_CURRENT_SOURCE_DIR}/spirv_glsl.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/spirv_glsl.hpp
-	)
-endif()
-
-add_library(spirv_cross OBJECT ${SPIRV_CROSS_SOURCES})
-target_include_directories(spirv_cross
-	PUBLIC    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-)
-set_target_properties(spirv_cross PROPERTIES FOLDER ThirdParty)
+# Restore packages.
+execute_process(COMMAND ${DOTNET_BINARY} restore ${CMAKE_CURRENT_SOURCE_DIR}/Alimer.Studio/Alimer.Studio.csproj)
+include_external_msproject(Alimer.Studio ${CMAKE_CURRENT_SOURCE_DIR}/Alimer.Studio/Alimer.Studio.csproj PLATFORM "Any CPU")
+set_target_properties(Alimer.Studio PROPERTIES FOLDER Managed/Studio)

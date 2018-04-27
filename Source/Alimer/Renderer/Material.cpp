@@ -56,13 +56,13 @@ namespace Alimer
 	bool Pass::LoadJSON(const json& source)
 	{
 		if (source.count("vs"))
-			_shaderNames[SHADER_VS] = source["vs"].get<string>();
+			_shaderNames[static_cast<unsigned>(ShaderStage::Vertex)] = source["vs"].get<string>();
 		if (source.count("ps"))
-			_shaderNames[SHADER_PS] = source["ps"].get<string>();
+			_shaderNames[static_cast<unsigned>(ShaderStage::Fragment)] = source["ps"].get<string>();
 		if (source.count("vsDefines"))
-			_shaderDefines[SHADER_VS] = source["vsDefines"].get<string>();
+			_shaderDefines[static_cast<unsigned>(ShaderStage::Vertex)] = source["vsDefines"].get<string>();
 		if (source.count("psDefines"))
-			_shaderDefines[SHADER_PS] = source["psDefines"].get<string>();
+			_shaderDefines[static_cast<unsigned>(ShaderStage::Fragment)] = source["psDefines"].get<string>();
 
 		if (source.count("depthFunc"))
 			depthFunc = (CompareFunc)str::ListIndex(source["depthFunc"].get<string>(), compareFuncNames, CMP_LESS_EQUAL);
@@ -110,14 +110,14 @@ namespace Alimer
 	{
 		dest.object();
 
-		if (_shaderNames[SHADER_VS].length())
-			dest["vs"] = _shaderNames[SHADER_VS];
-		if (_shaderNames[SHADER_PS].length())
-			dest["ps"] = _shaderNames[SHADER_PS];
-		if (_shaderDefines[SHADER_VS].length())
-			dest["vsDefines"] = _shaderDefines[SHADER_VS];
-		if (_shaderDefines[SHADER_PS].length())
-			dest["psDefines"] = _shaderDefines[SHADER_PS];
+		if (_shaderNames[static_cast<unsigned>(ShaderStage::Vertex)].length())
+			dest["vs"] = _shaderNames[static_cast<unsigned>(ShaderStage::Vertex)];
+		if (_shaderNames[static_cast<unsigned>(ShaderStage::Fragment)].length())
+			dest["ps"] = _shaderNames[static_cast<unsigned>(ShaderStage::Fragment)];
+		if (_shaderDefines[static_cast<unsigned>(ShaderStage::Vertex)].length())
+			dest["vsDefines"] = _shaderDefines[static_cast<unsigned>(ShaderStage::Vertex)];
+		if (_shaderDefines[static_cast<unsigned>(ShaderStage::Fragment)].length())
+			dest["psDefines"] = _shaderDefines[static_cast<unsigned>(ShaderStage::Fragment)];
 
 		dest["depthFunc"] = compareFuncNames[depthFunc];
 		dest["depthWrite"] = depthWrite;
@@ -165,10 +165,10 @@ namespace Alimer
 		const std::string& vsDefines,
 		const std::string& psDefines)
 	{
-		_shaderNames[SHADER_VS] = vsName;
-		_shaderNames[SHADER_PS] = psName;
-		_shaderDefines[SHADER_VS] = vsDefines;
-		_shaderDefines[SHADER_PS] = psDefines;
+		_shaderNames[static_cast<unsigned>(ShaderStage::Vertex)] = vsName;
+		_shaderNames[static_cast<unsigned>(ShaderStage::Fragment)] = psName;
+		_shaderDefines[static_cast<unsigned>(ShaderStage::Vertex)] = vsDefines;
+		_shaderDefines[static_cast<unsigned>(ShaderStage::Fragment)] = psDefines;
 		OnShadersChanged();
 	}
 
@@ -192,7 +192,7 @@ namespace Alimer
 	void Pass::OnShadersChanged()
 	{
 		// Reset existing variations
-		for (size_t i = 0; i < MAX_SHADER_STAGES; ++i)
+		for (uint32_t i = 0; i < static_cast<uint32_t>(ShaderStage::Count); ++i)
 		{
 			shaders[i].Reset();
 			shaderVariations[i].clear();
@@ -201,7 +201,7 @@ namespace Alimer
 		shadersLoaded = false;
 
 		// Combine and trim the shader defines
-		for (size_t i = 0; i < MAX_SHADER_STAGES; ++i)
+		for (uint32_t i = 0; i < static_cast<uint32_t>(ShaderStage::Count); ++i)
 		{
 			const std::string& materialDefines = _parent->ShaderDefines((ShaderStage)i);
 			if (materialDefines.length())
@@ -210,8 +210,12 @@ namespace Alimer
 				_combinedShaderDefines[i] = str::Trim(_shaderDefines[i]);
 		}
 
-		_shaderHash = StringHash(_shaderNames[SHADER_VS] + _shaderNames[SHADER_PS] + _combinedShaderDefines[SHADER_VS] +
-			_combinedShaderDefines[SHADER_PS]).Value();
+		_shaderHash = StringHash(
+			_shaderNames[static_cast<uint32_t>(ShaderStage::Vertex)]
+			+ _shaderNames[static_cast<uint32_t>(ShaderStage::Fragment)]
+			+ _combinedShaderDefines[static_cast<uint32_t>(ShaderStage::Vertex)]
+			+ _combinedShaderDefines[static_cast<uint32_t>(ShaderStage::Fragment)]
+		).Value();
 	}
 
 	Material::Material()
@@ -237,12 +241,12 @@ namespace Alimer
 
 		const json& root = _loadJSON->GetRoot();
 
-		_shaderDefines[SHADER_VS].clear();
-		_shaderDefines[SHADER_PS].clear();
+		_shaderDefines[static_cast<uint32_t>(ShaderStage::Vertex)].clear();
+		_shaderDefines[static_cast<uint32_t>(ShaderStage::Fragment)].clear();
 		if (root.count("vsDefines"))
-			_shaderDefines[SHADER_VS] = root["vsDefines"].get<string>();
+			_shaderDefines[static_cast<uint32_t>(ShaderStage::Vertex)] = root["vsDefines"].get<string>();
 		if (root.count("psDefines"))
-			_shaderDefines[SHADER_PS] = root["psDefines"].get<string>();
+			_shaderDefines[static_cast<uint32_t>(ShaderStage::Fragment)] = root["psDefines"].get<string>();
 
 		return true;
 	}
@@ -264,18 +268,18 @@ namespace Alimer
 			}
 		}
 
-		constantBuffers[SHADER_VS].Reset();
+		constantBuffers[static_cast<uint32_t>(ShaderStage::Vertex)].Reset();
 		if (root.count("vsConstantBuffer"))
 		{
-			constantBuffers[SHADER_VS] = new ConstantBuffer();
-			constantBuffers[SHADER_VS]->LoadJSON(root["vsConstantBuffer"]);
+			constantBuffers[static_cast<uint32_t>(ShaderStage::Vertex)] = new ConstantBuffer();
+			constantBuffers[static_cast<uint32_t>(ShaderStage::Vertex)]->LoadJSON(root["vsConstantBuffer"]);
 		}
 
-		constantBuffers[SHADER_PS].Reset();
+		constantBuffers[static_cast<uint32_t>(ShaderStage::Fragment)].Reset();
 		if (root.count("psConstantBuffer"))
 		{
-			constantBuffers[SHADER_PS] = new ConstantBuffer();
-			constantBuffers[SHADER_PS]->LoadJSON(root["psConstantBuffer"]);
+			constantBuffers[static_cast<uint32_t>(ShaderStage::Fragment)] = new ConstantBuffer();
+			constantBuffers[static_cast<uint32_t>(ShaderStage::Fragment)]->LoadJSON(root["psConstantBuffer"]);
 		}
 
 		/// \todo Queue texture loads during BeginLoad()
@@ -301,10 +305,10 @@ namespace Alimer
 
 		json root = json::object();
 
-		if (_shaderDefines[SHADER_VS].length())
-			root["vsDefines"] = _shaderDefines[SHADER_VS];
-		if (_shaderDefines[SHADER_PS].length())
-			root["psDefines"] = _shaderDefines[SHADER_PS];
+		if (_shaderDefines[static_cast<uint32_t>(ShaderStage::Vertex)].length())
+			root["vsDefines"] = _shaderDefines[static_cast<uint32_t>(ShaderStage::Vertex)];
+		if (_shaderDefines[static_cast<uint32_t>(ShaderStage::Fragment)].length())
+			root["psDefines"] = _shaderDefines[static_cast<uint32_t>(ShaderStage::Fragment)];
 
 		if (_passes.size())
 		{
@@ -316,10 +320,10 @@ namespace Alimer
 			}
 		}
 
-		if (constantBuffers[SHADER_VS])
-			constantBuffers[SHADER_VS]->SaveJSON(root["vsConstantBuffer"]);
-		if (constantBuffers[SHADER_PS])
-			constantBuffers[SHADER_PS]->SaveJSON(root["psConstantBuffer"]);
+		if (constantBuffers[static_cast<uint32_t>(ShaderStage::Vertex)])
+			constantBuffers[static_cast<uint32_t>(ShaderStage::Vertex)]->SaveJSON(root["vsConstantBuffer"]);
+		if (constantBuffers[static_cast<uint32_t>(ShaderStage::Fragment)])
+			constantBuffers[static_cast<uint32_t>(ShaderStage::Fragment)]->SaveJSON(root["psConstantBuffer"]);
 
 		root["textures"].object();
 		for (size_t i = 0; i < MAX_MATERIAL_TEXTURE_UNITS; ++i)
@@ -367,16 +371,15 @@ namespace Alimer
 
 	void Material::SetConstantBuffer(ShaderStage stage, ConstantBuffer* buffer)
 	{
-		if (stage < MAX_SHADER_STAGES)
-			constantBuffers[stage] = buffer;
+		constantBuffers[static_cast<uint32_t>(stage)] = buffer;
 	}
 
 	void Material::SetShaderDefines(
 		const std::string& vsDefines,
 		const std::string& psDefines)
 	{
-		_shaderDefines[SHADER_VS] = vsDefines;
-		_shaderDefines[SHADER_PS] = psDefines;
+		_shaderDefines[static_cast<uint32_t>(ShaderStage::Vertex)] = vsDefines;
+		_shaderDefines[static_cast<uint32_t>(ShaderStage::Fragment)] = psDefines;
 
 		for (auto pass : _passes)
 		{
@@ -402,12 +405,18 @@ namespace Alimer
 
 	ConstantBuffer* Material::GetConstantBuffer(ShaderStage stage) const
 	{
-		return stage < MAX_SHADER_STAGES ? constantBuffers[stage].Get() : nullptr;
+		if (stage < ShaderStage::Count)
+			return constantBuffers[static_cast<unsigned>(stage)].Get();
+
+		return nullptr;
 	}
 
 	const std::string& Material::ShaderDefines(ShaderStage stage) const
 	{
-		return stage < MAX_SHADER_STAGES ? _shaderDefines[stage] : str::EMPTY;
+		if (stage < ShaderStage::Count)
+			return _shaderDefines[static_cast<unsigned>(stage)];
+
+		return str::EMPTY;
 	}
 
 	uint8_t Material::GetPassIndex(const std::string& name, bool createNew)
@@ -423,7 +432,7 @@ namespace Alimer
 			_passNames.push_back(nameLower);
 			return _nextPassIndex++;
 		}
-		
+
 		return 0xff;
 	}
 

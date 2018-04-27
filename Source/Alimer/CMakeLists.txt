@@ -73,16 +73,54 @@ endif ()
 
 define_engine_source_files(ThirdParty/STB)
 
+# SPIRV-Cross
+set(SPIRV_CROSS_HEADER_FILES
+	ThirdParty/SPIRV-Cross/GLSL.std.450.h
+	ThirdParty/SPIRV-Cross/spirv_common.hpp
+	ThirdParty/SPIRV-Cross/spirv_cfg.hpp
+	ThirdParty/SPIRV-Cross/spirv_cross.hpp
+	ThirdParty/SPIRV-Cross/spirv.hpp
+)
+
+set(SPIRV_CROSS_SOURCE_FILES
+	ThirdParty/SPIRV-Cross/spirv_cfg.cpp
+	ThirdParty/SPIRV-Cross/spirv_cross.cpp
+)
+
+set(NEED_SPIRV_CROSS_GLSL OFF)
+
+if (ALIMER_D3D11 OR ALIMER_D3D12)
+	list(APPEND SPIRV_CROSS_HEADER_FILES
+		ThirdParty/SPIRV-Cross/spirv_hlsl.hpp
+	)
+
+	list(APPEND SPIRV_CROSS_SOURCE_FILES
+		ThirdParty/SPIRV-Cross/spirv_hlsl.cpp
+	)
+	set(NEED_SPIRV_CROSS_GLSL ON)
+endif()
+
+if (ALIMER_VULKAN OR ALIMER_OPENGL OR NEED_SPIRV_CROSS_GLSL)
+	list(APPEND SPIRV_CROSS_HEADER_FILES
+		ThirdParty/SPIRV-Cross/spirv_glsl.hpp
+	)
+	list(APPEND SPIRV_CROSS_SOURCE_FILES
+		ThirdParty/SPIRV-Cross/spirv_glsl.cpp
+	)
+endif()
+
+list (APPEND HEADER_FILES ${SPIRV_CROSS_HEADER_FILES})
+list (APPEND SOURCE_FILES ${SPIRV_CROSS_SOURCE_FILES})
+install (FILES ${SPIRV_CROSS_HEADER_FILES} DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/SPIRV-Cross)
+
 # Group source code in VS solution
 group_sources()
 
 set (THIRD_PARTY_DEPENDENCIES)
 if (ALIMER_SDL)
-	if (SDL_SHARED)
+	if (BUILD_SHARED_LIBS)
 		list(APPEND THIRD_PARTY_DEPENDENCIES SDL2)
-	endif ()
-
-	if (SDL_STATIC)
+	else ()
 		list(APPEND THIRD_PARTY_DEPENDENCIES SDL2-static)
 	endif()
 endif()

@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "../Base/Utils.h"
 #include "../Graphics/GraphicsDefs.h"
 #include "../Resource/Resource.h"
 
@@ -65,11 +66,11 @@ namespace Alimer
 		/// Return pass name.
 		const std::string& GetName() const { return _name; }
 		/// Return shader name by stage.
-		const std::string& GetShaderName(ShaderStage stage) const { return _shaderNames[stage]; }
+		const std::string& GetShaderName(ShaderStage stage) const { return _shaderNames[static_cast<unsigned>(stage)]; }
 		/// Return shader defines by stage.
-		const std::string& GetShaderDefines(ShaderStage stage) const { return _shaderDefines[stage]; }
+		const std::string& GetShaderDefines(ShaderStage stage) const { return _shaderDefines[static_cast<unsigned>(stage)]; }
 		/// Return combined shader defines from the material and pass by stage.
-		const std::string& CombinedShaderDefines(ShaderStage stage) const { return _combinedShaderDefines[stage]; }
+		const std::string& GetCombinedShaderDefines(ShaderStage stage) const { return _combinedShaderDefines[static_cast<unsigned>(stage)]; }
 		/// Return shader hash value for state sorting.
 		uint32_t GetShaderHash() const { return _shaderHash; }
 
@@ -93,9 +94,9 @@ namespace Alimer
 		/// Polygon fill mode.
 		FillMode fillMode;
 		/// Shader resources. Filled by Renderer.
-		SharedPtr<Shader> shaders[MAX_SHADER_STAGES];
+		SharedPtr<Shader> shaders[static_cast<unsigned>(ShaderStage::Count)];
 		/// Cached shader variations. Filled by Renderer.
-		std::map<uint16_t, WeakPtr<ShaderVariation> > shaderVariations[MAX_SHADER_STAGES];
+		std::map<uint16_t, WeakPtr<ShaderVariation> > shaderVariations[static_cast<unsigned>(ShaderStage::Count)];
 		/// Shader load attempted flag. Filled by Renderer.
 		bool shadersLoaded;
 
@@ -105,11 +106,11 @@ namespace Alimer
 		/// Pass name.
 		std::string _name;
 		/// Shader names.
-		std::string _shaderNames[MAX_SHADER_STAGES];
+		std::string _shaderNames[static_cast<unsigned>(ShaderStage::Count)];
 		/// Shader defines.
-		std::string _shaderDefines[MAX_SHADER_STAGES];
+		std::string _shaderDefines[static_cast<unsigned>(ShaderStage::Count)];
 		/// Combined shader defines from both the pass and material. Filled by Renderer.
-		std::string _combinedShaderDefines[MAX_SHADER_STAGES];
+		std::string _combinedShaderDefines[static_cast<unsigned>(ShaderStage::Count)];
 		/// Shader hash calculated from names and defines.
 		uint32_t _shaderHash;
 	};
@@ -169,13 +170,13 @@ namespace Alimer
 		/// Material textures.
 		SharedPtr<Texture> textures[MAX_MATERIAL_TEXTURE_UNITS];
 		/// Constant buffers.
-		SharedPtr<ConstantBuffer> constantBuffers[MAX_SHADER_STAGES];
+		SharedPtr<ConstantBuffer> constantBuffers[static_cast<unsigned>(ShaderStage::Count)];
 
 	private:
 		/// Passes by index.
 		std::vector<std::shared_ptr<Pass>> _passes;
 		/// Global shader defines.
-		std::string _shaderDefines[MAX_SHADER_STAGES];
+		std::string _shaderDefines[static_cast<unsigned>(ShaderStage::Count)];
 		/// JSON data used for loading.
 		UniquePtr<JSONFile> _loadJSON;
 
