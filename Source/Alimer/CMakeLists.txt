@@ -70,9 +70,6 @@ if (PLATFORM_WINDOWS)
 	define_engine_source_files(IO/Windows)
 	define_engine_source_files(Window/Win32)
 endif ()
-
-define_engine_source_files(ThirdParty/STB)
-
 # SPIRV-Cross
 set(SPIRV_CROSS_HEADER_FILES
 	${ALIMER_THIRD_PARTY_DIR}/SPIRV-Cross/GLSL.std.450.h
@@ -142,7 +139,7 @@ target_include_directories(Alimer PUBLIC
 
 target_include_directories(Alimer PRIVATE
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty>
+	$<BUILD_INTERFACE:${ALIMER_THIRD_PARTY_DIR}>
 )
 
 if (ALIMER_SDL)
