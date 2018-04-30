@@ -75,37 +75,37 @@ define_engine_source_files(ThirdParty/STB)
 
 # SPIRV-Cross
 set(SPIRV_CROSS_HEADER_FILES
-	ThirdParty/SPIRV-Cross/GLSL.std.450.h
-	ThirdParty/SPIRV-Cross/spirv_common.hpp
-	ThirdParty/SPIRV-Cross/spirv_cfg.hpp
-	ThirdParty/SPIRV-Cross/spirv_cross.hpp
-	ThirdParty/SPIRV-Cross/spirv.hpp
+	${ALIMER_THIRD_PARTY_DIR}/SPIRV-Cross/GLSL.std.450.h
+	${ALIMER_THIRD_PARTY_DIR}/SPIRV-Cross/spirv_common.hpp
+	${ALIMER_THIRD_PARTY_DIR}/SPIRV-Cross/spirv_cfg.hpp
+	${ALIMER_THIRD_PARTY_DIR}/SPIRV-Cross/spirv_cross.hpp
+	${ALIMER_THIRD_PARTY_DIR}/SPIRV-Cross/spirv.hpp
 )
 
 set(SPIRV_CROSS_SOURCE_FILES
-	ThirdParty/SPIRV-Cross/spirv_cfg.cpp
-	ThirdParty/SPIRV-Cross/spirv_cross.cpp
+	${ALIMER_THIRD_PARTY_DIR}/SPIRV-Cross/spirv_cfg.cpp
+	${ALIMER_THIRD_PARTY_DIR}/SPIRV-Cross/spirv_cross.cpp
 )
 
 set(NEED_SPIRV_CROSS_GLSL OFF)
 
 if (ALIMER_D3D11 OR ALIMER_D3D12)
 	list(APPEND SPIRV_CROSS_HEADER_FILES
-		ThirdParty/SPIRV-Cross/spirv_hlsl.hpp
+		${ALIMER_THIRD_PARTY_DIR}/SPIRV-Cross/spirv_hlsl.hpp
 	)
 
 	list(APPEND SPIRV_CROSS_SOURCE_FILES
-		ThirdParty/SPIRV-Cross/spirv_hlsl.cpp
+		${ALIMER_THIRD_PARTY_DIR}/SPIRV-Cross/spirv_hlsl.cpp
 	)
 	set(NEED_SPIRV_CROSS_GLSL ON)
 endif()
 
 if (ALIMER_VULKAN OR ALIMER_OPENGL OR NEED_SPIRV_CROSS_GLSL)
 	list(APPEND SPIRV_CROSS_HEADER_FILES
-		ThirdParty/SPIRV-Cross/spirv_glsl.hpp
+		${ALIMER_THIRD_PARTY_DIR}/SPIRV-Cross/spirv_glsl.hpp
 	)
 	list(APPEND SPIRV_CROSS_SOURCE_FILES
-		ThirdParty/SPIRV-Cross/spirv_glsl.cpp
+		${ALIMER_THIRD_PARTY_DIR}/SPIRV-Cross/spirv_glsl.cpp
 	)
 endif()
 
