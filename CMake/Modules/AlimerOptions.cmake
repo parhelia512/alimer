@@ -137,11 +137,12 @@ if (NOT ALIMER_DISABLE_D3D12)
 endif ()
 
 if (NOT ALIMER_DISABLE_OPENGL)
-	if (NOT PLATFORM_UWP)
-		set (ALIMER_OPENGL_DEFAULT ON)
-	else ()
+	# TODO: Restore once supported
+	#if (NOT PLATFORM_UWP)
+	#	set (ALIMER_OPENGL_DEFAULT ON)
+	#else ()
 		set (ALIMER_OPENGL_DEFAULT OFF)
-	endif ()
+	#endif ()
 endif ()
 
 if (NOT ALIMER_DISABLE_VULKAN)

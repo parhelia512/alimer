@@ -41,5 +41,3 @@ branches:
 skip_commits:
   files:
     - .travis.yml
-    - LICENSE
-    - README.md
