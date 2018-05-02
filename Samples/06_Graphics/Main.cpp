@@ -77,12 +77,14 @@ public:
 		_indexBuffer = std::make_unique<IndexBuffer>();
 		_indexBuffer->Define(ResourceUsage::Immutable, 3, IndexType::UInt16, true, indexData);
 
-		Constant pc(ELEM_VECTOR4, "Color");
+		Constant pc(ConstantElementType::Float4, "Color");
 
 		_constantBuffer = std::make_unique<ConstantBuffer>();
 		_constantBuffer->Define(1, &pc, true);
 		_constantBuffer->SetConstant("Color", Color::WHITE);
 		_constantBuffer->Apply();
+
+		auto testShader = GetCache()->LoadResource<Shader>("TestShader.bin");
 
 		std::string vsCode =
 #ifndef ALIMER_OPENGL

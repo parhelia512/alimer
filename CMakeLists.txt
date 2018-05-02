@@ -58,6 +58,7 @@ endif ()
 set (ALIMER_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set (ALIMER_SDK_SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Source/Alimer)
 set (ALIMER_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/ThirdParty)
+set (ALIMER_ASSETS_PATH ${CMAKE_CURRENT_SOURCE_DIR}/assets)
 
 # Source
 add_subdirectory (Source)
@@ -102,6 +103,8 @@ message(STATUS "  Library         ${ALIMER_LIBRARY_TYPE}")
 message(STATUS "  SIMD            ${ALIMER_SIMD}")
 message(STATUS "  D3D11           ${ALIMER_D3D11}")
 message(STATUS "  D3D12           ${ALIMER_D3D12}")
+message(STATUS "  OpenGL          ${ALIMER_OPENGL}")
+message(STATUS "  Vulkan          ${ALIMER_VULKAN}")
 
 message(STATUS "Developer options:")
 message(STATUS "  Packaging       ${ALIMER_PACKAGING}")

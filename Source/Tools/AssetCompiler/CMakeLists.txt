@@ -1,5 +1,4 @@
 #
-# Alimer is based on the Turso3D codebase.
 # Copyright (c) 2018 Amer Koleci and contributors.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,6 +20,9 @@
 # THE SOFTWARE.
 #
 
-add_subdirectory (Tools)
-add_subdirectory (AssetCompiler)
-add_subdirectory (Editor)
+file (GLOB_RECURSE SOURCE_FILES *.cpp *.h *.hpp)
+add_executable (AlimerAssetCompiler ${SOURCE_FILES})
+target_link_libraries (AlimerAssetCompiler AlimerAssets)
+install(TARGETS AlimerAssetCompiler RUNTIME DESTINATION ${DEST_TOOLS_DIR})
+
+set_property(TARGET AlimerAssetCompiler PROPERTY FOLDER "Tools")

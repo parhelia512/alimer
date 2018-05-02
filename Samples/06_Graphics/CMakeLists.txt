@@ -26,3 +26,8 @@ set (ALIMER_WIN32_CONSOLE TRUE)
 
 file (GLOB SOURCE_FILES *.cpp *.h)
 add_alimer_executable (${TARGET_NAME} ${SOURCE_FILES})
+
+add_custom_command(
+	TARGET ${TARGET_NAME} POST_BUILD
+	COMMAND $<TARGET_FILE:AlimerAssetCompiler> "${ALIMER_ASSETS_PATH}/shaders/tests/06_Graphics.hlsl" "${CMAKE_BINARY_DIR}/bin/Debug"
+	DEPENDS AlimerAssetCompiler)
