@@ -99,7 +99,6 @@ else ()
 endif ()
 
 # Define CMake options
-include (CMakeDependentOption)
 option(ALIMER_ENABLE_ALL "Enables all optional subsystems by default" OFF)
 
 set (ALIMER_SDL_DEFAULT ON)
@@ -137,6 +136,22 @@ if (NOT ALIMER_DISABLE_D3D12)
 	endif ()
 endif ()
 
+if (NOT ALIMER_DISABLE_OPENGL)
+	if (NOT PLATFORM_UWP)
+		set (ALIMER_OPENGL_DEFAULT ON)
+	else ()
+		set (ALIMER_OPENGL_DEFAULT OFF)
+	endif ()
+endif ()
+
+if (NOT ALIMER_DISABLE_VULKAN)
+	if (PLATFORM_WINDOWS OR PLATFORM_LINUX OR PLATFORM_ANDROID)
+		set (ALIMER_VULKAN_DEFAULT ON)
+	else ()
+		set (ALIMER_VULKAN_DEFAULT OFF)
+	endif ()
+endif ()
+
 # Configuration presets
 set(ALIMER_PRESET None CACHE STRING "Select configuration preset: None | Developer | Release")
 string(TOUPPER "${ALIMER_PRESET}" ALIMER_PRESET)
@@ -152,7 +167,13 @@ else ()
     set (ALIMER_RELEASE ${ALIMER_ENABLE_ALL})
 endif ()
 
-set (ALIMER_TOOLS_DEFAULT ${ALIMER_DEVELOPER})
+if (NOT ALIMER_DISABLE_TOOLS)
+	if (PLATFORM_WINDOWS OR PLATFORM_LINUX OR PLATFORM_OSX)
+		set (ALIMER_TOOLS_DEFAULT ON)
+	else ()
+		set(ALIMER_TOOLS_DEFAULT OFF)
+	endif ()
+endif ()
 
 set (ALIMER_AVX OFF CACHE BOOL "Enable AVX instructions set support.")
 
@@ -163,16 +184,14 @@ option (ALIMER_THREADING "Enable multithreading" ${ALIMER_THREADS_DEFAULT})
 option (ALIMER_SIMD "Enable SIMD (SSE, NEON) instructions" ${ALIMER_SIMD_DEFAULT})
 option (ALIMER_D3D11 "Enable D3D11 backend" ${ALIMER_D3D11_DEFAULT})
 option (ALIMER_D3D12 "Enable D3D12 backend" ${ALIMER_D3D12_DEFAULT})
-cmake_dependent_option (ALIMER_OPENGL "Use OpenGL instead of Direct3D11 on Windows" FALSE "WIN32" TRUE)
+option (ALIMER_OPENGL "Enable OpenGL backend" ${ALIMER_OPENGL_DEFAULT})
+option (ALIMER_VULKAN "Enable Vulkan backend" ${ALIMER_VULKAN_DEFAULT})
+
 option(ALIMER_PACKAGING "Package resources" ${ALIMER_RELEASE})
 option(ALIMER_CSHARP "Enable C# support" ${ALIMER_ENABLE_ALL})
 
 # Tools
-if (ANDROID OR WEB OR IOS)
-    set (ALIMER_TOOLS OFF)
-else ()
-    option(ALIMER_TOOLS "Tools enabled" ${ALIMER_TOOLS_DEFAULT})
-endif ()
+option(ALIMER_TOOLS "Tools enabled" ${ALIMER_TOOLS_DEFAULT})
 
 # Unset any default config variables so they do not pollute namespace
 get_cmake_property(__cmake_variables VARIABLES)

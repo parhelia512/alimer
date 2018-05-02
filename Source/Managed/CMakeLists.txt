@@ -36,13 +36,13 @@ if (CMAKE_BUILD_TYPE MATCHES Release)
 	execute_process(COMMAND ${DOTNET_BINARY} pack -c Release ${CMAKE_CURRENT_SOURCE_DIR}/AlimerSharp/AlimerSharp.csproj)
 endif ()
 
-if (NOT ALIMER_SKIP_CSHARP_INSTALL)
+if (NOT $ENV{APPVEYOR})
 	if (MSVC)
 		# AlimerSharp
 		include_external_msproject(AlimerSharp ${CMAKE_CURRENT_SOURCE_DIR}/AlimerSharp/AlimerSharp.csproj PLATFORM "Any CPU")
 		set_target_properties(AlimerSharp PROPERTIES FOLDER Managed)
 
-		if (ALIMER_DESKTOP)
+		if (ALIMER_TOOLS)
 			add_subdirectory (Editor)
 		endif ()
 	endif ()

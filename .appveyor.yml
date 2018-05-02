@@ -22,7 +22,7 @@ before_build:
  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
  - mkdir "%APPVEYOR_BUILD_FOLDER%\Build"
  - cd "%APPVEYOR_BUILD_FOLDER%\Build"
- - cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=Release -DALIMER_SKIP_CSHARP_INSTALL=ON -DCMAKE_INSTALL_PREFIX="%APPVEYOR_BUILD_FOLDER%\Alimer-SDK" ..
+ - cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%APPVEYOR_BUILD_FOLDER%\Alimer-SDK" ..
 
 build_script:
   - cd "%APPVEYOR_BUILD_FOLDER%\Build"

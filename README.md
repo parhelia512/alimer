@@ -35,6 +35,7 @@ The engine uses the following third-party libraries:
   - [stb_truetype.h 1.19](https://github.com/nothings/stb/blob/master/stb_truetype.h)
   - [stb_vorbis.c 1.14](https://github.com/nothings/stb/blob/master/stb_vorbis.c)
   - [stb_textedit.h 1.12](https://github.com/nothings/stb/blob/master/stb_textedit.h)
+- [volk Metaloader for Vulkan](https://github.com/zeux/volk)
 
 Additional inspiration & research used:
 
