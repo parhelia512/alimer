@@ -43,10 +43,26 @@ namespace Alimer
 
 	bool Shader::BeginLoad(Stream& source)
 	{
-		std::string extension = GetExtension(source.GetName());
-		_stage = (extension == ".vs" || extension == ".vert") ? ShaderStage::Vertex : ShaderStage::Fragment;
-		_sourceCode.clear();
-		return ProcessIncludes(_sourceCode, source);
+		string fileID = source.ReadFileID();
+		if (fileID != "ASHD")
+		{
+			std::string extension = GetExtension(source.GetName());
+			_stage = (extension == ".vs" || extension == ".vert") ? ShaderStage::Vertex : ShaderStage::Fragment;
+			_sourceCode.clear();
+			return ProcessIncludes(_sourceCode, source);
+
+			//ALIMER_LOGERROR(source.GetName() + " is not a valid shader file.");
+			//return false;
+		}
+
+		const uint32_t shaderCount = source.ReadUInt();
+		for (uint32_t i = 0; i < shaderCount; ++i)
+		{
+			ShaderStage stage = static_cast<ShaderStage>(source.ReadUByte());
+			auto bytecode = source.ReadBuffer();
+		}
+
+		return true;
 	}
 
 	bool Shader::EndLoad()

@@ -26,19 +26,6 @@
 
 namespace Alimer
 {
-
-	extern ALIMER_API const uint32_t elementSizes[] =
-	{
-		sizeof(int),
-		sizeof(float),
-		sizeof(Vector2),
-		sizeof(Vector3),
-		sizeof(Vector4),
-		sizeof(unsigned),
-		sizeof(Matrix3x4),
-		sizeof(Matrix4)
-	};
-
 	extern ALIMER_API const char* resourceUsageNames[] =
 	{
 		"default",
@@ -47,18 +34,7 @@ namespace Alimer
 		nullptr
 	};
 
-	extern ALIMER_API const char* elementTypeNames[] =
-	{
-		"int",
-		"float",
-		"Vector2",
-		"Vector3",
-		"Vector4",
-		"UByte4",
-		"Matrix3x4",
-		"Matrix4",
-		nullptr
-	};
+	
 
 	extern ALIMER_API const char* blendFactorNames[] =
 	{
@@ -181,6 +157,31 @@ namespace Alimer
 			return 12;
 		case VertexFormat::Float4:
 			return 16;
+
+		default:
+			return static_cast<uint32_t>(-1);
+		}
+	}
+
+	uint32_t GetConstantElementSize(ConstantElementType type)
+	{
+		switch (type)
+		{
+		case ConstantElementType::Int:
+		case ConstantElementType::Float:
+			return 4;
+		case ConstantElementType::Float2:
+			return 8;
+		case ConstantElementType::Float3:
+			return 12;
+		case ConstantElementType::Float4:
+			return 16;
+
+		case ConstantElementType::Matrix3x4:
+			return sizeof(Matrix3x4);
+
+		case ConstantElementType::Matrix4x4:
+			return sizeof(Matrix4);
 
 		default:
 			return static_cast<uint32_t>(-1);

@@ -49,7 +49,7 @@ configure_file (AlimerConfig.h.in ${CMAKE_CURRENT_SOURCE_DIR}/AlimerConfig.h)
 
 # Add source files from subdirectories
 define_engine_source_files(Base Debug IO Math Object Renderer Resource Scene)
-define_engine_source_files(NORECURSE . Window Application Graphics)
+define_engine_source_files(NORECURSE . Platform Window Application Graphics)
 define_engine_source_files(nlohmann)
 
 if (ALIMER_SDL)
@@ -61,8 +61,12 @@ if (ALIMER_D3D11)
 	define_engine_source_files(Graphics/D3D11)
 endif ()
 
+if (ALIMER_VULKAN)
+	define_engine_source_files(Graphics/Vulkan)
+endif ()
+
 if (ALIMER_OPENGL)
-	define_engine_source_files(Graphics/GL)
+	# define_engine_source_files(Graphics/GL)
 endif ()
 
 if (PLATFORM_WINDOWS)
@@ -163,10 +167,14 @@ if (ALIMER_D3D11)
 	target_compile_definitions (Alimer PRIVATE -DNOMINMAX)
 endif ()
 
+if (ALIMER_VULKAN)
+	target_compile_definitions(Alimer PRIVATE ALIMER_VULKAN=1)
+endif ()
+
 if (ALIMER_OPENGL)
-	include_directories (ThirdParty/FlextGL)
-	find_package (OpenGL REQUIRED)
-	target_link_libraries (Alimer ${OPENGL_gl_LIBRARY})
+	# include_directories (ThirdParty/FlextGL)
+	# find_package (OpenGL REQUIRED)
+	# target_link_libraries (Alimer ${OPENGL_gl_LIBRARY})
 endif ()
 
 # Link dependencies

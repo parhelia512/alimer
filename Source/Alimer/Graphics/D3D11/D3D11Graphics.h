@@ -29,10 +29,9 @@
 
 namespace Alimer
 {
-	struct GraphicsImpl;
 	class D3D11Buffer;
 
-	/// Compiled shader with specific defines.
+	/// D3D11 graphics backend.
 	class D3D11Graphics final : public Graphics
 	{
 	public:

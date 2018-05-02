@@ -21,7 +21,7 @@
 // THE SOFTWARE.
 //
 
-#include "Object.h"
+#include "../Object/Object.h"
 using namespace std;
 
 namespace Alimer

@@ -46,6 +46,19 @@ namespace Alimer
 		MAX_ATTR_TYPES
 	};
 
+	static const char* elementTypeNames[] =
+	{
+		"int",
+		"float",
+		"Vector2",
+		"Vector3",
+		"Vector4",
+		"UByte4",
+		"Matrix3x4",
+		"Matrix4",
+		nullptr
+	};
+
 	ConstantBuffer::ConstantBuffer()
 		: Buffer(BufferUsageBits::Uniform)
 	{
@@ -72,8 +85,8 @@ namespace Alimer
 
 			Constant newConstant;
 			newConstant.name = jsonConstant["name"].get<string>();
-			newConstant.type = (ElementType)str::ListIndex(type, elementTypeNames, MAX_ELEMENT_TYPES);
-			if (newConstant.type == MAX_ELEMENT_TYPES)
+			newConstant.type = (ConstantElementType)str::ListIndex(type, elementTypeNames, static_cast<size_t>(ConstantElementType::Count));
+			if (newConstant.type == ConstantElementType::Count)
 			{
 				ALIMER_LOGERROR("Unknown element type {} in constant buffer JSON", type);
 				break;
@@ -90,7 +103,7 @@ namespace Alimer
 		for (uint32_t i = 0; i < constants.size() && i < jsonConstants.size(); ++i)
 		{
 			const json& value = jsonConstants[i]["value"];
-			AttributeType attrType = elementToAttribute[constants[i].type];
+			AttributeType attrType = elementToAttribute[ecast(constants[i].type)];
 
 			if (value.is_array())
 			{
@@ -117,11 +130,11 @@ namespace Alimer
 		for (uint32_t i = 0; i < _constants.size(); ++i)
 		{
 			const Constant& constant = _constants[i];
-			AttributeType attrType = elementToAttribute[constant.type];
+			AttributeType attrType = elementToAttribute[ecast(constant.type)];
 
 			json jsonConstant = json::object();
 			jsonConstant["name"] = constant.name;
-			jsonConstant["type"] = elementTypeNames[constant.type];
+			jsonConstant["type"] = elementTypeNames[ecast(constant.type)];
 			if (constant.numElements != 1)
 				jsonConstant["numElements"] = (int)constant.numElements;
 
@@ -167,19 +180,11 @@ namespace Alimer
 
 		while (numConstants--)
 		{
-			if (srcConstants->type == ELEM_UBYTE4)
-			{
-				ALIMER_LOGERROR("UBYTE4 type is not supported in constant buffers");
-				_constants.clear();
-				_size = 0;
-				return false;
-			}
-
 			Constant newConstant;
 			newConstant.type = srcConstants->type;
 			newConstant.name = srcConstants->name;
 			newConstant.numElements = srcConstants->numElements;
-			newConstant.elementSize = elementSizes[newConstant.type];
+			newConstant.elementSize = GetConstantElementSize(newConstant.type);
 			// If element crosses 16 byte boundary or is larger than 16 bytes, align to next 16 bytes
 			if ((newConstant.elementSize <= 16 && ((_size + newConstant.elementSize - 1) >> 4) != (_size >> 4)) ||
 				(newConstant.elementSize > 16 && (_size & 15)))

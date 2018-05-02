@@ -128,23 +128,23 @@ namespace Alimer
 	{
 		if (graphics)
 		{
-			for (size_t i = 0; i < MAX_TEXTURE_UNITS; ++i)
+			for (uint32_t i = 0; i < MAX_TEXTURE_UNITS; ++i)
 			{
-				if (graphics->GetTexture(i) == this)
-					graphics->SetTexture(i, 0);
+				//if (graphics->GetTexture(i) == this)
+				//	graphics->SetTexture(i, 0);
 			}
 
 			if (_usage & TextureUsageBits::RenderTarget)
 			{
 				bool clear = false;
 
-				for (size_t i = 0; i < MAX_RENDERTARGETS; ++i)
+				for (uint32_t i = 0; i < MAX_RENDERTARGETS; ++i)
 				{
-					if (graphics->GetRenderTarget(i) == this)
-					{
-						clear = true;
-						break;
-					}
+					//if (graphics->GetRenderTarget(i) == this)
+					//{
+					//	clear = true;
+					//	break;
+					//}
 				}
 
 				if (!clear && graphics->GetDepthStencil() == this)

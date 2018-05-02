@@ -41,13 +41,22 @@
 using namespace std;
 using namespace Microsoft::WRL;
 
+#ifdef _WIN32
+// Prefer the high-performance GPU on switchable GPU systems
+extern "C"
+{
+	__declspec(dllexport) DWORD NvOptimusEnablement = 1;
+	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif
+
 namespace Alimer
 {
 	static_assert(static_cast<uint32_t>(ResourceUsage::Default) == D3D11_USAGE_DEFAULT, "D3D11: Wrong ResourceUsage map");
 	static_assert(static_cast<uint32_t>(ResourceUsage::Immutable) == D3D11_USAGE_IMMUTABLE, "D3D11: Wrong ResourceUsage map");
 	static_assert(static_cast<uint32_t>(ResourceUsage::Dynamic) == D3D11_USAGE_DYNAMIC, "D3D11: Wrong ResourceUsage map");
 
-	
+
 
 #if ALIMER_PLATFORM_WINDOWS && !ALIMER_PLATFORM_UWP
 	typedef HRESULT(WINAPI* PFN_CREATE_DXGI_FACTORY)(REFIID riid, _COM_Outptr_ void **ppFactory);
@@ -142,7 +151,7 @@ namespace Alimer
 		ID3D11Texture2D* defaultDepthTexture;
 		/// Default depth-stencil view.
 		ID3D11DepthStencilView* defaultDepthStencilView;
-		
+
 		/// Current shader resource views.
 		ID3D11ShaderResourceView* resourceViews[MAX_TEXTURE_UNITS];
 		/// Current sampler states.
@@ -218,7 +227,7 @@ namespace Alimer
 
 			// Swap chain needs to be updated manually for the first time, otherwise window resize event takes care of it
 			UpdateSwapChain(
-				settings.window->GetWidth(), 
+				settings.window->GetWidth(),
 				settings.window->GetHeight());
 		}
 
@@ -232,7 +241,7 @@ namespace Alimer
 			_backbufferSize.width,
 			_backbufferSize.height,
 			settings.window->IsFullscreen(),
-			settings.window->IsResizable(), 
+			settings.window->IsResizable(),
 			multisample);
 
 		_initialized = true;
@@ -338,13 +347,6 @@ namespace Alimer
 		}
 	}
 
-	void Graphics::SetRenderTarget(Texture* renderTarget, Texture* depthStencil)
-	{
-		static std::vector<Texture*> renderTargetVector(1);
-		renderTargetVector[0] = renderTarget;
-		SetRenderTargets(renderTargetVector, depthStencil);
-	}
-
 	void D3D11Graphics::SetRenderTargets(
 		const std::vector<Texture*>& renderTargets,
 		Texture* depthStencil)
@@ -418,7 +420,7 @@ namespace Alimer
 			return;
 		}
 
-		
+
 		if (_vbo.buffers[index] != buffer
 			|| _vbo.vertexOffsets[index] != vertexOffset
 			|| _vbo.rates[index] != stepRate)
@@ -556,44 +558,6 @@ namespace Alimer
 		}
 	}
 
-	void Graphics::SetColorState(const BlendModeDesc& blendMode, bool alphaToCoverage, unsigned char colorWriteMask)
-	{
-		renderState.blendMode = blendMode;
-		renderState.colorWriteMask = colorWriteMask;
-		renderState.alphaToCoverage = alphaToCoverage;
-
-		blendStateDirty = true;
-	}
-
-	void Graphics::SetColorState(BlendMode blendMode, bool alphaToCoverage, unsigned char colorWriteMask)
-	{
-		renderState.blendMode = blendModes[blendMode];
-		renderState.colorWriteMask = colorWriteMask;
-		renderState.alphaToCoverage = alphaToCoverage;
-
-		blendStateDirty = true;
-	}
-
-	void Graphics::SetDepthState(CompareFunc depthFunc, bool depthWrite, bool depthClip, int depthBias, float slopeScaledDepthBias)
-	{
-		renderState.depthFunc = depthFunc;
-		renderState.depthWrite = depthWrite;
-		renderState.depthClip = depthClip;
-		renderState.depthBias = depthBias;
-		renderState.slopeScaledDepthBias = slopeScaledDepthBias;
-
-		depthStateDirty = true;
-		rasterizerStateDirty = true;
-	}
-
-	void Graphics::SetRasterizerState(CullMode cullMode, FillMode fillMode)
-	{
-		renderState.cullMode = cullMode;
-		renderState.fillMode = fillMode;
-
-		rasterizerStateDirty = true;
-	}
-
 	void D3D11Graphics::SetScissorTest(bool scissorEnable, const IntRect& scissorRect)
 	{
 		renderState.scissorEnable = scissorEnable;
@@ -701,9 +665,9 @@ namespace Alimer
 	}
 
 	void D3D11Graphics::DrawInstanced(
-		PrimitiveType type, 
-		uint32_t vertexStart, 
-		uint32_t vertexCount, 
+		PrimitiveType type,
+		uint32_t vertexStart,
+		uint32_t vertexCount,
 		uint32_t instanceStart,
 		uint32_t instanceCount)
 	{
@@ -711,14 +675,14 @@ namespace Alimer
 			return;
 
 		_d3dContext->DrawInstanced(
-			vertexCount, 
-			instanceCount, 
+			vertexCount,
+			instanceCount,
 			vertexStart,
 			instanceStart);
 	}
 
 	void D3D11Graphics::DrawIndexedInstanced(
-		PrimitiveType type, 
+		PrimitiveType type,
 		uint32_t indexStart,
 		uint32_t indexCount,
 		uint32_t vertexStart,
@@ -729,35 +693,13 @@ namespace Alimer
 			return;
 
 		_d3dContext->DrawIndexedInstanced(
-			indexCount, 
-			instanceCount, 
-			indexStart, 
-			vertexStart, 
+			indexCount,
+			instanceCount,
+			indexStart,
+			vertexStart,
 			instanceStart);
 	}
 
-	Texture* Graphics::GetRenderTarget(size_t index) const
-	{
-		return index < MAX_RENDERTARGETS ? _renderTargets[index] : nullptr;
-	}
-
-	Texture* Graphics::GetTexture(size_t index) const
-	{
-		return (index < MAX_TEXTURE_UNITS) ? textures[index] : nullptr;
-	}
-
-	void Graphics::AddGPUObject(GPUObject* object)
-	{
-		if (object)
-			gpuObjects.push_back(object);
-	}
-
-	void Graphics::RemoveGPUObject(GPUObject* object)
-	{
-		auto it = std::find(gpuObjects.begin(), gpuObjects.end(), object);
-		if (it != gpuObjects.end())
-			gpuObjects.erase(it);
-	}
 
 	bool D3D11Graphics::CreateD3DDevice(
 		HWND windowHandle,
@@ -1302,16 +1244,4 @@ namespace Alimer
 		scissorRectDirty = false;
 		primitiveType = MAX_PRIMITIVE_TYPES;
 	}
-
-	void RegisterGraphicsLibrary()
-	{
-		static bool registered = false;
-		if (registered)
-			return;
-		registered = true;
-
-		Shader::RegisterObject();
-		Texture::RegisterObject();
-	}
-
 }

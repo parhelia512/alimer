@@ -35,15 +35,15 @@ namespace Alimer
 	/// Maximum simultaneous vertex buffers.
 	static constexpr uint32_t MaxVertexBuffers = 4;
 	/// Maximum simultaneous constant buffers.
-	static const uint32_t MAX_CONSTANT_BUFFERS = 15;
+	static constexpr uint32_t MAX_CONSTANT_BUFFERS = 15;
 	/// Maximum number of textures in use at once.
-	static const uint32_t MAX_TEXTURE_UNITS = 16;
+	static constexpr uint32_t MAX_TEXTURE_UNITS = 16;
 	/// Maximum number of textures reserved for materials, starting from 0.
-	static const uint32_t MAX_MATERIAL_TEXTURE_UNITS = 8;
+	static constexpr uint32_t MAX_MATERIAL_TEXTURE_UNITS = 8;
 	/// Maximum number of color rendertargets in use at once.
-	static const uint32_t MAX_RENDERTARGETS = 4;
+	static constexpr uint32_t MAX_RENDERTARGETS = 4;
 	/// Number of cube map faces.
-	static const uint32_t MAX_CUBE_FACES = 6;
+	static constexpr uint32_t MAX_CUBE_FACES = 6;
 
 	/// Disable color write.
 	static const unsigned char COLORMASK_NONE = 0x0;
@@ -100,17 +100,16 @@ namespace Alimer
 	};
 
 	/// Element types for constant buffers and vertex elements.
-	enum ElementType
+	enum class ConstantElementType : uint32_t
 	{
-		ELEM_INT = 0,
-		ELEM_FLOAT,
-		ELEM_VECTOR2,
-		ELEM_VECTOR3,
-		ELEM_VECTOR4,
-		ELEM_UBYTE4,
-		ELEM_MATRIX3X4,
-		ELEM_MATRIX4,
-		MAX_ELEMENT_TYPES
+		Int = 0,
+		Float,
+		Float2,
+		Float3,
+		Float4,
+		Matrix3x4,
+		Matrix4x4,
+		Count
 	};
 
 	/// Format for VertexElement
@@ -355,7 +354,7 @@ namespace Alimer
 		}
 
 		/// Construct with type, name and optional number of elements.
-		Constant(ElementType type_, const std::string& name_, uint32_t numElements_ = 1)
+		Constant(ConstantElementType type_, const std::string& name_, uint32_t numElements_ = 1)
 			: type(type_)
 			, name(name_)
 			, numElements(numElements_)
@@ -363,7 +362,7 @@ namespace Alimer
 		}
 
 		/// Construct with type, name and optional number of elements.
-		Constant(ElementType type_, const char* name_, uint32_t numElements_ = 1)
+		Constant(ConstantElementType type_, const char* name_, uint32_t numElements_ = 1)
 			: type(type_)
 			, name(name_)
 			, numElements(numElements_)
@@ -371,7 +370,7 @@ namespace Alimer
 		}
 
 		/// Data type of constant.
-		ElementType type;
+		ConstantElementType type;
 		/// Name of constant.
 		std::string name;
 		/// Number of elements. Default 1.
@@ -544,13 +543,10 @@ namespace Alimer
 	};
 
 	ALIMER_API uint32_t GetVertexFormatSize(VertexFormat format);
+	ALIMER_API uint32_t GetConstantElementSize(ConstantElementType type);
 
-	/// Vertex element sizes by element type.
-	extern ALIMER_API const uint32_t elementSizes[];
 	/// Resource usage names.
 	extern ALIMER_API const char* resourceUsageNames[];
-	/// Element type names.
-	extern ALIMER_API const char* elementTypeNames[];
 	/// Blend factor names.
 	extern ALIMER_API const char* blendFactorNames[];
 	/// Blend operation names.

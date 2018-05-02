@@ -618,37 +618,37 @@ namespace Alimer
 		std::vector<Constant> constants;
 
 		vsFrameConstantBuffer = new ConstantBuffer();
-		constants.push_back(Constant(ELEM_MATRIX3X4, "viewMatrix"));
-		constants.push_back(Constant(ELEM_MATRIX4, "projectionMatrix"));
-		constants.push_back(Constant(ELEM_MATRIX4, "viewProjMatrix"));
-		constants.push_back(Constant(ELEM_VECTOR4, "depthParameters"));
+		constants.push_back(Constant(ConstantElementType::Matrix3x4, "viewMatrix"));
+		constants.push_back(Constant(ConstantElementType::Matrix4x4, "projectionMatrix"));
+		constants.push_back(Constant(ConstantElementType::Matrix4x4, "viewProjMatrix"));
+		constants.push_back(Constant(ConstantElementType::Float4, "depthParameters"));
 		vsFrameConstantBuffer->Define(constants, true);
 
 		psFrameConstantBuffer = new ConstantBuffer();
 		constants.clear();
-		constants.push_back(Constant(ELEM_VECTOR4, "ambientColor"));
+		constants.push_back(Constant(ConstantElementType::Float4, "ambientColor"));
 		psFrameConstantBuffer->Define(constants, true);
 
 		vsObjectConstantBuffer = new ConstantBuffer();
 		constants.clear();
-		constants.push_back(Constant(ELEM_MATRIX3X4, "worldMatrix"));
+		constants.push_back(Constant(ConstantElementType::Matrix3x4, "worldMatrix"));
 		vsObjectConstantBuffer->Define(constants, true);
 
 		vsLightConstantBuffer = new ConstantBuffer();
 		constants.clear();
-		constants.push_back(Constant(ELEM_MATRIX4, "shadowMatrices", MAX_LIGHTS_PER_PASS));
+		constants.push_back(Constant(ConstantElementType::Matrix4x4, "shadowMatrices", MAX_LIGHTS_PER_PASS));
 		vsLightConstantBuffer->Define(constants, true);
 
 		psLightConstantBuffer = new ConstantBuffer();
 		constants.clear();
-		constants.push_back(Constant(ELEM_VECTOR4, "lightPositions", MAX_LIGHTS_PER_PASS));
-		constants.push_back(Constant(ELEM_VECTOR4, "lightDirections", MAX_LIGHTS_PER_PASS));
-		constants.push_back(Constant(ELEM_VECTOR4, "lightColors", MAX_LIGHTS_PER_PASS));
-		constants.push_back(Constant(ELEM_VECTOR4, "lightAttenuations", MAX_LIGHTS_PER_PASS));
-		constants.push_back(Constant(ELEM_VECTOR4, "shadowParameters", MAX_LIGHTS_PER_PASS));
-		constants.push_back(Constant(ELEM_VECTOR4, "pointShadowParameters", MAX_LIGHTS_PER_PASS));
-		constants.push_back(Constant(ELEM_VECTOR4, "dirShadowSplits"));
-		constants.push_back(Constant(ELEM_VECTOR4, "dirShadowFade"));
+		constants.push_back(Constant(ConstantElementType::Float4, "lightPositions", MAX_LIGHTS_PER_PASS));
+		constants.push_back(Constant(ConstantElementType::Float4, "lightDirections", MAX_LIGHTS_PER_PASS));
+		constants.push_back(Constant(ConstantElementType::Float4, "lightColors", MAX_LIGHTS_PER_PASS));
+		constants.push_back(Constant(ConstantElementType::Float4, "lightAttenuations", MAX_LIGHTS_PER_PASS));
+		constants.push_back(Constant(ConstantElementType::Float4, "shadowParameters", MAX_LIGHTS_PER_PASS));
+		constants.push_back(Constant(ConstantElementType::Float4, "pointShadowParameters", MAX_LIGHTS_PER_PASS));
+		constants.push_back(Constant(ConstantElementType::Float4, "dirShadowSplits"));
+		constants.push_back(Constant(ConstantElementType::Float4, "dirShadowFade"));
 		psLightConstantBuffer->Define(constants, true);
 
 		// Instance vertex buffer contains texcoords 4-6 which define the instances' world matrices

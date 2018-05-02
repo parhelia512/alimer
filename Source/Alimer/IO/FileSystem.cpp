@@ -21,8 +21,8 @@
 // THE SOFTWARE.
 //
 
-#include "File.h"
-#include "FileSystem.h"
+#include "../IO/File.h"
+#include "../IO/FileSystem.h"
 
 #include <cstdio>
 #include <cstring>

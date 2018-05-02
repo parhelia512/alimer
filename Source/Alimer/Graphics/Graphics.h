@@ -187,15 +187,11 @@ namespace Alimer
 		uint32_t GetRenderTargetHeight() const { return _renderTargetSize.height; }
 		/// Return whether is using vertical sync.
 		bool VSync() const { return vsync; }
-		/// Return the current color rendertarget by index, or null if rendering to the backbuffer.
-		Texture* GetRenderTarget(size_t index) const;
 		/// Return the current depth-stencil buffer, or null if rendering to the backbuffer.
 		Texture* GetDepthStencil() const { return _depthStencil; }
 		/// Return the current viewport rectangle.
 		const IntRect& Viewport() const { return viewport; }
 		
-		/// Return currently bound texture by texture unit.
-		Texture* GetTexture(size_t index) const;
 		/// Return currently bound vertex shader.
 		ShaderVariation* GetVertexShader() const { return vertexShader; }
 		/// Return currently bound pixel shader.
@@ -273,7 +269,7 @@ namespace Alimer
 		/// GPU objects mutex.
 		std::mutex _gpuResourceMutex;
 		/// GPU objects.
-		std::vector<GPUObject*> gpuObjects;
+		std::vector<GPUObject*> _gpuObjects;
 		
 		/// Multisample level.
 		uint32_t _multisample{ 1 };

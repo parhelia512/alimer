@@ -26,19 +26,17 @@
 #include "../Window/Window.h"
 #include "Graphics.h"
 #include "GraphicsImpl.h"
+#include "VertexBuffer.h"
 #include "IndexBuffer.h"
+#include "Shader.h"
+#include "Texture.h"
 
 #ifdef ALIMER_D3D11
 #	include "D3D11/D3D11Graphics.h"
 #endif
 
-#ifdef _WIN32
-// Prefer the high-performance GPU on switchable GPU systems
-extern "C" {
-	__declspec(dllexport) DWORD NvOptimusEnablement = 1;
-	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-}
-
+#ifdef ALIMER_VULKAN
+#	include "Vulkan/VulkanGraphics.h"
 #endif
 
 #include <algorithm>
@@ -70,20 +68,20 @@ namespace Alimer
 		if (!_initialized)
 			return;
 
-		if (gpuObjects.size())
+		if (_gpuObjects.size())
 		{
 			lock_guard<mutex> lock(_gpuResourceMutex);
 
 			// Release all GPU objects that still exist
 			//std::sort(gpuObjects.begin(), gpuObjects.end(), SortResources);
-			for (size_t i = 0; i < gpuObjects.size(); ++i)
+			for (size_t i = 0; i < _gpuObjects.size(); ++i)
 			{
-				GPUObject* resource = gpuObjects.at(i);
+				GPUObject* resource = _gpuObjects.at(i);
 				assert(resource);
 				resource->Release();
 			}
 
-			gpuObjects.clear();
+			_gpuObjects.clear();
 		}
 
 		_initialized = false;
@@ -106,6 +104,67 @@ namespace Alimer
 		}
 	}
 
+	void Graphics::SetRenderTarget(Texture* renderTarget, Texture* depthStencil)
+	{
+		static std::vector<Texture*> renderTargetVector(1);
+		renderTargetVector[0] = renderTarget;
+		SetRenderTargets(renderTargetVector, depthStencil);
+	}
+
+	void Graphics::SetColorState(const BlendModeDesc& blendMode, bool alphaToCoverage, unsigned char colorWriteMask)
+	{
+		renderState.blendMode = blendMode;
+		renderState.colorWriteMask = colorWriteMask;
+		renderState.alphaToCoverage = alphaToCoverage;
+
+		blendStateDirty = true;
+	}
+
+	void Graphics::SetColorState(BlendMode blendMode, bool alphaToCoverage, unsigned char colorWriteMask)
+	{
+		renderState.blendMode = blendModes[blendMode];
+		renderState.colorWriteMask = colorWriteMask;
+		renderState.alphaToCoverage = alphaToCoverage;
+
+		blendStateDirty = true;
+	}
+
+	void Graphics::SetDepthState(CompareFunc depthFunc, bool depthWrite, bool depthClip, int depthBias, float slopeScaledDepthBias)
+	{
+		renderState.depthFunc = depthFunc;
+		renderState.depthWrite = depthWrite;
+		renderState.depthClip = depthClip;
+		renderState.depthBias = depthBias;
+		renderState.slopeScaledDepthBias = slopeScaledDepthBias;
+
+		depthStateDirty = true;
+		rasterizerStateDirty = true;
+	}
+
+	void Graphics::SetRasterizerState(CullMode cullMode, FillMode fillMode)
+	{
+		renderState.cullMode = cullMode;
+		renderState.fillMode = fillMode;
+
+		rasterizerStateDirty = true;
+	}
+
+	void Graphics::AddGPUObject(GPUObject* object)
+	{
+		if (object)
+			_gpuObjects.push_back(object);
+	}
+
+	void Graphics::RemoveGPUObject(GPUObject* object)
+	{
+		auto it = std::find(_gpuObjects.begin(), _gpuObjects.end(), object);
+		if (it != end(_gpuObjects))
+		{
+			_gpuObjects.erase(it);
+		}
+	}
+
+
 	std::vector<GraphicsDeviceType> Graphics::GetAvailableDrivers()
 	{
 		static std::vector<GraphicsDeviceType> availableDrivers;
@@ -118,6 +177,13 @@ namespace Alimer
 			if (D3D11Graphics::IsSupported())
 			{
 				availableDrivers.push_back(GraphicsDeviceType::Direct3D11);
+			}
+#endif
+
+#ifdef ALIMER_VULKAN
+			if (VulkanGraphics::IsSupported())
+			{
+				availableDrivers.push_back(GraphicsDeviceType::Vulkan);
 			}
 #endif
 
@@ -137,6 +203,15 @@ namespace Alimer
 		case GraphicsDeviceType::Direct3D11:
 #ifdef ALIMER_D3D11
 			if (D3D11Graphics::IsSupported())
+			{
+				return true;
+			}
+#endif
+			return false;
+
+		case GraphicsDeviceType::Vulkan:
+#ifdef ALIMER_VULKAN
+			if (VulkanGraphics::IsSupported())
 			{
 				return true;
 			}
@@ -184,24 +259,43 @@ namespace Alimer
 		Graphics* graphics = nullptr;
 		switch (deviceType)
 		{
-		case GraphicsDeviceType::Empty:
-		{
+		case GraphicsDeviceType::Empty: {
 			ALIMER_LOGINFO("Using empty graphics backend.");
 			break;
 		}
 
-		case GraphicsDeviceType::Direct3D11:
-		{
+		case GraphicsDeviceType::Direct3D11: {
 #ifdef ALIMER_D3D11
 			ALIMER_LOGINFO("Using Direct3D11 graphics backend.");
 			graphics = new D3D11Graphics(validation, applicationName);
 #else
-			LOGWARNING("Direct3D11 backend not supported on given platform.");
+			ALIMER_LOGWARN("Direct3D11 backend not supported on given platform.");
+#endif
+			break;
+		}
+
+		case GraphicsDeviceType::Vulkan: {
+#ifdef ALIMER_VULKAN
+			ALIMER_LOGINFO("Using Vulkan graphics backend.");
+			graphics = new VulkanGraphics(validation, applicationName);
+#else
+			ALIMER_LOGWARN("Vulkan backend not supported on given platform.");
 #endif
 			break;
 		}
 		}
 
 		return graphics;
+	}
+
+	void RegisterGraphicsLibrary()
+	{
+		static bool registered = false;
+		if (registered)
+			return;
+		registered = true;
+
+		Shader::RegisterObject();
+		Texture::RegisterObject();
 	}
 }
