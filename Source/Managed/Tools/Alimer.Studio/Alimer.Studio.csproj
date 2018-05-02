@@ -7,5 +7,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\AlimerSharp\AlimerSharp.csproj" />
+    <ProjectReference Include="..\Alimer.Assets\Alimer.Assets.csproj" />
   </ItemGroup>
 </Project>

@@ -21,6 +21,13 @@
 #
 
 # Restore packages.
+execute_process(COMMAND ${DOTNET_BINARY} restore ${CMAKE_CURRENT_SOURCE_DIR}/Alimer.Assets/Alimer.Assets.csproj)
 execute_process(COMMAND ${DOTNET_BINARY} restore ${CMAKE_CURRENT_SOURCE_DIR}/Alimer.Studio/Alimer.Studio.csproj)
+
+# Assets
+include_external_msproject(Alimer.Assets ${CMAKE_CURRENT_SOURCE_DIR}/Alimer.Assets/Alimer.Assets.csproj PLATFORM "Any CPU")
+set_target_properties(Alimer.Assets PROPERTIES FOLDER Managed/Assets)
+
+# Studio
 include_external_msproject(Alimer.Studio ${CMAKE_CURRENT_SOURCE_DIR}/Alimer.Studio/Alimer.Studio.csproj PLATFORM "Any CPU")
 set_target_properties(Alimer.Studio PROPERTIES FOLDER Managed/Studio)
